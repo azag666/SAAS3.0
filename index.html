@@ -241,20 +241,40 @@
             },
             settings() {
                 const { settings } = App.state.data;
-                const isChecked = (provider) => (settings.active_pix_provider === provider) || (!settings.active_pix_provider && provider === 'pushinpay') ? 'checked' : '';
+                const providers = [
+                    { value: 'pushinpay', text: 'PushinPay' },
+                    { value: 'cnpay', text: 'CN Pay' },
+                    { value: 'oasyfy', text: 'Oasy.fy' }
+                ];
 
+                const createSelect = (name, selectedValue) => {
+                    const options = providers.map(p => `<option value="${p.value}" ${p.value === selectedValue ? 'selected' : ''}>${p.text}</option>`).join('');
+                    return `<select name="${name}" class="form-select w-full p-2 rounded-md">${options}<option value="" ${!selectedValue ? 'selected' : ''}>Nenhum</option></select>`;
+                };
+                
                 return `
                 <div class="animate-fade-in">
                     <h1 class="text-3xl font-bold text-white mb-6">API PIX</h1>
                     <form id="pixSettingsForm" class="space-y-8 max-w-3xl">
                         <div class="card p-6 rounded-lg">
-                            <h2 class="text-xl font-semibold mb-2 text-white">Provedor de PIX Ativo</h2><p class="text-sm text-gray-400 mb-4">Selecione o provedor de pagamento que será usado para todas as suas transações.</p>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 provider-selector">
-                                <input type="radio" id="provider_pushinpay" name="active_pix_provider" value="pushinpay" class="hidden" ${isChecked('pushinpay')}><label for="provider_pushinpay" class="card p-4 text-center cursor-pointer border-2 border-slate-700 hover:border-sky-500 transition-all duration-200"><h3 class="text-lg font-bold text-white">PushinPay</h3></label>
-                                <input type="radio" id="provider_cnpay" name="active_pix_provider" value="cnpay" class="hidden" ${isChecked('cnpay')}><label for="provider_cnpay" class="card p-4 text-center cursor-pointer border-2 border-slate-700 hover:border-sky-500 transition-all duration-200"><h3 class="text-lg font-bold text-white">CN Pay</h3></label>
-                                <input type="radio" id="provider_oasyfy" name="active_pix_provider" value="oasyfy" class="hidden" ${isChecked('oasyfy')}><label for="provider_oasyfy" class="card p-4 text-center cursor-pointer border-2 border-slate-700 hover:border-sky-500 transition-all duration-200"><h3 class="text-lg font-bold text-white">Oasy.fy</h3></label>
+                            <h2 class="text-xl font-semibold mb-2 text-white">Ordem de Prioridade dos Provedores</h2>
+                            <p class="text-sm text-gray-400 mb-4">Defina a ordem em que o sistema tentará gerar o PIX. Se o Provedor Primário falhar, o sistema automaticamente tentará o Secundário, e assim por diante.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block mb-2 text-sm font-medium text-gray-400">1º - Provedor Primário</label>
+                                    ${createSelect('pix_provider_primary', settings.pix_provider_primary || 'pushinpay')}
+                                </div>
+                                <div>
+                                    <label class="block mb-2 text-sm font-medium text-gray-400">2º - Provedor Secundário</label>
+                                    ${createSelect('pix_provider_secondary', settings.pix_provider_secondary)}
+                                </div>
+                                <div>
+                                    <label class="block mb-2 text-sm font-medium text-gray-400">3º - Provedor Terciário</label>
+                                    ${createSelect('pix_provider_tertiary', settings.pix_provider_tertiary)}
+                                </div>
                             </div>
                         </div>
+
                         <div class="card p-6 rounded-lg">
                             <div class="flex justify-between items-center mb-4">
                                 <div class="flex items-center gap-3">
