@@ -90,7 +90,7 @@
             currentPage: 'dashboard',
             statusInterval: null,
             dateFilter: {
-                period: 'all', // 'today', 'last7days', 'thisMonth', 'custom'
+                period: 'all', // 'today', 'last7days', 'thisMonth', 'custom', 'all'
                 startDate: null,
                 endDate: null
             }
@@ -180,9 +180,6 @@
                 </div>`;
             },
             dateFilterComponent(page) {
-                 // NOTE: The filter for 'dashboard' is for UI demonstration.
-                 // The API endpoint /api/dashboard/metrics returns aggregated data,
-                 // so client-side date filtering is not possible without server changes.
                 const { period } = App.state.dateFilter;
                 return `
                 <div id="${page}-date-filter" class="card p-4 rounded-lg mb-6 flex flex-wrap items-center gap-2 text-sm">
@@ -447,24 +444,26 @@
                     }
                 }
                 
-                // Date Filter Handler
-                const filterContainer = e.target.closest('#transactions-date-filter');
+                // --- START: CORRECTED DATE FILTER HANDLER ---
+                const filterContainer = e.target.closest('#transactions-date-filter, #dashboard-date-filter');
                 if (filterContainer) {
+                    const page = filterContainer.id.split('-')[0]; // 'transactions' or 'dashboard'
+                    
                     if (e.target.dataset.period) {
-                        this.applyDateFilter(e.target.dataset.period);
-                    } else if (e.target.id === 'apply-custom-date-filter-transactions') {
-                        const startDate = document.getElementById('transactions-start-date').value;
-                        const endDate = document.getElementById('transactions-end-date').value;
+                        this.handleFilterChange(page, e.target.dataset.period);
+                    } else if (e.target.id === `apply-custom-date-filter-${page}`) {
+                        const startDate = document.getElementById(`${page}-start-date`).value;
+                        const endDate = document.getElementById(`${page}-end-date`).value;
                         if (startDate && endDate) {
-                            this.applyDateFilter('custom', startDate, endDate);
+                            this.handleFilterChange(page, 'custom', startDate, endDate);
                         } else {
                             this.showToast('Por favor, selecione data de início e fim.', 'error');
                         }
-                    } else if (e.target.id === 'clear-date-filter-transactions') {
-                        this.applyDateFilter('all');
+                    } else if (e.target.id === `clear-date-filter-${page}`) {
+                        this.handleFilterChange(page, 'all');
                     }
                 }
-
+                // --- END: CORRECTED DATE FILTER HANDLER ---
             });
 
             document.addEventListener('submit', async (e) => {
@@ -565,6 +564,8 @@
         navigateTo(page) {
             clearInterval(this.state.statusInterval);
             this.state.currentPage = page;
+            this.handleFilterChange(page, 'all'); // Reset filter on page navigation
+
             const contentContainer = document.getElementById('content');
             if (contentContainer && this.templates[page]) {
                 contentContainer.innerHTML = this.templates[page]();
@@ -626,12 +627,13 @@
                 switch(period) {
                     case 'today':
                         start = new Date(now.setHours(0, 0, 0, 0));
-                        end = new Date(now.setHours(23, 59, 59, 999));
+                        end = new Date(new Date().setHours(23, 59, 59, 999));
                         break;
                     case 'last7days':
                         end = new Date();
+                        end.setHours(23, 59, 59, 999);
                         start = new Date();
-                        start.setDate(end.getDate() - 7);
+                        start.setDate(end.getDate() - 6);
                         start.setHours(0, 0, 0, 0);
                         break;
                     case 'thisMonth':
@@ -640,16 +642,17 @@
                         end.setHours(23, 59, 59, 999);
                         break;
                     case 'custom':
-                        start = new Date(startDate);
-                        end = new Date(endDate);
-                        end.setHours(23, 59, 59, 999);
+                        start = new Date(`${startDate}T00:00:00`);
+                        end = new Date(`${endDate}T23:59:59`);
                         break;
                 }
 
-                filteredTransactions = this.state.data.transactions.filter(t => {
-                    const transactionDate = new Date(t.created_at);
-                    return transactionDate >= start && transactionDate <= end;
-                });
+                if (start && end) {
+                    filteredTransactions = this.state.data.transactions.filter(t => {
+                        const transactionDate = new Date(t.created_at);
+                        return transactionDate >= start && transactionDate <= end;
+                    });
+                }
             }
 
             if (filteredTransactions.length > 0) {
@@ -664,19 +667,24 @@
                 tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Nenhuma transação encontrada para o período selecionado.</td></tr>';
             }
         },
-        applyDateFilter(period, startDate, endDate) {
+        handleFilterChange(page, period, startDate, endDate) {
             this.state.dateFilter.period = period;
             this.state.dateFilter.startDate = startDate || null;
             this.state.dateFilter.endDate = endDate || null;
             
-            // Re-render the filter component to update active class
-            const filterContainer = document.getElementById('transactions-date-filter');
+            const filterContainer = document.getElementById(`${page}-date-filter`);
             if (filterContainer) {
-                const newFilterHTML = this.templates.dateFilterComponent('transactions');
+                const newFilterHTML = this.templates.dateFilterComponent(page);
                 filterContainer.outerHTML = newFilterHTML;
             }
 
-            this.renderTransactionsTable();
+            if (page === 'transactions') {
+                this.renderTransactionsTable();
+            } else if (page === 'dashboard') {
+                if (period !== 'all') {
+                     this.showToast('Filtro visual. Métricas totais não são afetadas sem alteração na API.', 'info');
+                }
+            }
         },
         generatePresselCode(pressel) {
             const { pixels, bots, settings } = this.state.data;
@@ -819,11 +827,17 @@
         },
         showToast(message, type = 'success') {
             const toast = document.createElement('div');
-            const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+            let bgColor = '';
+            switch(type) {
+                case 'success': bgColor = 'bg-green-600'; break;
+                case 'error': bgColor = 'bg-red-600'; break;
+                case 'info': bgColor = 'bg-sky-600'; break;
+                default: bgColor = 'bg-gray-700';
+            }
             toast.className = `fixed bottom-5 right-5 ${bgColor} text-white py-2 px-4 rounded-lg shadow-lg animate-fade-in`;
             toast.textContent = message;
             document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 4000);
+            setTimeout(() => toast.remove(), 5000);
         }
     };
 
