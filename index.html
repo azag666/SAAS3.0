@@ -8,7 +8,7 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#020617"/>
 
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡️</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100%22><text y=%22.9em%22 font-size=%2290%22>⚡️</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,13 +23,17 @@
             background-color: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.2);
             backdrop-filter: blur(12px); transition: all 0.3s ease;
         }
-        .form-input, .form-select {
+        .form-input, .form-select, .form-date {
             background-color: rgba(30, 41, 59, 0.5); border: 1px solid #334155; color: #cbd5e1;
             transition: all 0.3s ease;
         }
-        .form-input:focus, .form-select:focus {
+        .form-input:focus, .form-select:focus, .form-date:focus {
             outline: none; border-color: #38bdf8;
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+        }
+        /* Style for date picker icon */
+        .form-date::-webkit-calendar-picker-indicator {
+            filter: invert(0.6) sepia(1) saturate(5) hue-rotate(180deg);
         }
         .btn {
             background-color: #0ea5e9; color: white; transition: all 0.3s ease;
@@ -45,6 +49,11 @@
         .btn-red:hover { background-color: #991b1b; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
         .btn-green { background-color: #047857; border-color: #059669; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
         .btn-green:hover { background-color: #059669; box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
+        .btn-secondary { background-color: #334155; border-color: #475569; box-shadow: none; }
+        .btn-secondary:hover { background-color: #475569; transform: translateY(-2px); }
+        .btn-filter { background-color: transparent; border: 1px solid #334155; color: #94a3b8; }
+        .btn-filter:hover { background-color: #1e293b; border-color: #38bdf8; color: #e2e8f0; }
+        .btn-filter.active { background-color: rgba(14, 165, 233, 0.1); border-color: #0ea5e9; color: white; font-weight: 600; }
         .nav-link { color: #94a3b8; border-left: 3px solid transparent; cursor: pointer; transition: all 0.3s ease; }
         .nav-link:hover { background-color: rgba(56, 189, 248, 0.05); border-left-color: #38bdf8; color: #e2e8f0; }
         .nav-link.active { background-color: rgba(14, 165, 233, 0.1); border-left-color: #0ea5e9; color: white; font-weight: 600; }
@@ -77,9 +86,14 @@
         state: {
             API_BASE_URL: 'https://novaapi-one.vercel.app',
             token: null,
-            data: { pixels: [], bots: [], pressels: [], settings: {} },
+            data: { pixels: [], bots: [], pressels: [], settings: {}, transactions: [] },
             currentPage: 'dashboard',
-            statusInterval: null
+            statusInterval: null,
+            dateFilter: {
+                period: 'all', // 'today', 'last7days', 'thisMonth', 'custom'
+                startDate: null,
+                endDate: null
+            }
         },
 
         async init() {
@@ -93,6 +107,7 @@
             if (this.state.token) {
                 try {
                     this.state.data = await this.apiRequest('/api/dashboard/data');
+                    this.state.data.transactions = []; // Initialize transactions
                     this.renderLayout();
                 } catch (e) { this.logout(); }
             } else {
@@ -112,7 +127,7 @@
         },
         
         templates: {
-            auth(page = 'login') {
+             auth(page = 'login') {
                 return `<div class="flex items-center justify-center min-h-screen p-4"><div id="auth-forms-container" class="w-full max-w-md">${page === 'login' ? this.loginForm() : this.registerForm()}</div></div>`;
             },
             loginForm() {
@@ -164,6 +179,27 @@
                     <main id="content" class="flex-1 p-8 overflow-y-auto"></main>
                 </div>`;
             },
+            dateFilterComponent(page) {
+                 // NOTE: The filter for 'dashboard' is for UI demonstration.
+                 // The API endpoint /api/dashboard/metrics returns aggregated data,
+                 // so client-side date filtering is not possible without server changes.
+                const { period } = App.state.dateFilter;
+                return `
+                <div id="${page}-date-filter" class="card p-4 rounded-lg mb-6 flex flex-wrap items-center gap-2 text-sm">
+                    <span class="font-semibold mr-2">Filtrar por:</span>
+                    <button data-period="today" class="btn-filter py-1 px-3 rounded-md ${period === 'today' ? 'active' : ''}">Hoje</button>
+                    <button data-period="last7days" class="btn-filter py-1 px-3 rounded-md ${period === 'last7days' ? 'active' : ''}">Últimos 7 dias</button>
+                    <button data-period="thisMonth" class="btn-filter py-1 px-3 rounded-md ${period === 'thisMonth' ? 'active' : ''}">Este Mês</button>
+                    <div class="flex items-center gap-2 pl-4 border-l border-slate-700 ml-2">
+                         <input type="date" id="${page}-start-date" class="form-date p-1 rounded-md text-sm">
+                         <span class="text-gray-500">até</span>
+                         <input type="date" id="${page}-end-date" class="form-date p-1 rounded-md text-sm">
+                         <button id="apply-custom-date-filter-${page}" class="btn-secondary py-1 px-3 rounded-md">Filtrar</button>
+                    </div>
+                    <button id="clear-date-filter-${page}" class="btn-secondary py-1 px-3 rounded-md ml-auto">Limpar</button>
+                </div>
+                `;
+            },
             dashboard() {
                 return `
                 <div class="animate-fade-in">
@@ -174,6 +210,7 @@
                             Atualizar
                         </button>
                     </div>
+                    ${this.dateFilterComponent('dashboard')}
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                         <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">Cliques na Página</h3><p id="metric-clicks" class="text-4xl font-bold text-sky-400 mt-2">...</p></div>
                         <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">PIX Gerados</h3><p id="metric-generated" class="text-4xl font-bold text-yellow-400 mt-2">...</p></div>
@@ -236,6 +273,7 @@
                 return `
                 <div class="animate-fade-in">
                     <div class="flex justify-between items-center mb-6"><h1 class="text-3xl font-bold text-white">Histórico de Transações</h1><button id="refreshTransactionsBtn" class="btn text-sm py-2 px-3"><svg class="h-4 w-4 inline-block mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001m0 0h-4.992m4.992 0L21 9.348M16.023 9.348A10.038 10.038 0 0112 19.5 10.038 10.038 0 012.98 9.348" /></svg>Atualizar</button></div>
+                    ${this.dateFilterComponent('transactions')}
                     <div class="card p-6 rounded-lg"><div id="transactions-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Status</th><th>Valor</th><th>Bot</th><th>Provedor PIX</th><th>Data</th></tr></thead><tbody id="transactions-table-body"><tr><td colspan="5" class="text-center text-gray-500">Carregando transações...</td></tr></tbody></table></div></div>
                 </div>`;
             },
@@ -408,6 +446,25 @@
                         } catch(err) {}
                     }
                 }
+                
+                // Date Filter Handler
+                const filterContainer = e.target.closest('#transactions-date-filter');
+                if (filterContainer) {
+                    if (e.target.dataset.period) {
+                        this.applyDateFilter(e.target.dataset.period);
+                    } else if (e.target.id === 'apply-custom-date-filter-transactions') {
+                        const startDate = document.getElementById('transactions-start-date').value;
+                        const endDate = document.getElementById('transactions-end-date').value;
+                        if (startDate && endDate) {
+                            this.applyDateFilter('custom', startDate, endDate);
+                        } else {
+                            this.showToast('Por favor, selecione data de início e fim.', 'error');
+                        }
+                    } else if (e.target.id === 'clear-date-filter-transactions') {
+                        this.applyDateFilter('all');
+                    }
+                }
+
             });
 
             document.addEventListener('submit', async (e) => {
@@ -545,23 +602,81 @@
         },
         async fetchTransactions() {
             const tableBody = document.getElementById('transactions-table-body');
+            tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Carregando transações...</td></tr>';
             try {
                 const transactions = await this.apiRequest('/api/transactions');
-                if (transactions.length > 0) {
-                    tableBody.innerHTML = transactions.map(t => {
-                        const statusColor = t.status === 'paid' ? 'text-green-400' : 'text-yellow-400';
-                        const statusText = t.status === 'paid' ? 'Pago' : 'Pendente';
-                        const formattedValue = `R$ ${parseFloat(t.pix_value).toFixed(2).replace('.', ',')}`;
-                        const formattedDate = new Date(t.created_at).toLocaleString('pt-BR');
-                        return `<tr class="hover:bg-slate-800/50"><td class="${statusColor}">${statusText}</td><td>${formattedValue}</td><td>${t.bot_name}</td><td>${t.provider.toUpperCase()}</td><td>${formattedDate}</td></tr>`;
-                    }).join('');
-                } else {
-                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Nenhuma transação encontrada.</td></tr>';
-                }
+                this.state.data.transactions = transactions;
+                this.renderTransactionsTable(); // Render table with current filter
             } catch (e) {
                 console.error("Erro ao buscar transações:", e);
                 tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-red-400">Erro ao carregar transações.</td></tr>';
             }
+        },
+        renderTransactionsTable() {
+            const tableBody = document.getElementById('transactions-table-body');
+            if (!tableBody) return;
+
+            const { period, startDate, endDate } = this.state.dateFilter;
+            let filteredTransactions = this.state.data.transactions;
+
+            if (period !== 'all') {
+                const now = new Date();
+                let start, end;
+                
+                switch(period) {
+                    case 'today':
+                        start = new Date(now.setHours(0, 0, 0, 0));
+                        end = new Date(now.setHours(23, 59, 59, 999));
+                        break;
+                    case 'last7days':
+                        end = new Date();
+                        start = new Date();
+                        start.setDate(end.getDate() - 7);
+                        start.setHours(0, 0, 0, 0);
+                        break;
+                    case 'thisMonth':
+                        start = new Date(now.getFullYear(), now.getMonth(), 1);
+                        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                        end.setHours(23, 59, 59, 999);
+                        break;
+                    case 'custom':
+                        start = new Date(startDate);
+                        end = new Date(endDate);
+                        end.setHours(23, 59, 59, 999);
+                        break;
+                }
+
+                filteredTransactions = this.state.data.transactions.filter(t => {
+                    const transactionDate = new Date(t.created_at);
+                    return transactionDate >= start && transactionDate <= end;
+                });
+            }
+
+            if (filteredTransactions.length > 0) {
+                tableBody.innerHTML = filteredTransactions.map(t => {
+                    const statusColor = t.status === 'paid' ? 'text-green-400' : 'text-yellow-400';
+                    const statusText = t.status === 'paid' ? 'Pago' : 'Pendente';
+                    const formattedValue = `R$ ${parseFloat(t.pix_value).toFixed(2).replace('.', ',')}`;
+                    const formattedDate = new Date(t.created_at).toLocaleString('pt-BR');
+                    return `<tr class="hover:bg-slate-800/50"><td class="${statusColor}">${statusText}</td><td>${formattedValue}</td><td>${t.bot_name}</td><td>${t.provider.toUpperCase()}</td><td>${formattedDate}</td></tr>`;
+                }).join('');
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Nenhuma transação encontrada para o período selecionado.</td></tr>';
+            }
+        },
+        applyDateFilter(period, startDate, endDate) {
+            this.state.dateFilter.period = period;
+            this.state.dateFilter.startDate = startDate || null;
+            this.state.dateFilter.endDate = endDate || null;
+            
+            // Re-render the filter component to update active class
+            const filterContainer = document.getElementById('transactions-date-filter');
+            if (filterContainer) {
+                const newFilterHTML = this.templates.dateFilterComponent('transactions');
+                filterContainer.outerHTML = newFilterHTML;
+            }
+
+            this.renderTransactionsTable();
         },
         generatePresselCode(pressel) {
             const { pixels, bots, settings } = this.state.data;
