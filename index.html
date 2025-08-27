@@ -61,6 +61,11 @@
             color: #7dd3fc;
         }
         .table-custom th, .table-custom td { padding: 0.75rem; border-bottom: 1px solid #334155; text-align: left; }
+        .info-line { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #1e293b; }
+        .info-label { font-weight: 500; color: #94a3b8; }
+        .info-value { font-weight: 600; color: #e2e8f0; }
+        .info-value.success { color: #4ade80; }
+        .code-area { background-color: #0f172a; border: 1px solid #1e293b; font-family: monospace; font-size: 0.8rem; word-break: break-all; max-height: 120px; overflow-y: auto; padding: 0.5rem; border-radius: 0.25rem; }
     </style>
 </head>
 <body>
@@ -603,14 +608,35 @@
 
             try {
                 const result = await this.apiRequest('/api/pix/test-generate', 'POST');
-                const modalContent = `<div class="text-center"><p class="text-lg font-medium text-green-400 mb-2">Conexão com ${result.provider} funcionando!</p><p class="text-sm text-gray-400">Um PIX de teste de R$ 0,50 foi gerado para confirmar a validade das suas credenciais.</p></div>`;
-                document.getElementById('modal-container').innerHTML = this.templates.modal('Teste de Conexão', modalContent);
+                const modalContent = `
+                    <div class="space-y-4">
+                        <div class="info-line">
+                            <span class="info-label">API PIX</span>
+                            <span class="info-value success">${result.provider} ATIVA</span>
+                        </div>
+                        <div class="info-line">
+                            <span class="info-label">Adquirente</span>
+                            <span class="info-value">${result.acquirer}</span>
+                        </div>
+                        <div class="info-line">
+                            <span class="info-label">Tempo de Resposta</span>
+                            <span class="info-value">${result.responseTime} segundos</span>
+                        </div>
+                        <div>
+                            <span class="info-label block mb-2">COPIA E COLA</span>
+                            <div class="relative">
+                                <div id="pix-code" class="code-area text-gray-400">${result.qr_code_text}</div>
+                                <button onclick="App.copyPixCode()" class="absolute top-2 right-2 btn text-xs py-1 px-2">Copiar</button>
+                            </div>
+                        </div>
+                    </div>`;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Teste de Conexão Bem-Sucedido', modalContent);
                 localStorage.setItem('pix_test_status', 'success');
                 localStorage.setItem('pix_test_timestamp', Date.now());
             } catch (error) {
                 const details = error.details ? `<pre class="mt-2 text-xs bg-slate-900 p-2 rounded text-red-400 whitespace-pre-wrap">${JSON.stringify(error.details, null, 2)}</pre>` : '';
                 const modalContent = `<div class="text-center"><p class="text-lg font-medium text-red-400 mb-2">Falha na Conexão</p><p class="text-sm text-gray-400">${error.message || 'Ocorreu um erro.'}</p>${details}</div>`;
-                document.getElementById('modal-container').innerHTML = this.templates.modal('Teste de Conexão', modalContent);
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste de Conexão', modalContent);
                 localStorage.setItem('pix_test_status', 'failure');
                 localStorage.setItem('pix_test_timestamp', Date.now());
             } finally {
@@ -618,6 +644,12 @@
                 btn.disabled = false;
                 this.updatePixStatusIndicator();
             }
+        },
+        copyPixCode() {
+            const code = document.getElementById('pix-code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                this.showToast('Código PIX copiado!', 'success');
+            });
         },
         updatePixStatusIndicator() {
             const indicator = document.getElementById('pix-status-indicator');
