@@ -1,4 +1,84 @@
-<script>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HotTrack SAAS</title>
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#020617"/>
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100%22><text y=%22.9em%22 font-size=%2290%22>⚡️</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif; background-color: #020617; color: #e2e8f0;
+            background-image: radial-gradient(circle at 1px 1px, rgba(56, 189, 248, 0.1) 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+        .card {
+            background-color: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.2);
+            backdrop-filter: blur(12px); transition: all 0.3s ease;
+        }
+        .form-input, .form-select, .form-date {
+            background-color: rgba(30, 41, 59, 0.5); border: 1px solid #334155; color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .form-input:focus, .form-select:focus, .form-date:focus {
+            outline: none; border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+        }
+        .form-date::-webkit-calendar-picker-indicator {
+            filter: invert(0.6) sepia(1) saturate(5) hue-rotate(180deg);
+        }
+        .btn {
+            background-color: #0ea5e9; color: white; transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.3), inset 0 0 5px rgba(255, 255, 255, 0.1);
+            border: 1px solid #38bdf8;
+        }
+        .btn:hover {
+            background-color: #38bdf8; box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+            transform: translateY(-2px);
+        }
+        .btn:disabled { background-color: #334155; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-red { background-color: #7f1d1d; border-color: #b91c1c; box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+        .btn-red:hover { background-color: #991b1b; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
+        .btn-green { background-color: #047857; border-color: #059669; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+        .btn-green:hover { background-color: #059669; box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
+        .btn-secondary { background-color: #334155; border-color: #475569; box-shadow: none; }
+        .btn-secondary:hover { background-color: #475569; transform: translateY(-2px); }
+        .btn-filter { background-color: transparent; border: 1px solid #334155; color: #94a3b8; }
+        .btn-filter:hover { background-color: #1e293b; border-color: #38bdf8; color: #e2e8f0; }
+        .btn-filter.active { background-color: rgba(14, 165, 233, 0.1); border-color: #0ea5e9; color: white; font-weight: 600; }
+        .nav-link { color: #94a3b8; border-left: 3px solid transparent; cursor: pointer; transition: all 0.3s ease; }
+        .nav-link:hover { background-color: rgba(56, 189, 248, 0.05); border-left-color: #38bdf8; color: #e2e8f0; }
+        .nav-link.active { background-color: rgba(14, 165, 233, 0.1); border-left-color: #0ea5e9; color: white; font-weight: 600; }
+        .modal { display: none; }
+        .modal.active { display: flex; align-items: center; justify-content: center; position: fixed; z-index: 50; inset: 0; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(8px); }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .table-custom th, .table-custom td { padding: 0.75rem; border-bottom: 1px solid #334155; text-align: left; }
+        .status-indicator { font-size: 0.75rem; font-weight: 500; padding: 0.125rem 0.5rem; border-radius: 9999px; display: inline-block; margin-left: 0.75rem; vertical-align: middle; }
+        .status-indicator.success { background-color: rgba(74, 222, 128, 0.1); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.2); }
+        .status-indicator.failure { background-color: rgba(248, 113, 113, 0.1); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.2); }
+        .status-indicator.unknown { background-color: rgba(100, 116, 139, 0.1); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
+        .status-indicator.testing { background-color: rgba(56, 189, 248, 0.1); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.2); }
+        .tab-button { background-color: transparent; border: 1px solid #334155; color: #94a3b8; padding: 0.5rem 1rem; border-radius: 0.375rem; transition: all 0.3s ease; }
+        .tab-button:hover { background-color: #1e293b; color: #e2e8f0; }
+        .tab-button.active { background-color: rgba(14, 165, 233, 0.1); border-color: #0ea5e9; color: white; font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.5s ease-out; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <div id="modal-container"></div>
+
+    <script>
     const App = {
         state: {
             API_BASE_URL: 'https://novaapi-one.vercel.app',
@@ -7,7 +87,7 @@
                 pixels: [], 
                 bots: [], 
                 pressels: [], 
-                checkouts: [],
+                checkouts: [], // Adicionado estado para checkouts
                 settings: {}, 
                 transactions: [],
                 dashboard: {}
@@ -201,6 +281,7 @@
                     </div>
                 </div>`;
             },
+            // --- NOVO TEMPLATE PARA CHECKOUTS ---
             checkouts() {
                 const { pixels, checkouts } = App.state.data;
                 const pixelCheckboxes = pixels.map(p => `<label class="flex items-center space-x-2 text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" name="pixel_ids" value="${p.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500"><span>${p.account_name}</span></label>`).join('');
@@ -446,6 +527,7 @@
                     if (pressel) this.generatePresselCode(pressel);
                 }
 
+                // Listener para o novo botão de gerar código do checkout
                 if (e.target.classList.contains('generate-checkout-code-btn')) {
                     const checkoutId = e.target.dataset.id;
                     this.generateCheckoutHTML(checkoutId);
@@ -549,6 +631,7 @@
                             }
                         }
                     }
+                    // Handler para o novo formulário de checkout
                     else if (form.id === 'checkoutForm') {
                         const pixel_ids = Array.from(form.querySelectorAll('input[name="pixel_ids"]:checked')).map(cb => cb.value);
                         if (pixel_ids.length === 0) {
@@ -558,8 +641,8 @@
                             const newCheckout = await this.apiRequest('/api/checkouts', 'POST', payload);
                             if (newCheckout) {
                                 this.state.data.checkouts.unshift(newCheckout);
-                                this.navigateTo('checkouts');
-                                this.generateCheckoutHTML(newCheckout.id);
+                                this.navigateTo('checkouts'); // Recarrega a página para mostrar o novo item na lista
+                                this.generateCheckoutHTML(newCheckout.id); // Abre o modal com o código
                             }
                         }
                     }
@@ -572,6 +655,7 @@
                 }
             });
             
+            // Listener para o seletor de tipo de valor no formulário de checkout
             document.addEventListener('change', e => {
                 if (e.target.id === 'value-type-selector') {
                     const container = document.getElementById('fixed-value-container');
@@ -600,17 +684,13 @@
             }
         },
         
-        // --- CORREÇÃO 2: LÓGICA DE LOGIN ---
         async login(email, password) {
             try {
                 const data = await this.apiRequest('/api/sellers/login', 'POST', { email, password });
                 this.state.token = data.token;
                 localStorage.setItem('hottrack_token', data.token);
-                // A linha abaixo força um recarregamento limpo da página, sem os parâmetros na URL
-                window.location.href = window.location.pathname; 
-            } catch (e) {
-                // O erro já é tratado pelo apiRequest, aqui só evitamos que a página quebre
-            }
+                await this.init();
+            } catch (e) {}
         },
         
         async register(name, email, password) {
@@ -709,7 +789,7 @@
                     const statusText = t.status === 'paid' ? 'Pago' : 'Pendente';
                     const formattedValue = `R$ ${parseFloat(t.pix_value).toFixed(2).replace('.', ',')}`;
                     const formattedDate = new Date(t.created_at).toLocaleString('pt-BR');
-                    return `<tr class="hover:bg-slate-800/50"><td class="${statusColor}">${statusText}</td><td>${formattedValue}</td><td>${t.source_name || 'Checkout'}</td><td>${t.provider.toUpperCase()}</td><td>${formattedDate}</td></tr>`;
+                    return `<tr class="hover:bg-slate-800/50"><td class="${statusColor}">${statusText}</td><td>${formattedValue}</td><td>${t.source_name}</td><td>${t.provider.toUpperCase()}</td><td>${formattedDate}</td></tr>`;
                 }).join('');
             } else {
                 tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Nenhuma transação encontrada.</td></tr>';
@@ -797,7 +877,7 @@
             document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
         },
 
-        // --- CORREÇÃO 1: FUNÇÃO PARA GERAR O CÓDIGO HTML DO CHECKOUT ---
+        // --- NOVA FUNÇÃO PARA GERAR O CÓDIGO HTML DO CHECKOUT ---
         generateCheckoutHTML(checkoutId) {
             const checkout = this.state.data.checkouts.find(c => c.id == checkoutId);
             const { settings, pixels } = this.state.data;
@@ -807,61 +887,33 @@
             }
 
             const selectedPixels = pixels.filter(p => checkout.pixel_ids.includes(p.id));
-            const fbqInitBlock = selectedPixels.map(p => `fbq('init', '${p.pixel_id}');`).join('\n        ');
+            const fbqInitBlock = selectedPixels.map(p => `fbq('init', '${p.pixel_id}');`).join('\\n        ');
 
-            const htmlTemplate = `
-<!DOCTYPE html>
+            const htmlTemplate = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pagamento Seguro</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        :root { --primary-color: #2c5282; --secondary-color: #e2e8f0; --success-color: #38a169; --text-color: #2d3748; --light-text-color: #718096; --background-color: #f7fafc; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--background-color); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: var(--text-color); }
-        .container { background-color: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); width: 100%; max-width: 420px; text-align: center; box-sizing: border-box; margin: 1rem; }
-        .header h1 { font-size: 1.5rem; margin-bottom: 0.5rem; } .header p { color: var(--light-text-color); margin-top: 0; }
-        .timer { background-color: var(--secondary-color); color: var(--primary-color); font-weight: 600; padding: 0.5rem 1rem; border-radius: 8px; display: inline-block; margin-bottom: 1.5rem; }
-        #qr-code-container { position: relative; margin: 1rem 0; min-height: 280px; display: flex; justify-content: center; align-items: center; }
-        #qr-code-img { border: 6px solid var(--secondary-color); border-radius: 8px; max-width: 100%; height: auto; display: none; }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .copy-button { background-color: var(--primary-color); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.3s, transform 0.2s; width: 100%; margin-top: 1rem; }
-        .copy-button:hover { background-color: #3182ce; } .copy-button:active { transform: scale(0.98); }
-        #copy-feedback { color: var(--success-color); font-weight: 600; margin-top: 0.5rem; height: 20px; visibility: hidden; opacity: 0; transition: visibility 0s, opacity 0.5s linear; }
-        #copy-feedback.visible { visibility: visible; opacity: 1; }
-        .instructions { margin-top: 1.5rem; color: var(--light-text-color); font-size: 0.9rem; }
-        .footer { margin-top: 2rem; font-size: 0.8rem; color: #a0aec0; } .footer svg { vertical-align: middle; width: 16px; height: 16px; margin-right: 5px; }
-    </style>
-    <script>
-        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    <style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');:root{--primary-color:#2c5282;--secondary-color:#e2e8f0;--success-color:#38a169;--text-color:#2d3748;--light-text-color:#718096;--background-color:#f7fafc}body{font-family:'Inter',sans-serif;background-color:var(--background-color);margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;color:var(--text-color)}.container{background-color:#fff;padding:2rem;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);width:100%;max-width:420px;text-align:center;box-sizing:border-box;margin:1rem}.header h1{font-size:1.5rem;margin-bottom:.5rem}.header p{color:var(--light-text-color);margin-top:0}.timer{background-color:var(--secondary-color);color:var(--primary-color);font-weight:600;padding:.5rem 1rem;border-radius:8px;display:inline-block;margin-bottom:1.5rem}#qr-code-container{position:relative;margin:1rem 0;min-height:280px;display:flex;justify-content:center;align-items:center}#qr-code-img{border:6px solid var(--secondary-color);border-radius:8px;max-width:100%;height:auto;display:none}.loader{border:5px solid #f3f3f3;border-top:5px solid var(--primary-color);border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}.copy-button{background-color:var(--primary-color);color:#fff;border:none;padding:.8rem 1.5rem;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:background-color .3s,transform .2s;width:100%;margin-top:1rem}.copy-button:hover{background-color:#3182ce}.copy-button:active{transform:scale(.98)}#copy-feedback{color:var(--success-color);font-weight:600;margin-top:.5rem;height:20px;visibility:hidden;opacity:0;transition:visibility 0s,opacity .5s linear}#copy-feedback.visible{visibility:visible;opacity:1}.instructions{margin-top:1.5rem;color:var(--light-text-color);font-size:.9rem}.footer{margin-top:2rem;font-size:.8rem;color:#a0aec0}.footer svg{vertical-align:middle;width:16px;height:16px;margin-right:5px}</style>
+    <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
         ${fbqInitBlock}
         fbq('track', 'PageView');
     <\/script>
 </head>
 <body>
-    <div class="container">
-        <div class="header"><h1 id="product-name">Finalize seu Pagamento</h1><p>Escaneie o QR Code ou copie o código abaixo.</p></div>
-        <div class="timer">Expira em: <span id="countdown">10:00</span></div>
-        <div id="qr-code-container"><div id="loader" class="loader"></div><img id="qr-code-img" src="" alt="PIX QR Code"></div>
-        <button class="copy-button" id="copy-btn" disabled><span id="btn-text">Carregando PIX...</span></button>
-        <div id="copy-feedback">Código PIX copiado!</div>
-        <div class="instructions">1. Abra o app do seu banco.<br>2. Escolha a opção Pagar com PIX.<br>3. Escaneie o QR Code ou use o "Copia e Cola".</div>
-        <div class="footer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg> Pagamento seguro</div>
-    </div>
+    <div class="container"><div class="header"><h1 id="product-name">Finalize seu Pagamento</h1><p>Escaneie o QR Code ou copie o código abaixo.</p></div><div class="timer">Expira em: <span id="countdown">10:00</span></div><div id="qr-code-container"><div id="loader" class="loader"></div><img id="qr-code-img" src="" alt="PIX QR Code"></div><button class="copy-button" id="copy-btn" disabled><span id="btn-text">Carregando PIX...</span></button><div id="copy-feedback">Código PIX copiado!</div><div class="instructions">1. Abra o app do seu banco.<br>2. Escolha a opção Pagar com PIX.<br>3. Escaneie o QR Code ou use o "Copia e Cola".</div><div class="footer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg> Pagamento seguro</div></div>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const CONFIG = { API_BASE_URL: '${this.state.API_BASE_URL}', SELLER_API_KEY: '${settings.api_key}', CHECKOUT_ID: ${checkout.id}, PRODUCT_NAME: '${checkout.product_name}', REDIRECT_URL: '${checkout.redirect_url}', VALUE_TYPE: '${checkout.value_type}', FIXED_VALUE_CENTS: ${checkout.fixed_value_cents || null}, POLLING_INTERVAL: 5000, TIMER_DURATION_MINUTES: 10 };
         const qrCodeImg = document.getElementById('qr-code-img'), loader = document.getElementById('loader'), copyBtn = document.getElementById('copy-btn'), btnText = document.getElementById('btn-text'), copyFeedback = document.getElementById('copy-feedback'), countdownEl = document.getElementById('countdown');
         let pixCode = '', transactionId = '', statusCheckInterval;
-        
         function displayError(message) { console.error(message); loader.style.display = 'none'; qrCodeImg.style.display = 'none'; document.querySelector('.header h1').textContent = 'Ocorreu um Erro'; document.querySelector('.header p').textContent = message; copyBtn.disabled = true; btnText.textContent = 'Erro ao Gerar PIX'; }
         function startTimer() { let time = CONFIG.TIMER_DURATION_MINUTES * 60; const timerInterval = setInterval(() => { if (time <= 0) { clearInterval(timerInterval); countdownEl.textContent = 'Expirado'; displayError('O tempo para pagamento expirou.'); return; } time--; const minutes = Math.floor(time / 60).toString().padStart(2, '0'); const seconds = (time % 60).toString().padStart(2, '0'); countdownEl.textContent = \`\${minutes}:\${seconds}\`; }, 1000); }
         async function copyPixCode() { try { await navigator.clipboard.writeText(pixCode); copyFeedback.classList.add('visible'); setTimeout(() => copyFeedback.classList.remove('visible'), 2000); } catch (err) { console.error('Falha ao copiar:', err); } }
         async function checkPaymentStatus() { if (!transactionId) return; try { const response = await fetch(\`\${CONFIG.API_BASE_URL}/api/pix/status/\${transactionId}\`, { headers: { 'x-api-key': CONFIG.SELLER_API_KEY } }); if (!response.ok) return; const data = await response.json(); if (data.status === 'paid' || data.status === 'COMPLETED') { clearInterval(statusCheckInterval); window.location.href = CONFIG.REDIRECT_URL; } } catch (error) { console.error('Erro ao verificar status do pagamento:', error); } }
-        async function generatePix(click_id, value_cents) { try { const response = await fetch(\`\${CONFIG.API_BASE_URL}/api/pix/generate\`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': CONFIG.SELLER_API_KEY }, body: JSON.stringify({ value_cents, click_id }) }); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Erro do servidor'); } const data = await response.json(); pixCode = data.qr_code_text; transactionId = data.transaction_id; qrCodeImg.src = \`data:image/png;base64,\${data.qr_code_base64}\`; loader.style.display = 'none'; qrCodeImg.style.display = 'block'; copyBtn.disabled = false; btnText.textContent = 'Copiar Código PIX'; startTimer(); statusCheckInterval = setInterval(checkPaymentStatus, CONFIG.POLLING_INTERVAL); checkPaymentStatus(); } catch (error) { displayError(error.message || 'Não foi possível gerar o PIX.'); } }
-        async function initializeCheckout() { try { document.getElementById('product-name').textContent = CONFIG.PRODUCT_NAME; let final_value_cents; if (CONFIG.VALUE_TYPE === 'fixed') { final_value_cents = CONFIG.FIXED_VALUE_CENTS; if (!final_value_cents) return displayError('Valor do produto não configurado.'); } else { const urlValue = new URLSearchParams(window.location.search).get('value'); if (!urlValue) return displayError('Valor não fornecido na URL (ex: ?value=1990).'); final_value_cents = parseInt(urlValue, 10); } const urlParams = new URLSearchParams(window.location.search); const bodyPayload = { sellerApiKey: CONFIG.SELLER_API_KEY, checkoutId: CONFIG.CHECKOUT_ID, referer: document.referrer, user_agent: navigator.userAgent, fbclid: urlParams.get('fbclid'), fbp: document.cookie.split('; ').find(row => row.startsWith('_fbp='))?.split('=')[1], fbc: document.cookie.split('; ').find(row => row.startsWith('_fbc='))?.split('=')[1], utm_source: urlParams.get('utm_source'), utm_campaign: urlParams.get('utm_campaign'), utm_medium: urlParams.get('utm_medium'), utm_content: urlParams.get('utm_content'), utm_term: urlParams.get('utm_term') }; Object.keys(bodyPayload).forEach(key => (bodyPayload[key] === null || bodyPayload[key] === undefined) && delete bodyPayload[key]); const clickResponse = await fetch(CONFIG.API_BASE_URL + '/api/registerClick', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyPayload) }); if (!clickResponse.ok) throw new Error('Falha ao rastrear o acesso.'); const clickData = await clickResponse.json(); await generatePix(clickData.click_id, final_value_cents); } catch (error) { displayError(error.message); } }
+        async function generatePix(click_id, value_cents) { try { const response = await fetch(\`\${CONFIG.API_BASE_URL}/api/pix/generate\`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': CONFIG.SELLER_API_KEY, }, body: JSON.stringify({ value_cents, click_id }), }); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Erro do servidor'); } const data = await response.json(); pixCode = data.qr_code_text; transactionId = data.transaction_id; qrCodeImg.src = \`data:image/png;base64,\${data.qr_code_base64}\`; loader.style.display = 'none'; qrCodeImg.style.display = 'block'; copyBtn.disabled = false; btnText.textContent = 'Copiar Código PIX'; startTimer(); statusCheckInterval = setInterval(checkPaymentStatus, CONFIG.POLLING_INTERVAL); checkPaymentStatus(); } catch (error) { displayError(error.message || 'Não foi possível gerar o PIX.'); } }
+        async function initializeCheckout() { try { document.getElementById('product-name').textContent = CONFIG.PRODUCT_NAME; let final_value_cents; if (CONFIG.VALUE_TYPE === 'fixed') { final_value_cents = CONFIG.FIXED_VALUE_CENTS; if (!final_value_cents) return displayError('Valor do produto não configurado.'); } else { const urlValue = new URLSearchParams(window.location.search).get('value'); if (!urlValue) return displayError('Valor não fornecido na URL (ex: ?value=1990).'); final_value_cents = parseInt(urlValue, 10); } const urlParams = new URLSearchParams(window.location.search); const bodyPayload = { sellerApiKey: CONFIG.SELLER_API_KEY, checkoutId: CONFIG.CHECKOUT_ID, referer: document.referrer, user_agent: navigator.userAgent, fbclid: urlParams.get('fbclid'), fbp: document.cookie.split('; ').find(row => row.startsWith('_fbp='))?.split('=')[1], fbc: document.cookie.split('; ').find(row => row.startsWith('_fbc='))?.split('=')[1], utm_source: urlParams.get('utm_source'), utm_campaign: urlParams.get('utm_campaign'), utm_medium: urlParams.get('utm_medium'), utm_content: urlParams.get('utm_content'), utm_term: urlParams.get('utm_term'), }; Object.keys(bodyPayload).forEach(key => (bodyPayload[key] === null || bodyPayload[key] === undefined) && delete bodyPayload[key]); const clickResponse = await fetch(CONFIG.API_BASE_URL + '/api/registerClick', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyPayload) }); if (!clickResponse.ok) throw new Error('Falha ao rastrear o acesso.'); const clickData = await clickResponse.json(); await generatePix(clickData.click_id, final_value_cents); } catch (error) { displayError(error.message); } }
         copyBtn.addEventListener('click', copyPixCode); initializeCheckout();
     });
     <\/script>
@@ -1050,4 +1102,6 @@
     };
 
     App.init();
-</script>
+    </script>
+</body>
+</html>
