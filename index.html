@@ -114,7 +114,7 @@
             this.navigateTo(this.state.currentPage);
             this.addDashboardEventListeners();
         },
-
+        
         templates: {
             auth(page = 'login') {
                 return `<div class="flex items-center justify-center min-h-screen p-4"><div id="auth-forms-container" class="w-full max-w-md">${page === 'login' ? this.loginForm() : this.registerForm()}</div></div>`;
@@ -388,7 +388,7 @@
                 if (form.id === 'registerForm') await this.register(data.name, data.email, data.password);
             });
         },
-
+        
         addDashboardEventListeners() {
             document.addEventListener('click', async (e) => {
                 if (e.target.id === 'logoutButton') this.logout();
@@ -396,7 +396,7 @@
                 if (e.target.id === 'refreshDashboardBtn') this.fetchDashboardMetrics();
                 if (e.target.id === 'refreshTransactionsBtn') this.fetchTransactions();
                 if (e.target.id === 'testPixConnectionBtn') this.testPixConnection();
-
+                
                 const sidebarLink = e.target.closest('.nav-link');
                 if (sidebarLink) this.navigateTo(sidebarLink.dataset.target);
 
@@ -411,14 +411,14 @@
                         });
                     }
                 }
-
+                
                 const toggleBtn = e.target.closest('.toggle-visibility-btn');
                 if (toggleBtn) {
                     const targetInput = document.querySelector(toggleBtn.dataset.target);
                     const isPassword = targetInput.type === 'password';
                     targetInput.type = isPassword ? 'text' : 'password';
-                    toggleBtn.innerHTML = isPassword
-                        ? `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243L6.228 6.228" /></svg>`
+                    toggleBtn.innerHTML = isPassword 
+                        ? `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243L6.228 6.228" /></svg>` 
                         : `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
                 }
 
@@ -444,7 +444,7 @@
                         } catch(err) {}
                     }
                 }
-
+                
                 const filterContainer = e.target.closest('#transactions-date-filter, #dashboard-date-filter');
                 if (filterContainer) {
                     const page = filterContainer.id.split('-')[0];
@@ -461,7 +461,7 @@
             document.addEventListener('submit', async (e) => {
                 const form = e.target.closest('form');
                 if (!form) return;
-
+                
                 e.preventDefault();
                 const button = form.querySelector('button[type="submit"]');
                 const originalButtonText = button.innerHTML;
@@ -529,7 +529,7 @@
                 throw error;
             }
         },
-
+        
         async login(email, password) {
             try {
                 const data = await this.apiRequest('/api/sellers/login', 'POST', { email, password });
@@ -538,7 +538,7 @@
                 await this.init();
             } catch (e) {}
         },
-
+        
         async register(name, email, password) {
             try {
                 await this.apiRequest('/api/sellers/register', 'POST', { name, email, password });
@@ -567,7 +567,7 @@
                 document.querySelectorAll('.nav-link').forEach(item => { item.classList.toggle('active', item.dataset.target === page); });
             }
         },
-
+        
         async fetchDashboardMetrics() {
             try {
                 const metrics = await this.apiRequest('/api/dashboard/metrics');
@@ -612,7 +612,7 @@
             if (period !== 'all') {
                 const now = new Date();
                 let start, end;
-
+                
                 switch(period) {
                     case 'today':
                         start = new Date(now.setHours(0, 0, 0, 0));
@@ -660,7 +660,7 @@
             this.state.dateFilter.period = period;
             this.state.dateFilter.startDate = startDate || null;
             this.state.dateFilter.endDate = endDate || null;
-
+            
             const filterContainer = document.getElementById(`${page}-date-filter`);
             if (filterContainer) {
                 const newFilterHTML = this.templates.dateFilterComponent(page);
@@ -670,24 +670,25 @@
             if (page === 'transactions') {
                 this.renderTransactionsTable();
             } else if (page === 'dashboard' && period !== 'all') {
-                this.showToast('Filtro visual. Métricas não são afetadas sem alteração na API.', 'info');
+                // Em uma implementação futura, poderíamos re-buscar as métricas com o filtro de data.
+                // this.fetchDashboardMetrics({ period, startDate, endDate });
+                this.showToast('Filtro de data aplicado visualmente à tabela.', 'info');
             }
         },
+        
         generatePresselCode(pressel) {
             const { pixels, bots, settings } = this.state.data;
             const bot = bots.find(b => b.id === pressel.bot_id);
-            const presselPixels = pressel.pixel_ids.map(pid => pixels.find(p => p.id === pid)).filter(Boolean);
-
             if (!bot) {
-                this.showToast('Bot não encontrado para esta pressel.', 'error');
+                this.showToast('Bot associado à pressel não foi encontrado.', 'error');
                 return;
             }
-
+            const presselPixels = pressel.pixel_ids.map(pid => pixels.find(p => p.id === pid)).filter(Boolean);
+            
             const pixelInitScripts = presselPixels.map(p => `fbq('init', '${p.pixel_id}');`).join('\n        ');
             const pixelNoScripts = presselPixels.map(p => `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${p.pixel_id}&ev=PageView&noscript=1"/>`).join('\n    ');
 
-            const htmlContent = `
-<!DOCTYPE html>
+            const htmlContent = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -705,17 +706,17 @@
     ${pixelInitScripts}
     fbq('track', 'PageView');
     </script>
-    <noscript>${pixelNoScripts}</noscript>
+    <noscript>
+    ${pixelNoScripts}
+    </noscript>
     <script>
         (async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const whitePageUrl = '${pressel.white_page_url}';
             const botUrl = 'https://t.me/${bot.bot_name}';
             
-            // Lógica para verificar se o visitante é um bot/revisor pode ser adicionada aqui
-            const isReviewer = navigator.webdriver || (window.chrome && !window.chrome.runtime);
-
-            if (isReviewer) {
+            const isBot = /bot|google|baidu|bing|msn|duckduckgo|teoma|slurp|yandex/i.test(navigator.userAgent);
+            if (isBot) {
                 window.location.href = whitePageUrl;
                 return;
             }
@@ -723,7 +724,7 @@
             try {
                 const getCookie = (name) => document.cookie.split('; ').find(row => row.startsWith(name + '='))?.split('=')[1];
                 
-                const response = await fetch('${this.state.API_BASE_URL}/api/registerClick', {
+                const response = await fetch('${App.state.API_BASE_URL}/api/registerClick', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -742,7 +743,7 @@
                     })
                 });
                 
-                if (!response.ok) throw new Error('Failed to register click');
+                if (!response.ok) throw new Error('Falha ao registrar o clique');
 
                 const data = await response.json();
                 if (data.status === 'success' && data.click_id) {
@@ -751,7 +752,7 @@
                     window.location.href = whitePageUrl;
                 }
             } catch (error) {
-                console.error('Redirection Error:', error);
+                console.error('Erro no redirecionamento:', error);
                 window.location.href = whitePageUrl;
             }
         })();
@@ -763,27 +764,27 @@
 </html>`;
 
             const modalContent = `
-                <p class="text-sm text-gray-400 mb-4">Copie e cole este código em um arquivo <code class="bg-slate-700 p-1 rounded">index.html</code> e suba na sua hospedagem.</p>
-                <textarea id="pressel-code-textarea" class="form-input w-full p-3 rounded-md font-mono text-xs bg-slate-900" rows="15" readonly>${htmlContent.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
+                <p class="text-sm text-gray-400 mb-4">Copie e cole este código em um arquivo <code class="bg-slate-800 p-1 rounded-sm text-xs font-mono">index.html</code> e hospede em seu servidor.</p>
+                <textarea id="pressel-code-textarea" class="form-input w-full p-3 rounded-md font-mono text-xs bg-slate-900 border-slate-700" rows="15" readonly>${htmlContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
                 <div class="mt-4 flex justify-end">
-                    <button id="copy-pressel-code-btn" class="btn text-sm py-2 px-3">Copiar Código</button>
-                </div>
-            `;
+                    <button id="copy-pressel-code-btn" data-clipboard-text="${encodeURIComponent(htmlContent)}" class="btn text-sm py-2 px-3">Copiar Código</button>
+                </div>`;
 
             document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
-
+            
             document.getElementById('copy-pressel-code-btn').addEventListener('click', (e) => {
-                navigator.clipboard.writeText(htmlContent.trim()).then(() => {
+                navigator.clipboard.writeText(htmlContent).then(() => {
                     const btn = e.target;
                     const originalText = btn.textContent;
                     btn.textContent = 'Copiado!';
+                    this.showToast('Código copiado para a área de transferência!', 'success');
                     setTimeout(() => { btn.textContent = originalText; }, 2000);
                 }).catch(err => {
-                    this.showToast('Falha ao copiar o código.', 'error');
-                    console.error('Copy failed', err);
+                    this.showToast('Falha ao copiar. Tente manualmente.', 'error');
                 });
             });
         },
+
         async testPixConnection() {
             const btn = document.getElementById('testPixConnectionBtn');
             const originalText = btn.innerHTML;
@@ -797,7 +798,7 @@
             try {
                 const result = await this.apiRequest('/api/pix/test-generate', 'POST');
                 const successfulProvider = result.provider.toLowerCase();
-
+                
                 ['pushinpay', 'cnpay', 'oasyfy'].forEach(p => {
                     localStorage.removeItem(`pix_status_${p}`);
                     localStorage.removeItem(`pix_timestamp_${p}`);
@@ -805,7 +806,7 @@
 
                 localStorage.setItem(`pix_status_${successfulProvider}`, 'success');
                 localStorage.setItem(`pix_timestamp_${successfulProvider}`, Date.now());
-
+                
                 this.showToast(`Conexão com ${result.provider.toUpperCase()} bem-sucedida!`, 'success');
 
             } catch (error) {
@@ -822,7 +823,7 @@
                 this.updateAllPixStatusIndicators();
             }
         },
-
+        
         updateAllPixStatusIndicators(mode) {
             const providers = ['pushinpay', 'cnpay', 'oasyfy'];
             providers.forEach(provider => {
@@ -861,7 +862,7 @@
             const days = Math.floor(hours / 24);
             return `há ${days}d`;
         },
-
+        
         showToast(message, type = 'success') {
             const toast = document.createElement('div');
             let bgColor = '';
