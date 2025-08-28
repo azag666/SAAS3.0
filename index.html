@@ -87,6 +87,7 @@
                 pixels: [], 
                 bots: [], 
                 pressels: [], 
+                checkouts: [], // Adicionado estado para checkouts
                 settings: {}, 
                 transactions: [],
                 dashboard: {}
@@ -168,6 +169,7 @@
                         </div>
                         <nav id="sidebarNav" class="flex flex-col space-y-2">
                             <div data-target="dashboard" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10v11h18V10M3 10l9-7 9 7M3 10h18" /></svg>Dashboard</div>
+                            <div data-target="checkouts" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h6m3-3.75l-3 3m0 0l-3-3m3 3V15m6 1.125c1.02.392 2.132.526 3.25.526a9.75 9.75 0 000-19.5 9.75 9.75 0 00-3.25.526" /></svg>Criador de Checkout</div>
                             <div data-target="pressels" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>Criador de Pressel</div>
                             <div data-target="pixels" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 12l4.179 2.25M6.429 9.75l5.571 3 5.571-3m0 0l4.179-2.25L12 5.25 7.821 7.5" /></svg>Gerenciar Pixels</div>
                             <div data-target="bots" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Gerenciar Bots</div>
@@ -266,7 +268,7 @@
                 const { pixels, bots, pressels } = App.state.data;
                 const botOptions = bots.map(b => `<option value="${b.id}">${b.bot_name}</option>`).join('');
                 const pixelCheckboxes = pixels.map(p => `<label class="flex items-center space-x-2 text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" name="pixel_ids" value="${p.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500"><span>${p.account_name}</span></label>`).join('');
-                const presselList = pressels.map(pr => `<div class="p-3 card flex justify-between items-center text-sm"><div><p class="font-semibold">${pr.name}</p><p class="text-xs text-gray-400">Bot: ${pr.bot_name}</p></div><div class="space-x-2"><button data-id="${pr.id}" class="generate-code-btn btn text-xs py-1 px-2">Ver Código</button><button data-id="${pr.id}" class="delete-pressel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
+                const presselList = pressels.map(pr => `<div class="p-3 card flex justify-between items-center text-sm"><div><p class="font-semibold">${pr.name}</p><p class="text-xs text-gray-400">Bot: ${pr.bot_name}</p></div><div class="space-x-2"><button data-id="${pr.id}" class="generate-pressel-code-btn btn text-xs py-1 px-2">Ver Código</button><button data-id="${pr.id}" class="delete-pressel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
                 return `
                 <div class="animate-fade-in">
                     <h1 class="text-3xl font-bold text-white mb-6">Criador de Pressel</h1>
@@ -279,12 +281,63 @@
                     </div>
                 </div>`;
             },
+            // --- NOVO TEMPLATE PARA CHECKOUTS ---
+            checkouts() {
+                const { pixels, checkouts } = App.state.data;
+                const pixelCheckboxes = pixels.map(p => `<label class="flex items-center space-x-2 text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" name="pixel_ids" value="${p.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500"><span>${p.account_name}</span></label>`).join('');
+                const checkoutList = checkouts.map(c => `
+                    <div class="p-3 card flex justify-between items-center text-sm">
+                        <div>
+                            <p class="font-semibold">${c.name}</p>
+                            <p class="text-xs text-gray-400">Produto: ${c.product_name}</p>
+                        </div>
+                        <div class="space-x-2">
+                            <button data-id="${c.id}" class="generate-checkout-code-btn btn text-xs py-1 px-2">Ver Código</button>
+                            <button data-id="${c.id}" class="delete-checkout-btn btn btn-red text-xs py-1 px-2">Excluir</button>
+                        </div>
+                    </div>`).join('');
+
+                return `
+                <div class="animate-fade-in">
+                    <h1 class="text-3xl font-bold text-white mb-6">Criador de Checkout</h1>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="card p-6 rounded-lg">
+                            <h2 class="text-xl font-bold mb-4 text-white">Criar Novo Checkout</h2>
+                            <form id="checkoutForm" class="space-y-4">
+                                <input name="name" placeholder="Nome Interno do Checkout (Ex: Ebook XYZ)" class="form-input w-full p-2 rounded-md" required>
+                                <input name="product_name" placeholder="Nome do Produto (visível ao cliente)" class="form-input w-full p-2 rounded-md" required>
+                                <input name="redirect_url" type="url" placeholder="URL de Redirecionamento Pós-Compra (Obrigado/Entrega)" class="form-input w-full p-2 rounded-md" required>
+                                
+                                <select name="value_type" id="value-type-selector" class="form-select w-full p-2 rounded-md" required>
+                                    <option value="fixed">Valor Fixo</option>
+                                    <option value="variable">Valor Variável (definido na URL)</option>
+                                </select>
+                                
+                                <div id="fixed-value-container">
+                                    <input name="fixed_value_cents" type="number" placeholder="Valor em CENTAVOS (Ex: 1990 para R$19,90)" class="form-input w-full p-2 rounded-md">
+                                </div>
+
+                                <div class="card p-3">
+                                    <p class="font-semibold mb-2">Selecione os Pixels para este Checkout:</p>
+                                    <div class="space-y-2">${pixelCheckboxes.length ? pixelCheckboxes : '<p class="text-gray-500 text-sm">Cadastre um pixel primeiro.</p>'}</div>
+                                </div>
+                                
+                                <button type="submit" class="btn w-full p-3 rounded-md text-base font-bold">Salvar e Gerar Código</button>
+                            </form>
+                        </div>
+                        <div class="card p-6 rounded-lg">
+                            <h2 class="text-xl font-bold mb-4 text-white">Checkouts Criados</h2>
+                            <div id="checkout-list" class="space-y-3">${checkoutList.length ? checkoutList : '<p class="text-gray-500 text-sm">Nenhum checkout criado.</p>'}</div>
+                        </div>
+                    </div>
+                </div>`;
+            },
             transactions() {
                 return `
                 <div class="animate-fade-in">
                     <div class="flex justify-between items-center mb-6"><h1 class="text-3xl font-bold text-white">Histórico de Transações</h1></div>
                     ${this.dateFilterComponent('transactions')}
-                    <div class="card p-6 rounded-lg"><div id="transactions-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Status</th><th>Valor</th><th>Bot</th><th>Provedor PIX</th><th>Data</th></tr></thead><tbody id="transactions-table-body"><tr><td colspan="5" class="text-center text-gray-500">Carregando transações...</td></tr></tbody></table></div></div>
+                    <div class="card p-6 rounded-lg"><div id="transactions-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Status</th><th>Valor</th><th>Origem</th><th>Provedor PIX</th><th>Data</th></tr></thead><tbody id="transactions-table-body"><tr><td colspan="5" class="text-center text-gray-500">Carregando transações...</td></tr></tbody></table></div></div>
                 </div>`;
             },
             settings() {
@@ -468,10 +521,16 @@
                         : `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
                 }
 
-                if (e.target.classList.contains('generate-code-btn')) {
+                if (e.target.classList.contains('generate-pressel-code-btn')) {
                     const presselId = e.target.dataset.id;
                     const pressel = this.state.data.pressels.find(p => p.id == presselId);
                     if (pressel) this.generatePresselCode(pressel);
+                }
+
+                // Listener para o novo botão de gerar código do checkout
+                if (e.target.classList.contains('generate-checkout-code-btn')) {
+                    const checkoutId = e.target.dataset.id;
+                    this.generateCheckoutHTML(checkoutId);
                 }
                 
                 if (e.target.classList.contains('test-bot-btn')) {
@@ -497,12 +556,13 @@
                     document.getElementById(`tab-${tabName}`).classList.add('active');
                 }
 
-                if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-bot-btn') || e.target.classList.contains('delete-pressel-btn')) {
+                if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-bot-btn') || e.target.classList.contains('delete-pressel-btn') || e.target.classList.contains('delete-checkout-btn')) {
                     const id = e.target.dataset.id;
                     let type = '', endpoint = '';
                     if (e.target.classList.contains('delete-pixel-btn')) { type = 'pixels'; endpoint = 'pixels'; }
                     if (e.target.classList.contains('delete-bot-btn')) { type = 'bots'; endpoint = 'bots'; }
                     if (e.target.classList.contains('delete-pressel-btn')) { type = 'pressels'; endpoint = 'pressels'; }
+                    if (e.target.classList.contains('delete-checkout-btn')) { type = 'checkouts'; endpoint = 'checkouts'; }
 
                     if (confirm(`Tem certeza que deseja excluir este item?`)) {
                         try {
@@ -566,13 +626,23 @@
                             const newPressel = await this.apiRequest('/api/pressels', 'POST', payload);
                             if (newPressel) {
                                 this.state.data.pressels.unshift(newPressel);
-                                const presselListContainer = document.getElementById('pressel-list');
-                                if (presselListContainer) {
-                                    const presselListHTML = this.state.data.pressels.map(pr => `<div class="p-3 card flex justify-between items-center text-sm"><div><p class="font-semibold">${pr.name}</p><p class="text-xs text-gray-400">Bot: ${pr.bot_name}</p></div><div class="space-x-2"><button data-id="${pr.id}" class="generate-code-btn btn text-xs py-1 px-2">Ver Código</button><button data-id="${pr.id}" class="delete-pressel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
-                                    presselListContainer.innerHTML = presselListHTML.length ? presselListHTML : '<p class="text-gray-500 text-sm">Nenhuma pressel criada.</p>';
-                                }
-                                form.reset();
+                                this.navigateTo('pressels');
                                 this.generatePresselCode(newPressel);
+                            }
+                        }
+                    }
+                    // Handler para o novo formulário de checkout
+                    else if (form.id === 'checkoutForm') {
+                        const pixel_ids = Array.from(form.querySelectorAll('input[name="pixel_ids"]:checked')).map(cb => cb.value);
+                        if (pixel_ids.length === 0) {
+                             this.showToast('Selecione ao menos um pixel para o checkout.', 'error');
+                        } else {
+                            const payload = { ...data, pixel_ids };
+                            const newCheckout = await this.apiRequest('/api/checkouts', 'POST', payload);
+                            if (newCheckout) {
+                                this.state.data.checkouts.unshift(newCheckout);
+                                this.navigateTo('checkouts'); // Recarrega a página para mostrar o novo item na lista
+                                this.generateCheckoutHTML(newCheckout.id); // Abre o modal com o código
                             }
                         }
                     }
@@ -581,6 +651,16 @@
                     if(button) {
                         button.innerHTML = originalButtonText;
                         button.disabled = false;
+                    }
+                }
+            });
+            
+            // Listener para o seletor de tipo de valor no formulário de checkout
+            document.addEventListener('change', e => {
+                if (e.target.id === 'value-type-selector') {
+                    const container = document.getElementById('fixed-value-container');
+                    if (container) {
+                        container.style.display = e.target.value === 'fixed' ? 'block' : 'none';
                     }
                 }
             });
@@ -635,9 +715,8 @@
                 
                 document.querySelectorAll('.nav-link').forEach(item => { item.classList.toggle('active', item.dataset.target === page); });
                 
-                // Pós-renderização
-                if (page === 'dashboard') this.handleFilterChange(page, 'last7days'); // Inicia com filtro
-                else if (page === 'transactions') this.fetchTransactions(); // Transações ainda não usam filtro global
+                if (page === 'dashboard') this.handleFilterChange(page, 'last7days');
+                else if (page === 'transactions') this.fetchTransactions();
                 else if (page === 'settings') this.updateAllPixStatusIndicators();
                 else if (page === 'bots') this.updateAllBotStatusIndicators();
             }
@@ -654,14 +733,12 @@
                 const metrics = await this.apiRequest(`/api/dashboard/metrics?${query}`);
                 this.state.data.dashboard = metrics;
 
-                // Atualiza os cards
                 document.getElementById('metric-clicks').textContent = metrics.total_clicks || '0';
                 document.getElementById('metric-generated').textContent = metrics.total_pix_generated || '0';
                 document.getElementById('metric-paid').textContent = metrics.total_pix_paid || '0';
                 document.getElementById('metric-total-revenue').textContent = `R$ ${(metrics.total_revenue || 0).toFixed(2).replace('.', ',')}`;
                 document.getElementById('metric-paid-revenue').textContent = `R$ ${(metrics.paid_revenue || 0).toFixed(2).replace('.', ',')}`;
                 
-                // Atualiza as tabelas
                 const botsTableBody = document.getElementById('bots-performance-table');
                 if (metrics.bots_performance && metrics.bots_performance.length > 0) {
                     botsTableBody.innerHTML = metrics.bots_performance.map(b => `<tr class="hover:bg-slate-800/50"><td>${b.bot_name}</td><td>${b.total_clicks || '0'}</td><td>${b.total_pix_paid || '0'}</td><td>R$ ${(b.paid_revenue || 0).toFixed(2).replace('.', ',')}</td></tr>`).join('');
@@ -712,7 +789,7 @@
                     const statusText = t.status === 'paid' ? 'Pago' : 'Pendente';
                     const formattedValue = `R$ ${parseFloat(t.pix_value).toFixed(2).replace('.', ',')}`;
                     const formattedDate = new Date(t.created_at).toLocaleString('pt-BR');
-                    return `<tr class="hover:bg-slate-800/50"><td class="${statusColor}">${statusText}</td><td>${formattedValue}</td><td>${t.bot_name}</td><td>${t.provider.toUpperCase()}</td><td>${formattedDate}</td></tr>`;
+                    return `<tr class="hover:bg-slate-800/50"><td class="${statusColor}">${statusText}</td><td>${formattedValue}</td><td>${t.source_name}</td><td>${t.provider.toUpperCase()}</td><td>${formattedDate}</td></tr>`;
                 }).join('');
             } else {
                 tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Nenhuma transação encontrada.</td></tr>';
@@ -723,47 +800,30 @@
             let startDate, endDate;
 
             switch(period) {
-                case 'today':
-                    startDate = endDate = now.toISOString().split('T')[0];
-                    break;
+                case 'today': startDate = endDate = now.toISOString().split('T')[0]; break;
                 case 'yesterday':
-                    const yesterday = new Date(now);
-                    yesterday.setDate(now.getDate() - 1);
-                    startDate = endDate = yesterday.toISOString().split('T')[0];
-                    break;
+                    const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+                    startDate = endDate = yesterday.toISOString().split('T')[0]; break;
                 case 'last7days':
                     endDate = now.toISOString().split('T')[0];
-                    const sevenDaysAgo = new Date(now);
-                    sevenDaysAgo.setDate(now.getDate() - 6);
-                    startDate = sevenDaysAgo.toISOString().split('T')[0];
-                    break;
+                    const sevenDaysAgo = new Date(now); sevenDaysAgo.setDate(now.getDate() - 6);
+                    startDate = sevenDaysAgo.toISOString().split('T')[0]; break;
                 case 'thisMonth':
                     startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-                    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-                    break;
-                case 'custom':
-                    startDate = customStartDate;
-                    endDate = customEndDate;
-                    break;
-                case 'all':
-                default:
-                    startDate = null;
-                    endDate = null;
+                    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]; break;
+                case 'custom': startDate = customStartDate; endDate = customEndDate; break;
+                case 'all': default: startDate = null; endDate = null;
             }
 
             this.state.dateFilter = { period, startDate, endDate };
 
             const filterContainer = document.getElementById(`${page}-date-filter`);
             if (filterContainer) {
-                const newFilterHTML = this.templates.dateFilterComponent(page);
-                filterContainer.outerHTML = newFilterHTML;
+                filterContainer.outerHTML = this.templates.dateFilterComponent(page);
             }
             
-            if (page === 'dashboard') {
-                this.fetchDashboardMetrics();
-            } else if (page === 'transactions') {
-                this.renderTransactionsTable(); // Atualiza a tabela de transações com o novo filtro
-            }
+            if (page === 'dashboard') this.fetchDashboardMetrics();
+            else if (page === 'transactions') this.renderTransactionsTable();
         },
         
         renderRevenueChart() {
@@ -771,62 +831,33 @@
             if (!ctx) return;
             
             const data = this.state.data.dashboard.daily_revenue || [];
-            
-            // Mapeia os dados para o formato do Chart.js
             const labels = data.map(item => new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }));
             const revenues = data.map(item => item.revenue);
 
-            if (this.state.revenueChart) {
-                this.state.revenueChart.destroy();
-            }
+            if (this.state.revenueChart) this.state.revenueChart.destroy();
 
             this.state.revenueChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Faturamento Pago',
-                        data: revenues,
-                        backgroundColor: 'rgba(56, 189, 248, 0.2)',
-                        borderColor: '#38bdf8',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true,
-                        pointBackgroundColor: '#38bdf8',
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
+                        label: 'Faturamento Pago', data: revenues, backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                        borderColor: '#38bdf8', borderWidth: 2, tension: 0.4, fill: true,
+                        pointBackgroundColor: '#38bdf8', pointRadius: 4, pointHoverRadius: 6,
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
+                    responsive: true, maintainAspectRatio: true,
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { 
-                                color: '#94a3b8',
-                                callback: function(value) { return 'R$ ' + value.toFixed(2).replace('.', ','); }
-                            },
-                            grid: { color: 'rgba(51, 65, 85, 0.5)' }
-                        },
-                        x: {
-                            ticks: { color: '#94a3b8' },
-                            grid: { color: 'rgba(51, 65, 85, 0.5)' }
-                        }
+                        y: { beginAtZero: true, ticks: { color: '#94a3b8', callback: (value) => 'R$ ' + value.toFixed(2).replace('.', ',') }, grid: { color: 'rgba(51, 65, 85, 0.5)' } },
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(51, 65, 85, 0.5)' } }
                     },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: '#020617',
-                            titleColor: '#e2e8f0',
-                            bodyColor: '#cbd5e1',
-                            borderColor: '#334155',
-                            borderWidth: 1,
-                            callbacks: {
-                                label: function(context) {
-                                    return `Faturamento: R$ ${context.raw.toFixed(2).replace('.', ',')}`;
-                                }
-                            }
+                            backgroundColor: '#020617', titleColor: '#e2e8f0', bodyColor: '#cbd5e1',
+                            borderColor: '#334155', borderWidth: 1,
+                            callbacks: { label: (context) => `Faturamento: R$ ${context.raw.toFixed(2).replace('.', ',')}` }
                         }
                     }
                 }
@@ -839,90 +870,64 @@
             const sellerApiKey = settings.api_key;
             const apiBaseUrl = this.state.API_BASE_URL;
 
-            const htmlContent = `<!DOCTYPE html>
-<html>
+            const htmlContent = `<!DOCTYPE html><html><head><title>Redirecionando...</title><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('track', 'PageView');fbq('track', 'ViewContent');<\/script></head><body><p>Aguarde um instante...</p><script>const config = { API_BASE_URL: '${apiBaseUrl}', sellerApiKey: '${sellerApiKey}', presselId: ${pressel.id}, whitePageUrl: '${pressel.white_page_url}', botLink: '${botLink}' };async function registerClickAndRedirect() { try { const urlParams = new URLSearchParams(window.location.search); const bodyPayload = { sellerApiKey: config.sellerApiKey, presselId: config.presselId, referer: document.referrer, user_agent: navigator.userAgent, fbclid: urlParams.get('fbclid'), fbp: document.cookie.split('; ').find(row => row.startsWith('_fbp='))?.split('=')[1], fbc: document.cookie.split('; ').find(row => row.startsWith('_fbc='))?.split('=')[1], utm_source: urlParams.get('utm_source'), utm_campaign: urlParams.get('utm_campaign'), utm_medium: urlParams.get('utm_medium'), utm_content: urlParams.get('utm_content'), utm_term: urlParams.get('utm_term')}; Object.keys(bodyPayload).forEach(key => (bodyPayload[key] === null || bodyPayload[key] === undefined) && delete bodyPayload[key]); const response = await fetch(config.API_BASE_URL + '/api/registerClick', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyPayload) }); if (!response.ok) throw new Error('Failed to register click'); const data = await response.json(); window.location.href = config.botLink + data.click_id; } catch (error) { console.error('Redirect Error:', error); window.location.href = config.whitePageUrl; } } registerClickAndRedirect();<\/script></body></html>`;
+
+            const modalContent = `<p class="text-sm text-gray-400 mb-4">Copie e cole este código no HTML da sua página. Lembre-se de adicionar os IDs dos seus pixels no local indicado.</p><textarea id="pressel-code-textarea" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="12" readonly>${htmlContent}</textarea><button class="copy-btn btn w-full mt-4 py-2" data-target="#pressel-code-textarea">Copiar Código</button>`;
+            
+            document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
+        },
+
+        // --- NOVA FUNÇÃO PARA GERAR O CÓDIGO HTML DO CHECKOUT ---
+        generateCheckoutHTML(checkoutId) {
+            const checkout = this.state.data.checkouts.find(c => c.id == checkoutId);
+            const { settings, pixels } = this.state.data;
+            if (!checkout) {
+                this.showToast('Checkout não encontrado.', 'error');
+                return;
+            }
+
+            const selectedPixels = pixels.filter(p => checkout.pixel_ids.includes(p.id));
+            const fbqInitBlock = selectedPixels.map(p => `fbq('init', '${p.pixel_id}');`).join('\\n        ');
+
+            const htmlTemplate = `<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
-    <title>Redirecionando...</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>
-        !function(f,b,e,v,n,t,s)
-        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-        n.queue=[];t=b.createElement(e);t.async=!0;
-        t.src=v;s=b.getElementsByTagName(e)[0];
-        s.parentNode.insertBefore(t,s)}(window, document,'script',
-        'https://connect.facebook.net/en_US/fbevents.js');
-        // Insira aqui os IDs dos seus pixels
-        // fbq('init', 'PIXEL_ID_1');
-        // fbq('init', 'PIXEL_ID_2');
+    <title>Pagamento Seguro</title>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');:root{--primary-color:#2c5282;--secondary-color:#e2e8f0;--success-color:#38a169;--text-color:#2d3748;--light-text-color:#718096;--background-color:#f7fafc}body{font-family:'Inter',sans-serif;background-color:var(--background-color);margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;color:var(--text-color)}.container{background-color:#fff;padding:2rem;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);width:100%;max-width:420px;text-align:center;box-sizing:border-box;margin:1rem}.header h1{font-size:1.5rem;margin-bottom:.5rem}.header p{color:var(--light-text-color);margin-top:0}.timer{background-color:var(--secondary-color);color:var(--primary-color);font-weight:600;padding:.5rem 1rem;border-radius:8px;display:inline-block;margin-bottom:1.5rem}#qr-code-container{position:relative;margin:1rem 0;min-height:280px;display:flex;justify-content:center;align-items:center}#qr-code-img{border:6px solid var(--secondary-color);border-radius:8px;max-width:100%;height:auto;display:none}.loader{border:5px solid #f3f3f3;border-top:5px solid var(--primary-color);border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}.copy-button{background-color:var(--primary-color);color:#fff;border:none;padding:.8rem 1.5rem;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:background-color .3s,transform .2s;width:100%;margin-top:1rem}.copy-button:hover{background-color:#3182ce}.copy-button:active{transform:scale(.98)}#copy-feedback{color:var(--success-color);font-weight:600;margin-top:.5rem;height:20px;visibility:hidden;opacity:0;transition:visibility 0s,opacity .5s linear}#copy-feedback.visible{visibility:visible;opacity:1}.instructions{margin-top:1.5rem;color:var(--light-text-color);font-size:.9rem}.footer{margin-top:2rem;font-size:.8rem;color:#a0aec0}.footer svg{vertical-align:middle;width:16px;height:16px;margin-right:5px}</style>
+    <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+        ${fbqInitBlock}
         fbq('track', 'PageView');
-        fbq('track', 'ViewContent'); // Dispara o evento ViewContent
     <\/script>
-    </head>
+</head>
 <body>
-    <p>Aguarde um instante, estamos te redirecionando...</p>
+    <div class="container"><div class="header"><h1 id="product-name">Finalize seu Pagamento</h1><p>Escaneie o QR Code ou copie o código abaixo.</p></div><div class="timer">Expira em: <span id="countdown">10:00</span></div><div id="qr-code-container"><div id="loader" class="loader"></div><img id="qr-code-img" src="" alt="PIX QR Code"></div><button class="copy-button" id="copy-btn" disabled><span id="btn-text">Carregando PIX...</span></button><div id="copy-feedback">Código PIX copiado!</div><div class="instructions">1. Abra o app do seu banco.<br>2. Escolha a opção Pagar com PIX.<br>3. Escaneie o QR Code ou use o "Copia e Cola".</div><div class="footer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg> Pagamento seguro</div></div>
     <script>
-        const config = {
-            API_BASE_URL: '${apiBaseUrl}',
-            sellerApiKey: '${sellerApiKey}',
-            presselId: ${pressel.id},
-            whitePageUrl: '${pressel.white_page_url}',
-            botLink: '${botLink}'
-        };
-
-        async function registerClickAndRedirect() {
-            try {
-                const urlParams = new URLSearchParams(window.location.search);
-                const bodyPayload = {
-                    sellerApiKey: config.sellerApiKey,
-                    presselId: config.presselId,
-                    referer: document.referrer,
-                    user_agent: navigator.userAgent,
-                    fbclid: urlParams.get('fbclid'),
-                    fbp: document.cookie.split('; ').find(row => row.startsWith('_fbp='))?.split('=')[1],
-                    fbc: document.cookie.split('; ').find(row => row.startsWith('_fbc='))?.split('=')[1],
-                    utm_source: urlParams.get('utm_source'),
-                    utm_campaign: urlParams.get('utm_campaign'),
-                    utm_medium: urlParams.get('utm_medium'),
-                    utm_content: urlParams.get('utm_content'),
-                    utm_term: urlParams.get('utm_term')
-                };
-
-                Object.keys(bodyPayload).forEach(key => (bodyPayload[key] === null || bodyPayload[key] === undefined) && delete bodyPayload[key]);
-                
-                const response = await fetch(config.API_BASE_URL + '/api/registerClick', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bodyPayload)
-                });
-
-                if (!response.ok) throw new Error('Failed to register click');
-                
-                const data = await response.json();
-                window.location.href = config.botLink + data.click_id;
-
-            } catch (error) {
-                console.error('Redirect Error:', error);
-                window.location.href = config.whitePageUrl;
-            }
-        }
-        
-        registerClickAndRedirect();
+    document.addEventListener('DOMContentLoaded', () => {
+        const CONFIG = { API_BASE_URL: '${this.state.API_BASE_URL}', SELLER_API_KEY: '${settings.api_key}', CHECKOUT_ID: ${checkout.id}, PRODUCT_NAME: '${checkout.product_name}', REDIRECT_URL: '${checkout.redirect_url}', VALUE_TYPE: '${checkout.value_type}', FIXED_VALUE_CENTS: ${checkout.fixed_value_cents || null}, POLLING_INTERVAL: 5000, TIMER_DURATION_MINUTES: 10 };
+        const qrCodeImg = document.getElementById('qr-code-img'), loader = document.getElementById('loader'), copyBtn = document.getElementById('copy-btn'), btnText = document.getElementById('btn-text'), copyFeedback = document.getElementById('copy-feedback'), countdownEl = document.getElementById('countdown');
+        let pixCode = '', transactionId = '', statusCheckInterval;
+        function displayError(message) { console.error(message); loader.style.display = 'none'; qrCodeImg.style.display = 'none'; document.querySelector('.header h1').textContent = 'Ocorreu um Erro'; document.querySelector('.header p').textContent = message; copyBtn.disabled = true; btnText.textContent = 'Erro ao Gerar PIX'; }
+        function startTimer() { let time = CONFIG.TIMER_DURATION_MINUTES * 60; const timerInterval = setInterval(() => { if (time <= 0) { clearInterval(timerInterval); countdownEl.textContent = 'Expirado'; displayError('O tempo para pagamento expirou.'); return; } time--; const minutes = Math.floor(time / 60).toString().padStart(2, '0'); const seconds = (time % 60).toString().padStart(2, '0'); countdownEl.textContent = \`\${minutes}:\${seconds}\`; }, 1000); }
+        async function copyPixCode() { try { await navigator.clipboard.writeText(pixCode); copyFeedback.classList.add('visible'); setTimeout(() => copyFeedback.classList.remove('visible'), 2000); } catch (err) { console.error('Falha ao copiar:', err); } }
+        async function checkPaymentStatus() { if (!transactionId) return; try { const response = await fetch(\`\${CONFIG.API_BASE_URL}/api/pix/status/\${transactionId}\`, { headers: { 'x-api-key': CONFIG.SELLER_API_KEY } }); if (!response.ok) return; const data = await response.json(); if (data.status === 'paid' || data.status === 'COMPLETED') { clearInterval(statusCheckInterval); window.location.href = CONFIG.REDIRECT_URL; } } catch (error) { console.error('Erro ao verificar status do pagamento:', error); } }
+        async function generatePix(click_id, value_cents) { try { const response = await fetch(\`\${CONFIG.API_BASE_URL}/api/pix/generate\`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': CONFIG.SELLER_API_KEY, }, body: JSON.stringify({ value_cents, click_id }), }); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Erro do servidor'); } const data = await response.json(); pixCode = data.qr_code_text; transactionId = data.transaction_id; qrCodeImg.src = \`data:image/png;base64,\${data.qr_code_base64}\`; loader.style.display = 'none'; qrCodeImg.style.display = 'block'; copyBtn.disabled = false; btnText.textContent = 'Copiar Código PIX'; startTimer(); statusCheckInterval = setInterval(checkPaymentStatus, CONFIG.POLLING_INTERVAL); checkPaymentStatus(); } catch (error) { displayError(error.message || 'Não foi possível gerar o PIX.'); } }
+        async function initializeCheckout() { try { document.getElementById('product-name').textContent = CONFIG.PRODUCT_NAME; let final_value_cents; if (CONFIG.VALUE_TYPE === 'fixed') { final_value_cents = CONFIG.FIXED_VALUE_CENTS; if (!final_value_cents) return displayError('Valor do produto não configurado.'); } else { const urlValue = new URLSearchParams(window.location.search).get('value'); if (!urlValue) return displayError('Valor não fornecido na URL (ex: ?value=1990).'); final_value_cents = parseInt(urlValue, 10); } const urlParams = new URLSearchParams(window.location.search); const bodyPayload = { sellerApiKey: CONFIG.SELLER_API_KEY, checkoutId: CONFIG.CHECKOUT_ID, referer: document.referrer, user_agent: navigator.userAgent, fbclid: urlParams.get('fbclid'), fbp: document.cookie.split('; ').find(row => row.startsWith('_fbp='))?.split('=')[1], fbc: document.cookie.split('; ').find(row => row.startsWith('_fbc='))?.split('=')[1], utm_source: urlParams.get('utm_source'), utm_campaign: urlParams.get('utm_campaign'), utm_medium: urlParams.get('utm_medium'), utm_content: urlParams.get('utm_content'), utm_term: urlParams.get('utm_term'), }; Object.keys(bodyPayload).forEach(key => (bodyPayload[key] === null || bodyPayload[key] === undefined) && delete bodyPayload[key]); const clickResponse = await fetch(CONFIG.API_BASE_URL + '/api/registerClick', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyPayload) }); if (!clickResponse.ok) throw new Error('Falha ao rastrear o acesso.'); const clickData = await clickResponse.json(); await generatePix(clickData.click_id, final_value_cents); } catch (error) { displayError(error.message); } }
+        copyBtn.addEventListener('click', copyPixCode); initializeCheckout();
+    });
     <\/script>
 </body>
 </html>`;
 
             const modalContent = `
-                <p class="text-sm text-gray-400 mb-4">Copie e cole este código no HTML da sua página. Lembre-se de adicionar os IDs dos seus pixels no local indicado.</p>
-                <textarea id="pressel-code-textarea" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="12" readonly></textarea>
-                <button class="copy-btn btn w-full mt-4 py-2" data-target="#pressel-code-textarea">Copiar Código</button>
+                <p class="text-sm text-gray-400 mb-4">Copie o código abaixo, salve como 'index.html' e hospede no seu domínio.</p>
+                <textarea id="checkout-code-textarea" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="15" readonly></textarea>
+                <button class="copy-btn btn w-full mt-4 py-2" data-target="#checkout-code-textarea">Copiar Código HTML</button>
             `;
-            
             const modalContainer = document.getElementById('modal-container');
-            modalContainer.innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
-            modalContainer.querySelector('#pressel-code-textarea').value = htmlContent;
+            modalContainer.innerHTML = this.templates.modal(`Código do Checkout: ${checkout.name}`, modalContent);
+            modalContainer.querySelector('#checkout-code-textarea').value = htmlTemplate.trim();
         },
 
         async testIndividualPixConnection(provider, button) {
@@ -938,10 +943,8 @@
                 App.state.data.settings = { ...App.state.data.settings, ...formData };
             } catch (e) {
                 this.showToast('Erro ao salvar as configurações antes do teste.', 'error');
-                button.innerHTML = originalText;
-                button.disabled = false;
-                this.updatePixStatusIndicator(provider);
-                return;
+                button.innerHTML = originalText; button.disabled = false;
+                this.updatePixStatusIndicator(provider); return;
             }
 
             try {
@@ -949,19 +952,7 @@
                 localStorage.setItem(`pix_status_${provider}`, 'success');
                 localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
                 
-                const successModalContent = `
-                    <div class="space-y-4 text-sm">
-                        <div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Provedor:</span> <span class="text-white">${result.provider}</span></div>
-                        <div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Adquirente:</span> <span class="text-white">${result.acquirer}</span></div>
-                        <div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Tempo de Resposta:</span> <span class="text-white">${result.responseTime}s</span></div>
-                        <hr class="border-slate-700">
-                        <div>
-                            <p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 0,05):</p>
-                            <textarea id="pix-test-key" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="4" readonly>${result.qr_code_text}</textarea>
-                            <button class="copy-btn btn w-full mt-2 py-2 text-sm" data-target="#pix-test-key">Copiar Chave PIX</button>
-                        </div>
-                    </div>
-                `;
+                const successModalContent = `<div class="space-y-4 text-sm"><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Provedor:</span> <span class="text-white">${result.provider}</span></div><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Adquirente:</span> <span class="text-white">${result.acquirer}</span></div><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Tempo de Resposta:</span> <span class="text-white">${result.responseTime}s</span></div><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 0,05):</p><textarea id="pix-test-key" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="4" readonly>${result.qr_code_text}</textarea><button class="copy-btn btn w-full mt-2 py-2 text-sm" data-target="#pix-test-key">Copiar Chave PIX</button></div></div>`;
                 document.getElementById('modal-container').innerHTML = this.templates.modal('Conexão Bem-sucedida!', successModalContent);
 
             } catch (error) {
@@ -970,8 +961,7 @@
                 const errorModalContent = `<div class="text-center"><p class="text-lg font-medium text-red-400 mb-2">Falha na Conexão</p><p class="text-sm text-gray-400">${error.message || 'Ocorreu um erro desconhecido.'}</p></div>`;
                 document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste', errorModalContent);
             } finally {
-                button.innerHTML = originalText;
-                button.disabled = false;
+                button.innerHTML = originalText; button.disabled = false;
                 this.updatePixStatusIndicator(provider);
             }
         },
@@ -988,54 +978,21 @@
                 App.state.data.settings = { ...App.state.data.settings, ...formData };
             } catch (e) {
                 this.showToast('Erro ao salvar as configurações antes do teste.', 'error');
-                button.innerHTML = originalText;
-                button.disabled = false;
-                return;
+                button.innerHTML = originalText; button.disabled = false; return;
             }
 
             try {
                 const result = await this.apiRequest('/api/pix/test-priority-route', 'POST');
-                const logHTML = result.log.map(line => {
-                    const color = line.startsWith('SUCESSO') ? 'text-green-400' : 'text-red-400';
-                    return `<li class="${color}">${line}</li>`;
-                }).join('');
-
-                const successModalContent = `
-                    <div class="space-y-4 text-sm">
-                        <div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Provedor de Sucesso:</span> <span class="text-white">${result.provider} (${result.position})</span></div>
-                        <div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Tempo de Resposta:</span> <span class="text-white">${result.responseTime}s</span></div>
-                        <hr class="border-slate-700">
-                        <div>
-                            <p class="font-semibold text-gray-400 mb-2">Log de Tentativas:</p>
-                            <ul class="text-xs font-mono list-disc list-inside space-y-1">${logHTML}</ul>
-                        </div>
-                        <hr class="border-slate-700">
-                        <div>
-                            <p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 0,05):</p>
-                            <textarea id="pix-test-key" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="3" readonly>${result.qr_code_text}</textarea>
-                            <button class="copy-btn btn w-full mt-2 py-2 text-sm" data-target="#pix-test-key">Copiar Chave PIX</button>
-                        </div>
-                    </div>
-                `;
+                const logHTML = result.log.map(line => `<li class="${line.startsWith('SUCESSO') ? 'text-green-400' : 'text-red-400'}">${line}</li>`).join('');
+                const successModalContent = `<div class="space-y-4 text-sm"><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Provedor de Sucesso:</span> <span class="text-white">${result.provider} (${result.position})</span></div><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Tempo de Resposta:</span> <span class="text-white">${result.responseTime}s</span></div><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">Log de Tentativas:</p><ul class="text-xs font-mono list-disc list-inside space-y-1">${logHTML}</ul></div><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 0,05):</p><textarea id="pix-test-key" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="3" readonly>${result.qr_code_text}</textarea><button class="copy-btn btn w-full mt-2 py-2 text-sm" data-target="#pix-test-key">Copiar Chave PIX</button></div></div>`;
                 document.getElementById('modal-container').innerHTML = this.templates.modal('Teste da Rota Concluído!', successModalContent);
 
             } catch (error) {
                 const logHTML = error.log ? error.log.map(line => `<li class="text-red-400">${line}</li>`).join('') : '<li>Nenhum log disponível.</li>';
-                const errorModalContent = `
-                    <div class="space-y-4 text-sm">
-                         <p class="text-lg font-medium text-red-400 text-center mb-2">Falha na Rota de Prioridade</p>
-                         <p class="text-gray-400 text-center">${error.message}</p>
-                         <hr class="border-slate-700">
-                         <div>
-                            <p class="font-semibold text-gray-400 mb-2">Log de Tentativas:</p>
-                            <ul class="text-xs font-mono list-disc list-inside space-y-1">${logHTML}</ul>
-                        </div>
-                    </div>
-                `;
+                const errorModalContent = `<div class="space-y-4 text-sm"><p class="text-lg font-medium text-red-400 text-center mb-2">Falha na Rota de Prioridade</p><p class="text-gray-400 text-center">${error.message}</p><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">Log de Tentativas:</p><ul class="text-xs font-mono list-disc list-inside space-y-1">${logHTML}</ul></div></div>`;
                 document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste', errorModalContent);
             } finally {
-                button.innerHTML = originalText;
-                button.disabled = false;
+                button.innerHTML = originalText; button.disabled = false;
             }
         },
 
@@ -1054,17 +1011,14 @@
                 localStorage.setItem(`bot_status_${botId}`, 'failure');
                 localStorage.setItem(`bot_timestamp_${botId}`, Date.now());
             } finally {
-                button.innerHTML = originalText;
-                button.disabled = false;
+                button.innerHTML = originalText; button.disabled = false;
                 this.updateBotStatusIndicator(botId);
             }
         },
 
         updateAllBotStatusIndicators() {
             if (this.state.data.bots && this.state.data.bots.length > 0) {
-                this.state.data.bots.forEach(bot => {
-                    this.updateBotStatusIndicator(bot.id);
-                });
+                this.state.data.bots.forEach(bot => this.updateBotStatusIndicator(bot.id));
             }
         },
         
@@ -1136,13 +1090,7 @@
         
         showToast(message, type = 'success') {
             const toast = document.createElement('div');
-            let bgColor = '';
-            switch(type) {
-                case 'success': bgColor = 'bg-green-600'; break;
-                case 'error': bgColor = 'bg-red-600'; break;
-                case 'info': bgColor = 'bg-sky-600'; break;
-                default: bgColor = 'bg-gray-700';
-            }
+            let bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
             toast.className = `fixed bottom-5 right-5 ${bgColor} text-white py-2 px-4 rounded-lg shadow-lg animate-fade-in z-50`;
             toast.textContent = message;
             document.body.appendChild(toast);
