@@ -66,6 +66,13 @@
         .status-indicator.failure { background-color: rgba(248, 113, 113, 0.1); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.2); }
         .status-indicator.unknown { background-color: rgba(100, 116, 139, 0.1); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
         .status-indicator.testing { background-color: rgba(56, 189, 248, 0.1); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.2); }
+        /* Tab Styles */
+        .tab-button { background-color: transparent; border: 1px solid #334155; color: #94a3b8; padding: 0.5rem 1rem; border-radius: 0.375rem; transition: all 0.3s ease; }
+        .tab-button:hover { background-color: #1e293b; color: #e2e8f0; }
+        .tab-button.active { background-color: rgba(14, 165, 233, 0.1); border-color: #0ea5e9; color: white; font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.5s ease-out; }
+
     </style>
 </head>
 <body>
@@ -285,57 +292,77 @@
                 };
                 return `
                 <div class="animate-fade-in">
-                    <h1 class="text-3xl font-bold text-white mb-6">API PIX</h1>
-                    <form id="pixSettingsForm" class="space-y-8 max-w-3xl">
-                        <div class="card p-6 rounded-lg">
-                            <h2 class="text-xl font-semibold mb-2 text-white">Ordem de Prioridade dos Provedores</h2>
-                            <p class="text-sm text-gray-400 mb-4">Defina a ordem em que o sistema tentará gerar o PIX. Se o Provedor Primário falhar, o sistema automaticamente tentará o Secundário.</p>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block mb-2 text-sm font-medium text-gray-400">1º - Provedor Primário</label>
-                                    ${createSelect('pix_provider_primary', settings.pix_provider_primary)}
-                                </div>
-                                <div>
-                                    <label class="block mb-2 text-sm font-medium text-gray-400">2º - Provedor Secundário</label>
-                                    ${createSelect('pix_provider_secondary', settings.pix_provider_secondary)}
-                                </div>
-                                <div>
-                                    <label class="block mb-2 text-sm font-medium text-gray-400">3º - Provedor Terciário</label>
-                                    ${createSelect('pix_provider_tertiary', settings.pix_provider_tertiary)}
+                    <h1 class="text-3xl font-bold text-white mb-6">Configurações de PIX</h1>
+                    <form id="pixSettingsForm" class="max-w-4xl">
+                        <div class="flex border-b border-slate-700 mb-6" id="pix-settings-tabs">
+                            <button type="button" data-tab="priority" class="tab-button active">Ordem de Prioridade</button>
+                            <button type="button" data-tab="credentials" class="tab-button ml-2">Credenciais</button>
+                        </div>
+
+                        <div id="tab-priority" class="tab-content active space-y-8">
+                            <div class="card p-6 rounded-lg">
+                                <h2 class="text-xl font-semibold mb-2 text-white">Ordem de Prioridade dos Provedores</h2>
+                                <p class="text-sm text-gray-400 mb-4">Defina a ordem em que o sistema tentará gerar o PIX. Se o Provedor Primário falhar, o sistema automaticamente tentará o próximo na lista.</p>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block mb-2 text-sm font-medium text-gray-400">1º - Provedor Primário</label>
+                                        ${createSelect('pix_provider_primary', settings.pix_provider_primary)}
+                                    </div>
+                                    <div>
+                                        <label class="block mb-2 text-sm font-medium text-gray-400">2º - Provedor Secundário</label>
+                                        ${createSelect('pix_provider_secondary', settings.pix_provider_secondary)}
+                                    </div>
+                                    <div>
+                                        <label class="block mb-2 text-sm font-medium text-gray-400">3º - Provedor Terciário</label>
+                                        ${createSelect('pix_provider_tertiary', settings.pix_provider_tertiary)}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="card p-6 rounded-lg">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h2 class="text-xl font-semibold text-white">Credenciais</h2>
-                                    <p class="text-sm text-gray-400 mt-1">O teste verifica a conexão na ordem de prioridade definida acima.</p>
+
+                        <div id="tab-credentials" class="tab-content space-y-6">
+                            <div class="card p-6 rounded-lg">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="text-lg font-medium text-sky-400 inline-block">PushinPay</h3>
+                                        <span id="status-indicator-pushinpay"></span>
+                                    </div>
+                                    <button type="button" data-provider="pushinpay" class="test-pix-btn btn btn-secondary text-xs py-1 px-3">Testar Conexão</button>
                                 </div>
-                                <button type="button" id="testPixConnectionBtn" class="btn btn-green text-sm py-2 px-3 flex-shrink-0">Testar Conexão</button>
+                                <label class="block mb-2 text-sm text-gray-400">Bearer Token</label>
+                                <input name="pushinpay_token" type="password" value="${settings.pushinpay_token || ''}" class="form-input w-full p-2 rounded-md">
                             </div>
-                            <div class="space-y-6">
-                                <div>
-                                    <h3 class="text-lg font-medium text-sky-400 mb-2 inline-block">PushinPay</h3><span id="status-indicator-pushinpay"></span>
-                                    <label class="block mb-2 text-sm text-gray-400">Bearer Token</label>
-                                    <input name="pushinpay_token" type="password" value="${settings.pushinpay_token || ''}" class="form-input w-full p-2 rounded-md">
-                                </div><hr class="border-slate-700">
-                                <div>
-                                    <h3 class="text-lg font-medium text-sky-400 mb-2 inline-block">CN Pay</h3><span id="status-indicator-cnpay"></span>
-                                    <label class="block mb-2 text-sm text-gray-400">Chave Pública (public-key)</label>
-                                    <input name="cnpay_public_key" type="password" value="${settings.cnpay_public_key || ''}" class="form-input w-full p-2 rounded-md">
-                                    <label class="block mt-4 mb-2 text-sm text-gray-400">Chave Privada (secret-key)</label>
-                                    <input name="cnpay_secret_key" type="password" value="${settings.cnpay_secret_key || ''}" class="form-input w-full p-2 rounded-md">
-                                </div><hr class="border-slate-700">
-                                <div>
-                                    <h3 class="text-lg font-medium text-sky-400 mb-2 inline-block">Oasy.fy</h3><span id="status-indicator-oasyfy"></span>
-                                    <label class="block mb-2 text-sm text-gray-400">Chave Pública (public-key)</label>
-                                    <input name="oasyfy_public_key" type="password" value="${settings.oasyfy_public_key || ''}" class="form-input w-full p-2 rounded-md">
-                                    <label class="block mt-4 mb-2 text-sm text-gray-400">Chave Privada (secret-key)</label>
-                                    <input name="oasyfy_secret_key" type="password" value="${settings.oasyfy_secret_key || ''}" class="form-input w-full p-2 rounded-md">
+
+                            <div class="card p-6 rounded-lg">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="text-lg font-medium text-sky-400 inline-block">CN Pay</h3>
+                                        <span id="status-indicator-cnpay"></span>
+                                    </div>
+                                    <button type="button" data-provider="cnpay" class="test-pix-btn btn btn-secondary text-xs py-1 px-3">Testar Conexão</button>
                                 </div>
+                                <label class="block mb-2 text-sm text-gray-400">Chave Pública (public-key)</label>
+                                <input name="cnpay_public_key" type="password" value="${settings.cnpay_public_key || ''}" class="form-input w-full p-2 rounded-md">
+                                <label class="block mt-4 mb-2 text-sm text-gray-400">Chave Privada (secret-key)</label>
+                                <input name="cnpay_secret_key" type="password" value="${settings.cnpay_secret_key || ''}" class="form-input w-full p-2 rounded-md">
+                            </div>
+                            
+                            <div class="card p-6 rounded-lg">
+                                 <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="text-lg font-medium text-sky-400 inline-block">Oasy.fy</h3>
+                                        <span id="status-indicator-oasyfy"></span>
+                                    </div>
+                                    <button type="button" data-provider="oasyfy" class="test-pix-btn btn btn-secondary text-xs py-1 px-3">Testar Conexão</button>
+                                </div>
+                                <label class="block mb-2 text-sm text-gray-400">Chave Pública (public-key)</label>
+                                <input name="oasyfy_public_key" type="password" value="${settings.oasyfy_public_key || ''}" class="form-input w-full p-2 rounded-md">
+                                <label class="block mt-4 mb-2 text-sm text-gray-400">Chave Privada (secret-key)</label>
+                                <input name="oasyfy_secret_key" type="password" value="${settings.oasyfy_secret_key || ''}" class="form-input w-full p-2 rounded-md">
                             </div>
                         </div>
-                        <div><button type="submit" class="btn w-full p-3 font-bold rounded-md">Salvar Configurações</button></div>
+                        
+                        <div class="mt-8"><button type="submit" class="btn w-full p-3 font-bold rounded-md">Salvar Configurações</button></div>
                     </form>
                 </div>`;
             },
@@ -405,7 +432,6 @@
                 if (e.target.closest('#closeModalBtn')) document.getElementById('modal-container').innerHTML = '';
                 if (e.target.id === 'refreshDashboardBtn') this.fetchDashboardMetrics();
                 if (e.target.id === 'refreshTransactionsBtn') this.fetchTransactions();
-                if (e.target.id === 'testPixConnectionBtn') this.testPixConnection();
                 
                 const sidebarLink = e.target.closest('.nav-link');
                 if (sidebarLink) this.navigateTo(sidebarLink.dataset.target);
@@ -442,6 +468,20 @@
                 if (e.target.classList.contains('test-bot-btn')) {
                     const botId = e.target.dataset.id;
                     this.testBotConnection(botId, e.target);
+                }
+
+                if (e.target.classList.contains('test-pix-btn')) {
+                    const provider = e.target.dataset.provider;
+                    this.testIndividualPixConnection(provider, e.target);
+                }
+
+                const tabButton = e.target.closest('.tab-button');
+                if (tabButton) {
+                    const tabName = tabButton.dataset.tab;
+                    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                    tabButton.classList.add('active');
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                    document.getElementById(`tab-${tabName}`).classList.add('active');
                 }
 
                 if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-bot-btn') || e.target.classList.contains('delete-pressel-btn')) {
@@ -770,42 +810,55 @@
             modalContainer.querySelector('#pressel-code-textarea').value = htmlContent;
         },
 
-        async testPixConnection() {
-            const btn = document.getElementById('testPixConnectionBtn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = 'Testando...';
-            btn.disabled = true;
-            this.updateAllPixStatusIndicators('testing');
-
+        async testIndividualPixConnection(provider, button) {
+            const originalText = button.innerHTML;
+            button.innerHTML = 'Testando...';
+            button.disabled = true;
+            this.updatePixStatusIndicator(provider, 'testing');
+            
+            // É importante salvar antes de testar para garantir que as credenciais mais recentes sejam usadas
             const form = document.getElementById('pixSettingsForm');
-            const primaryProvider = new FormData(form).get('pix_provider_primary');
+            const formData = Object.fromEntries(new FormData(form).entries());
+            try {
+                await this.apiRequest('/api/settings/pix', 'POST', formData);
+                App.state.data.settings = { ...App.state.data.settings, ...formData };
+            } catch (e) {
+                this.showToast('Erro ao salvar as configurações antes do teste.', 'error');
+                button.innerHTML = originalText;
+                button.disabled = false;
+                this.updatePixStatusIndicator(provider);
+                return;
+            }
 
             try {
-                const result = await this.apiRequest('/api/pix/test-generate', 'POST');
-                const successfulProvider = result.provider.toLowerCase();
+                const result = await this.apiRequest('/api/pix/test-provider', 'POST', { provider });
+                localStorage.setItem(`pix_status_${provider}`, 'success');
+                localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
                 
-                ['pushinpay', 'cnpay', 'oasyfy'].forEach(p => {
-                    localStorage.removeItem(`pix_status_${p}`);
-                    localStorage.removeItem(`pix_timestamp_${p}`);
-                });
-
-                localStorage.setItem(`pix_status_${successfulProvider}`, 'success');
-                localStorage.setItem(`pix_timestamp_${successfulProvider}`, Date.now());
-                
-                this.showToast(`Conexão com ${result.provider.toUpperCase()} bem-sucedida!`, 'success');
+                const successModalContent = `
+                    <div class="space-y-4 text-sm">
+                        <div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Provedor:</span> <span class="text-white">${result.provider}</span></div>
+                        <div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Adquirente:</span> <span class="text-white">${result.acquirer}</span></div>
+                        <div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Tempo de Resposta:</span> <span class="text-white">${result.responseTime}s</span></div>
+                        <hr class="border-slate-700">
+                        <div>
+                            <p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 0,50):</p>
+                            <textarea id="pix-test-key" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="4" readonly>${result.qr_code_text}</textarea>
+                            <button class="copy-btn btn w-full mt-2 py-2 text-sm" data-target="#pix-test-key">Copiar Chave PIX</button>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Conexão Bem-sucedida!', successModalContent);
 
             } catch (error) {
-                if (primaryProvider) {
-                    ['pushinpay', 'cnpay', 'oasyfy'].forEach(p => localStorage.removeItem(`pix_status_${p}`));
-                    localStorage.setItem(`pix_status_${primaryProvider}`, 'failure');
-                    localStorage.setItem(`pix_timestamp_${primaryProvider}`, Date.now());
-                }
-                const modalContent = `<div class="text-center"><p class="text-lg font-medium text-red-400 mb-2">Falha na Conexão</p><p class="text-sm text-gray-400">${error.message || 'Ocorreu um erro.'}</p></div>`;
-                document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste de Conexão', modalContent);
+                localStorage.setItem(`pix_status_${provider}`, 'failure');
+                localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
+                const errorModalContent = `<div class="text-center"><p class="text-lg font-medium text-red-400 mb-2">Falha na Conexão</p><p class="text-sm text-gray-400">${error.message || 'Ocorreu um erro desconhecido.'}</p></div>`;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste', errorModalContent);
             } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                this.updateAllPixStatusIndicators();
+                button.innerHTML = originalText;
+                button.disabled = false;
+                this.updatePixStatusIndicator(provider);
             }
         },
         
@@ -863,32 +916,34 @@
             }
         },
 
-        updateAllPixStatusIndicators(mode) {
+        updateAllPixStatusIndicators() {
             const providers = ['pushinpay', 'cnpay', 'oasyfy'];
-            providers.forEach(provider => {
-                const indicator = document.getElementById(`status-indicator-${provider}`);
-                if (!indicator) return;
+            providers.forEach(provider => this.updatePixStatusIndicator(provider));
+        },
 
-                if (mode === 'testing') {
-                    indicator.textContent = 'Testando...';
-                    indicator.className = 'status-indicator testing';
-                    return;
-                }
+        updatePixStatusIndicator(provider, mode) {
+             const indicator = document.getElementById(`status-indicator-${provider}`);
+            if (!indicator) return;
 
-                const status = localStorage.getItem(`pix_status_${provider}`);
-                const timestamp = localStorage.getItem(`pix_timestamp_${provider}`);
+            if (mode === 'testing') {
+                indicator.textContent = 'Testando...';
+                indicator.className = 'status-indicator testing';
+                return;
+            }
 
-                if (status === 'success' && timestamp) {
-                    indicator.textContent = `Ativo (Testado ${this.formatTimeAgo(timestamp)})`;
-                    indicator.className = 'status-indicator success';
-                } else if (status === 'failure' && timestamp) {
-                    indicator.textContent = `Falhou (Testado ${this.formatTimeAgo(timestamp)})`;
-                    indicator.className = 'status-indicator failure';
-                } else {
-                    indicator.textContent = 'Não testado';
-                    indicator.className = 'status-indicator unknown';
-                }
-            });
+            const status = localStorage.getItem(`pix_status_${provider}`);
+            const timestamp = localStorage.getItem(`pix_timestamp_${provider}`);
+
+            if (status === 'success' && timestamp) {
+                indicator.textContent = `Ativo (Testado ${this.formatTimeAgo(timestamp)})`;
+                indicator.className = 'status-indicator success';
+            } else if (status === 'failure' && timestamp) {
+                indicator.textContent = `Falhou (Testado ${this.formatTimeAgo(timestamp)})`;
+                indicator.className = 'status-indicator failure';
+            } else {
+                indicator.textContent = 'Não testado';
+                indicator.className = 'status-indicator unknown';
+            }
         },
 
         formatTimeAgo(timestamp) {
