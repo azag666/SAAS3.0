@@ -46,13 +46,8 @@
         .btn:disabled { background-color: #334155; cursor: not-allowed; transform: none; box-shadow: none; }
         .btn-red { background-color: #7f1d1d; border-color: #b91c1c; box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
         .btn-red:hover { background-color: #991b1b; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
-        .btn-green { background-color: #047857; border-color: #059669; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
-        .btn-green:hover { background-color: #059669; box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
         .btn-secondary { background-color: #334155; border-color: #475569; box-shadow: none; }
         .btn-secondary:hover { background-color: #475569; transform: translateY(-2px); }
-        .btn-filter { background-color: transparent; border: 1px solid #334155; color: #94a3b8; }
-        .btn-filter:hover { background-color: #1e293b; border-color: #38bdf8; color: #e2e8f0; }
-        .btn-filter.active { background-color: rgba(14, 165, 233, 0.1); border-color: #0ea5e9; color: white; font-weight: 600; }
         .nav-link { color: #94a3b8; border-left: 3px solid transparent; cursor: pointer; transition: all 0.3s ease; }
         .nav-link:hover { background-color: rgba(56, 189, 248, 0.05); border-left-color: #38bdf8; color: #e2e8f0; }
         .nav-link.active { background-color: rgba(14, 165, 233, 0.1); border-left-color: #0ea5e9; color: white; font-weight: 600; }
@@ -60,13 +55,22 @@
         .modal.active { display: flex; align-items: center; justify-content: center; position: fixed; z-index: 50; inset: 0; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(8px); }
         .animate-fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .table-custom th, .table-custom td { padding: 0.75rem; border-bottom: 1px solid #334155; text-align: left; }
-        .status-indicator { font-size: 0.75rem; font-weight: 500; padding: 0.125rem 0.5rem; border-radius: 9999px; display: inline-block; margin-left: 0.75rem; vertical-align: middle; }
+        .status-indicator { font-size: 0.75rem; font-weight: 500; padding: 0.125rem 0.5rem; border-radius: 9999px; display: inline-block; }
         .status-indicator.success { background-color: rgba(74, 222, 128, 0.1); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.2); }
         .status-indicator.failure { background-color: rgba(248, 113, 113, 0.1); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.2); }
         .status-indicator.unknown { background-color: rgba(100, 116, 139, 0.1); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
         .status-indicator.testing { background-color: rgba(56, 189, 248, 0.1); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.2); }
-        .provider-item.dragging { opacity: 0.5; }
+        
+        /* Estilos do Acordeão */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out; }
+        .accordion-item.open .accordion-content { max-height: 500px; padding-top: 1.5rem; }
+        .accordion-header .chevron { transition: transform 0.3s ease; }
+        .accordion-item.open .chevron { transform: rotate(180deg); }
+
+        /* Estilos do Interruptor (Toggle) */
+        .toggle-bg:after { content: ''; @apply absolute top-0.5 left-0.5 bg-white border border-gray-300 rounded-full h-5 w-5 transition shadow-sm; }
+        input:checked + .toggle-bg:after { @apply transform translate-x-full; }
+        input:checked + .toggle-bg { @apply bg-sky-500; }
     </style>
 </head>
 <body>
@@ -80,11 +84,6 @@
             token: null,
             data: { pixels: [], bots: [], pressels: [], settings: {}, transactions: [] },
             currentPage: 'dashboard',
-            dateFilter: {
-                period: 'all',
-                startDate: null,
-                endDate: null
-            }
         },
 
         async init() {
@@ -97,7 +96,6 @@
             if (this.state.token) {
                 try {
                     this.state.data = await this.apiRequest('/api/dashboard/data');
-                    this.state.data.transactions = [];
                     this.renderLayout();
                 } catch (e) { this.logout(); }
             } else {
@@ -112,7 +110,7 @@
 
         renderLayout() {
             document.getElementById('app').innerHTML = this.templates.layout();
-            this.navigateTo(this.state.currentPage);
+            this.navigateTo(this.state.currentPage || 'dashboard');
             this.addDashboardEventListeners();
         },
         
@@ -169,23 +167,6 @@
                     <main id="content" class="flex-1 p-8 overflow-y-auto"></main>
                 </div>`;
             },
-            dateFilterComponent(page) {
-                const { period } = App.state.dateFilter;
-                return `
-                <div id="${page}-date-filter" class="card p-4 rounded-lg mb-6 flex flex-wrap items-center gap-2 text-sm">
-                    <span class="font-semibold mr-2">Filtrar por:</span>
-                    <button data-period="today" class="btn-filter py-1 px-3 rounded-md ${period === 'today' ? 'active' : ''}">Hoje</button>
-                    <button data-period="last7days" class="btn-filter py-1 px-3 rounded-md ${period === 'last7days' ? 'active' : ''}">Últimos 7 dias</button>
-                    <button data-period="thisMonth" class="btn-filter py-1 px-3 rounded-md ${period === 'thisMonth' ? 'active' : ''}">Este Mês</button>
-                    <div class="flex items-center gap-2 pl-4 border-l border-slate-700 ml-2">
-                         <input type="date" id="${page}-start-date" class="form-date p-1 rounded-md text-sm">
-                         <span class="text-gray-500">até</span>
-                         <input type="date" id="${page}-end-date" class="form-date p-1 rounded-md text-sm">
-                         <button id="apply-custom-date-filter-${page}" class="btn-secondary py-1 px-3 rounded-md">Filtrar</button>
-                    </div>
-                    <button id="clear-date-filter-${page}" class="btn-secondary py-1 px-3 rounded-md ml-auto">Limpar</button>
-                </div>`;
-            },
             dashboard() {
                 return `
                 <div class="animate-fade-in">
@@ -196,7 +177,6 @@
                             Atualizar
                         </button>
                     </div>
-                    ${this.dateFilterComponent('dashboard')}
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                         <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">Cliques na Página</h3><p id="metric-clicks" class="text-4xl font-bold text-sky-400 mt-2">...</p></div>
                         <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">PIX Gerados</h3><p id="metric-generated" class="text-4xl font-bold text-yellow-400 mt-2">...</p></div>
@@ -210,61 +190,9 @@
                     </div>
                 </div>`;
             },
-            pixels() {
-                const pixelListHTML = App.state.data.pixels.map(p => `<div class="p-2 bg-slate-900/50 rounded flex justify-between items-center"><span class="text-sm">${p.account_name}</span><button data-id="${p.id}" class="delete-pixel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div>`).join('');
-                return `
-                <div class="animate-fade-in">
-                    <h1 class="text-3xl font-bold text-white mb-6">Gerenciar Pixels</h1>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="card p-6 rounded-lg">
-                            <h2 class="text-xl font-semibold mb-4 text-white">Adicionar Pixel</h2>
-                            <form id="pixelForm" class="space-y-3"><input name="account_name" placeholder="Nome do Pixel (Ex: Produto Y)" class="form-input w-full p-2 rounded-md" required><input name="pixel_id" placeholder="ID do Pixel da Meta" class="form-input w-full p-2 rounded-md" required><textarea name="meta_api_token" placeholder="Token da API de Conversões" class="form-input w-full p-2 rounded-md" rows="2" required></textarea><button type="submit" class="btn w-full p-2 rounded-md">Adicionar Pixel</button></form>
-                        </div>
-                        <div class="card p-6 rounded-lg"><h2 class="text-xl font-semibold text-white mb-4">Pixels Salvos</h2><div id="pixel-list" class="space-y-2">${pixelListHTML.length ? pixelListHTML : '<p class="text-gray-500 text-sm">Nenhum pixel salvo.</p>'}</div></div>
-                    </div>
-                </div>`;
-            },
-            bots() {
-                 const botListHTML = App.state.data.bots.map(b => `<div class="p-3 bg-slate-900/50 rounded flex justify-between items-center"><span class="text-sm font-medium">${b.bot_name}</span><div class="space-x-2"><button data-id="${b.id}" class="delete-bot-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
-                return `
-                <div class="animate-fade-in">
-                    <h1 class="text-3xl font-bold text-white mb-6">Gerenciar Bots</h1>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="card p-6 rounded-lg">
-                            <h2 class="text-xl font-semibold mb-4 text-white">Adicionar Bot</h2>
-                            <form id="botForm" class="space-y-3"><input name="bot_name" placeholder="Username do Bot (sem @)" class="form-input w-full p-2 rounded-md" required><input name="bot_token" placeholder="Token do Bot (do BotFather)" class="form-input w-full p-2 rounded-md" required><button type="submit" class="btn w-full p-2 rounded-md">Adicionar Bot</button></form>
-                        </div>
-                        <div class="card p-6 rounded-lg"><h2 class="text-xl font-semibold text-white mb-4">Bots Salvos</h2><div id="bot-list" class="space-y-2">${botListHTML.length ? botListHTML : '<p class="text-gray-500 text-sm">Nenhum bot salvo.</p>'}</div></div>
-                    </div>
-                </div>`;
-            },
-            pressels() {
-                const { pixels, bots, pressels } = App.state.data;
-                const botOptions = bots.map(b => `<option value="${b.id}">${b.bot_name}</option>`).join('');
-                const pixelCheckboxes = pixels.map(p => `<label class="flex items-center space-x-2 text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" name="pixel_ids" value="${p.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500"><span>${p.account_name}</span></label>`).join('');
-                const presselList = pressels.map(pr => `<div class="p-3 card flex justify-between items-center text-sm"><div><p class="font-semibold">${pr.name}</p><p class="text-xs text-gray-400">Bot: ${pr.bot_name}</p></div><div class="space-x-2"><button data-id="${pr.id}" class="generate-code-btn btn text-xs py-1 px-2">Ver Código</button><button data-id="${pr.id}" class="delete-pressel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
-                return `
-                <div class="animate-fade-in">
-                    <h1 class="text-3xl font-bold text-white mb-6">Criador de Pressel</h1>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div class="card p-6 rounded-lg">
-                            <h2 class="text-xl font-bold mb-4 text-white">Criar Nova Pressel</h2>
-                            <form id="presselForm" class="space-y-4"><input name="name" placeholder="Nome da Pressel (Ex: Campanha Black Friday)" class="form-input w-full p-2 rounded-md" required><input name="white_page_url" type="url" placeholder="URL da Página Branca (Fallback)" class="form-input w-full p-2 rounded-md" required><select name="bot_id" class="form-input w-full p-2 rounded-md" required><option value="">Selecione um Bot</option>${botOptions}</select><div class="card p-3"><p class="font-semibold mb-2">Selecione os Pixels:</p><div class="space-y-2">${pixelCheckboxes.length ? pixelCheckboxes : '<p class="text-gray-500 text-sm">Cadastre um pixel primeiro.</p>'}</div></div><button type="submit" class="btn w-full p-3 rounded-md text-base font-bold">Salvar e Gerar Código</button></form>
-                        </div>
-                        <div class="card p-6 rounded-lg"><h2 class="text-xl font-bold mb-4 text-white">Pressels Criadas</h2><div id="pressel-list" class="space-y-3">${presselList.length ? presselList : '<p class="text-gray-500 text-sm">Nenhuma pressel criada.</p>'}</div></div>
-                    </div>
-                </div>`;
-            },
-            transactions() {
-                return `
-                <div class="animate-fade-in">
-                    <div class="flex justify-between items-center mb-6"><h1 class="text-3xl font-bold text-white">Histórico de Transações</h1><button id="refreshTransactionsBtn" class="btn text-sm py-2 px-3"><svg class="h-4 w-4 inline-block mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001m0 0h-4.992m4.992 0L21 9.348M16.023 9.348A10.038 10.038 0 0112 19.5 10.038 10.038 0 012.98 9.348" /></svg>Atualizar</button></div>
-                    ${this.dateFilterComponent('transactions')}
-                    <div class="card p-6 rounded-lg"><div id="transactions-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Status</th><th>Valor</th><th>Bot</th><th>Provedor PIX</th><th>Data</th></tr></thead><tbody id="transactions-table-body"><tr><td colspan="5" class="text-center text-gray-500">Carregando transações...</td></tr></tbody></table></div></div>
-                </div>`;
-            },
+            
             // =========================================================================
-            // INÍCIO DO TEMPLATE MODIFICADO
+            // TEMPLATE SETTINGS COM LAYOUT ACORDEÃO
             // =========================================================================
             settings() {
                 const { settings } = App.state.data;
@@ -275,89 +203,91 @@
                 ];
 
                 const savedOrder = [settings.pix_provider_primary, settings.pix_provider_secondary, settings.pix_provider_tertiary].filter(Boolean);
-                const activeProviders = savedOrder.map(id => allProviders.find(p => p.id === id)).filter(Boolean);
-                const inactiveProviders = allProviders.filter(p => !savedOrder.includes(p.id));
+                const providerOrder = [
+                    ...savedOrder.map(id => allProviders.find(p => p.id === id)),
+                    ...allProviders.filter(p => !savedOrder.includes(p.id))
+                ].filter(Boolean);
 
-                const renderProviderItem = (provider) => `
-                    <div class="provider-item flex items-center justify-between p-3 bg-slate-800 rounded-md cursor-grab" draggable="true" data-provider-id="${provider.id}">
-                        <div class="flex items-center gap-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
-                            <span class="font-medium text-white pointer-events-none">${provider.name}</span>
+                const renderProviderAccordionItem = (provider) => {
+                    const isActive = savedOrder.includes(provider.id);
+                    return `
+                    <div class="accordion-item card rounded-lg" data-provider-id="${provider.id}" data-active="${isActive}">
+                        <div class="accordion-header flex items-center p-4 cursor-pointer">
+                            <h3 class="text-lg font-medium text-sky-400 flex-grow">${provider.name}</h3>
+                            <div class="flex items-center gap-4">
+                                <span id="status-indicator-${provider.id}" class="status-indicator unknown">Não testado</span>
+                                <label class="flex items-center cursor-pointer">
+                                    <div class="relative">
+                                        <input type="checkbox" class="sr-only toggle-switch" ${isActive ? 'checked' : ''}>
+                                        <div class="block bg-slate-600 w-12 h-7 rounded-full toggle-bg"></div>
+                                    </div>
+                                </label>
+                                <svg class="chevron h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                            </div>
                         </div>
-                        <span id="status-indicator-${provider.id}" class="status-indicator unknown pointer-events-none">Não testado</span>
+                        <div class="accordion-content px-6 pb-6">
+                            <div class="space-y-4 pt-2 border-t border-slate-700">
+                                ${provider.id === 'pushinpay' ? `
+                                    <div>
+                                        <label class="block mb-2 text-sm text-gray-400">Bearer Token</label>
+                                        <input name="pushinpay_token" type="password" value="${settings.pushinpay_token || ''}" class="form-input w-full p-2 rounded-md">
+                                    </div>
+                                ` : ''}
+                                ${provider.id === 'cnpay' || provider.id === 'oasyfy' ? `
+                                    <div>
+                                        <label class="block mb-2 text-sm text-gray-400">Chave Pública (public-key)</label>
+                                        <input name="${provider.id}_public_key" type="password" value="${settings[provider.id+'_public_key'] || ''}" class="form-input w-full p-2 rounded-md">
+                                    </div>
+                                    <div>
+                                        <label class="block mb-2 text-sm text-gray-400">Chave Privada (secret-key)</label>
+                                        <input name="${provider.id}_secret_key" type="password" value="${settings[provider.id+'_secret_key'] || ''}" class="form-input w-full p-2 rounded-md">
+                                    </div>
+                                ` : ''}
+                                <div class="text-right">
+                                    <button type="button" data-provider="${provider.id}" class="test-provider-btn btn btn-secondary text-sm py-2 px-4">Testar Conexão</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                `;
+                    `;
+                };
 
                 return `
                 <div class="animate-fade-in">
-                    <h1 class="text-3xl font-bold text-white mb-6">API PIX</h1>
+                    <h1 class="text-3xl font-bold text-white mb-2">Configurações da API PIX</h1>
+                    <p class="text-gray-400 mb-6 max-w-2xl">Ative os provedores que deseja usar e defina a ordem de prioridade. O primeiro da lista será a opção principal.</p>
+                    
                     <form id="pixSettingsForm" class="space-y-8 max-w-3xl">
-
                         <div class="card p-6 rounded-lg">
-                            <h2 class="text-xl font-semibold mb-2 text-white">Ordem de Prioridade dos Provedores</h2>
-                            <p class="text-sm text-gray-400 mb-4">Arraste os provedores para definir a ordem de tentativa. O sistema usará o primeiro da lista e, em caso de falha, tentará os próximos na sequência.</p>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <h3 class="font-semibold text-gray-300 mb-3 text-center">Provedores Ativos (Ordem de Prioridade)</h3>
-                                    <div id="active-providers-list" class="min-h-[150px] p-2 bg-slate-900/50 rounded-lg space-y-2">
-                                        ${activeProviders.map(renderProviderItem).join('') || '<p class="text-center text-gray-500 p-4 pointer-events-none">Arraste um provedor aqui.</p>'}
-                                    </div>
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-300 mb-3 text-center">Provedores Inativos</h3>
-                                    <div id="inactive-providers-list" class="min-h-[150px] p-2 bg-slate-900/50 rounded-lg space-y-2">
-                                        ${inactiveProviders.map(renderProviderItem).join('')}
-                                    </div>
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold text-white">Provedores e Prioridade</h2>
+                                <div class="flex items-center gap-2" id="ordering-buttons">
+                                    <button type="button" data-direction="up" class="order-btn btn-secondary p-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <svg class="h-5 w-5 pointer-events-none" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" /></svg>
+                                    </button>
+                                    <button type="button" data-direction="down" class="order-btn btn-secondary p-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <svg class="h-5 w-5 pointer-events-none" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                                    </button>
                                 </div>
                             </div>
-                            <input type="hidden" name="pix_provider_primary" id="pix_provider_primary">
-                            <input type="hidden" name="pix_provider_secondary" id="pix_provider_secondary">
-                            <input type="hidden" name="pix_provider_tertiary" id="pix_provider_tertiary">
-                        </div>
 
-                        <div class="card p-6 rounded-lg">
-                            <h2 class="text-xl font-semibold text-white">Credenciais dos Provedores</h2>
-                            <p class="text-sm text-gray-400 mt-1 mb-6">Insira as credenciais abaixo e use o botão de teste individual para verificar a conexão.</p>
-                            <div class="space-y-6">
-                                <div>
-                                    <div class="flex justify-between items-center mb-2">
-                                        <h3 class="text-lg font-medium text-sky-400">PushinPay</h3>
-                                        <button type="button" data-provider="pushinpay" class="test-provider-btn btn btn-secondary text-xs py-1 px-3">Testar</button>
-                                    </div>
-                                    <label class="block mb-2 text-sm text-gray-400">Bearer Token</label>
-                                    <input name="pushinpay_token" type="password" value="${settings.pushinpay_token || ''}" class="form-input w-full p-2 rounded-md">
-                                </div><hr class="border-slate-700">
-
-                                <div>
-                                    <div class="flex justify-between items-center mb-2">
-                                        <h3 class="text-lg font-medium text-sky-400">CN Pay</h3>
-                                        <button type="button" data-provider="cnpay" class="test-provider-btn btn btn-secondary text-xs py-1 px-3">Testar</button>
-                                    </div>
-                                    <label class="block mb-2 text-sm text-gray-400">Chave Pública (public-key)</label>
-                                    <input name="cnpay_public_key" type="password" value="${settings.cnpay_public_key || ''}" class="form-input w-full p-2 rounded-md">
-                                    <label class="block mt-4 mb-2 text-sm text-gray-400">Chave Privada (secret-key)</label>
-                                    <input name="cnpay_secret_key" type="password" value="${settings.cnpay_secret_key || ''}" class="form-input w-full p-2 rounded-md">
-                                </div><hr class="border-slate-700">
-                                
-                                <div>
-                                    <div class="flex justify-between items-center mb-2">
-                                        <h3 class="text-lg font-medium text-sky-400">Oasy.fy</h3>
-                                        <button type="button" data-provider="oasyfy" class="test-provider-btn btn btn-secondary text-xs py-1 px-3">Testar</button>
-                                    </div>
-                                    <label class="block mb-2 text-sm text-gray-400">Chave Pública (public-key)</label>
-                                    <input name="oasyfy_public_key" type="password" value="${settings.oasyfy_public_key || ''}" class="form-input w-full p-2 rounded-md">
-                                    <label class="block mt-4 mb-2 text-sm text-gray-400">Chave Privada (secret-key)</label>
-                                    <input name="oasyfy_secret_key" type="password" value="${settings.oasyfy_secret_key || ''}" class="form-input w-full p-2 rounded-md">
-                                </div>
+                            <div id="provider-list" class="space-y-4">
+                                ${providerOrder.map(renderProviderAccordionItem).join('')}
                             </div>
                         </div>
-                        <div><button type="submit" class="btn w-full p-3 font-bold rounded-md">Salvar Configurações</button></div>
+
+                        <input type="hidden" name="pix_provider_primary" id="pix_provider_primary">
+                        <input type="hidden" name="pix_provider_secondary" id="pix_provider_secondary">
+                        <input type="hidden" name="pix_provider_tertiary" id="pix_provider_tertiary">
+
+                        <div>
+                            <button type="submit" class="btn w-full p-3 font-bold rounded-md">Salvar Configurações</button>
+                        </div>
                     </form>
-                </div>`;
+                </div>
+                `;
             },
-            // =========================================================================
-            // FIM DO TEMPLATE MODIFICADO
-            // =========================================================================
+            
             integrations() {
                 const { settings } = App.state.data;
                 return `
@@ -377,6 +307,7 @@
                 </div>`;
             },
             documentation() {
+                const { settings } = App.state.data;
                 return `
                 <div class="animate-fade-in">
                     <h1 class="text-3xl font-bold text-white mb-6">Documentação e Chave de API</h1>
@@ -385,7 +316,7 @@
                             <h2 class="text-xl font-semibold mb-4 text-white">Sua Chave de API HotTrack</h2>
                             <p class="text-sm text-gray-400 mb-4">Use esta chave para autenticar suas requisições na API HotTrack (ex: gerar PIX, consultar status).</p>
                             <div class="flex items-center gap-2">
-                                <input id="hottrack-api-key" type="password" readonly value="${App.state.data.settings.api_key || ''}" class="form-input flex-grow p-2 rounded-md">
+                                <input id="hottrack-api-key" type="password" readonly value="${settings.api_key || ''}" class="form-input flex-grow p-2 rounded-md">
                                 <button type="button" class="toggle-visibility-btn p-2 text-gray-400 hover:text-white" data-target="#hottrack-api-key"><svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
                                 <button type="button" class="copy-btn btn text-sm py-2 px-3" data-target="#hottrack-api-key">Copiar</button>
                             </div>
@@ -419,20 +350,11 @@
         },
         
         addDashboardEventListeners() {
-            document.addEventListener('click', async (e) => {
+            document.addEventListener('click', (e) => {
+                // Listeners gerais
                 if (e.target.id === 'logoutButton') this.logout();
                 if (e.target.id === 'closeModalBtn') document.getElementById('modal-container').innerHTML = '';
                 if (e.target.id === 'refreshDashboardBtn') this.fetchDashboardMetrics();
-                if (e.target.id === 'refreshTransactionsBtn') this.fetchTransactions();
-                
-                // === INÍCIO DAS MODIFICAÇÕES NO LISTENER ===
-                const testButton = e.target.closest('.test-provider-btn');
-                if (testButton) {
-                    const provider = testButton.dataset.provider;
-                    this.testPixConnection(provider, testButton);
-                }
-                // === FIM DAS MODIFICAÇÕES NO LISTENER ===
-
                 const sidebarLink = e.target.closest('.nav-link');
                 if (sidebarLink) this.navigateTo(sidebarLink.dataset.target);
 
@@ -451,54 +373,15 @@
                 const toggleBtn = e.target.closest('.toggle-visibility-btn');
                 if (toggleBtn) {
                     const targetInput = document.querySelector(toggleBtn.dataset.target);
-                    const isPassword = targetInput.type === 'password';
-                    targetInput.type = isPassword ? 'text' : 'password';
-                    toggleBtn.innerHTML = isPassword 
-                        ? `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243L6.228 6.228" /></svg>` 
-                        : `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
-                }
-
-                if (e.target.classList.contains('generate-code-btn')) {
-                    const presselId = e.target.dataset.id;
-                    const pressel = this.state.data.pressels.find(p => p.id == presselId);
-                    if (pressel) this.generatePresselCode(pressel);
-                }
-
-                if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-bot-btn') || e.target.classList.contains('delete-pressel-btn')) {
-                    const id = e.target.dataset.id;
-                    let type = '', endpoint = '';
-                    if (e.target.classList.contains('delete-pixel-btn')) { type = 'pixels'; endpoint = 'pixels'; }
-                    if (e.target.classList.contains('delete-bot-btn')) { type = 'bots'; endpoint = 'bots'; }
-                    if (e.target.classList.contains('delete-pressel-btn')) { type = 'pressels'; endpoint = 'pressels'; }
-
-                    if (confirm(`Tem certeza que deseja excluir este item?`)) {
-                        try {
-                            await this.apiRequest(`/api/${endpoint}/${id}`, 'DELETE');
-                            this.state.data[type] = this.state.data[type].filter(item => item.id != id);
-                            this.navigateTo(this.state.currentPage);
-                            this.showToast('Item excluído com sucesso!', 'success');
-                        } catch(err) {}
-                    }
-                }
-                
-                const filterContainer = e.target.closest('#transactions-date-filter, #dashboard-date-filter');
-                if (filterContainer) {
-                    const page = filterContainer.id.split('-')[0];
-                    if (e.target.dataset.period) { this.handleFilterChange(page, e.target.dataset.period); }
-                    else if (e.target.id === `apply-custom-date-filter-${page}`) {
-                        const startDate = document.getElementById(`${page}-start-date`).value;
-                        const endDate = document.getElementById(`${page}-end-date`).value;
-                        if (startDate && endDate) { this.handleFilterChange(page, 'custom', startDate, endDate); }
-                        else { this.showToast('Por favor, selecione data de início e fim.', 'error'); }
-                    } else if (e.target.id === `clear-date-filter-${page}`) { this.handleFilterChange(page, 'all'); }
+                    targetInput.type = targetInput.type === 'password' ? 'text' : 'password';
                 }
             });
 
             document.addEventListener('submit', async (e) => {
                 const form = e.target.closest('form');
                 if (!form) return;
-                
                 e.preventDefault();
+
                 const button = form.querySelector('button[type="submit"]');
                 const originalButtonText = button.innerHTML;
                 button.innerHTML = 'Salvando...';
@@ -507,38 +390,17 @@
                 let data = Object.fromEntries(new FormData(form).entries());
                 try {
                     if (form.id === 'pixSettingsForm') {
+                        this.updateProviderOrder();
+                        data = Object.fromEntries(new FormData(form).entries());
                         await this.apiRequest('/api/settings/pix', 'POST', data);
-                        App.state.data.settings = { ...App.state.data.settings, ...data };
+                        // Atualiza o estado local para refletir as novas configurações salvas
+                        const newSettings = {...App.state.data.settings, ...data};
+                        App.state.data.settings = newSettings;
                         this.showToast('Configurações PIX salvas!', 'success');
                     }
-                    else if (form.id === 'utmifySettingsForm') {
-                        await this.apiRequest('/api/settings/utmify', 'POST', data);
-                        App.state.data.settings = { ...App.state.data.settings, ...data };
-                        this.showToast('Integração Utmify salva!', 'success');
-                    }
-                    else if (form.id === 'pixelForm') {
-                        const newPixel = await this.apiRequest('/api/pixels', 'POST', data);
-                        if (newPixel) { this.state.data.pixels.unshift(newPixel); this.navigateTo('pixels'); }
-                    }
-                    else if (form.id === 'botForm') {
-                        const newBot = await this.apiRequest('/api/bots', 'POST', data);
-                        if (newBot) { this.state.data.bots.unshift(newBot); this.navigateTo('bots'); }
-                    }
-                    else if (form.id === 'presselForm') {
-                        const pixel_ids = Array.from(form.querySelectorAll('input[name="pixel_ids"]:checked')).map(cb => cb.value);
-                        if (pixel_ids.length === 0) {
-                             this.showToast('Selecione ao menos um pixel.', 'error');
-                        } else {
-                            const payload = { ...data, pixel_ids };
-                            const newPressel = await this.apiRequest('/api/pressels', 'POST', payload);
-                            if (newPressel) {
-                                this.state.data.pressels.unshift(newPressel);
-                                this.navigateTo('pressels');
-                                this.generatePresselCode(newPressel);
-                            }
-                        }
-                    }
-                } catch(e) { }
+                } catch(e) { 
+                    this.showToast('Erro ao salvar configurações.', 'error');
+                }
                 finally {
                     if(button) {
                         button.innerHTML = originalButtonText;
@@ -546,6 +408,146 @@
                     }
                 }
             });
+        },
+
+        // =========================================================================
+        // LÓGICA DO ACORDEÃO E ORDENAÇÃO
+        // =========================================================================
+        addSettingsEventListeners() {
+            const providerList = document.getElementById('provider-list');
+            if (!providerList) return;
+
+            providerList.addEventListener('click', (e) => {
+                const header = e.target.closest('.accordion-header');
+                const toggle = e.target.closest('.toggle-switch');
+                const testBtn = e.target.closest('.test-provider-btn');
+
+                if (header && !toggle && !e.target.closest('label')) {
+                    const item = header.closest('.accordion-item');
+                    const wasOpen = item.classList.contains('open');
+                    
+                    providerList.querySelectorAll('.accordion-item.open').forEach(openItem => openItem.classList.remove('open'));
+                    
+                    if (!wasOpen) {
+                        item.classList.add('open');
+                    }
+                    this.updateProviderOrder();
+                }
+                
+                if (toggle) {
+                    const item = toggle.closest('.accordion-item');
+                    item.dataset.active = toggle.checked;
+                    this.updateProviderOrder();
+                }
+                
+                if (testBtn) {
+                    const provider = testBtn.dataset.provider;
+                    this.testPixConnection(provider, testBtn);
+                }
+            });
+
+            document.getElementById('ordering-buttons').addEventListener('click', (e) => {
+                const button = e.target.closest('.order-btn');
+                if (!button || button.disabled) return;
+                
+                const openItem = providerList.querySelector('.accordion-item.open');
+                if (!openItem) return;
+
+                const direction = button.dataset.direction;
+                if (direction === 'up') {
+                    const prevSibling = openItem.previousElementSibling;
+                    if (prevSibling) {
+                        openItem.parentNode.insertBefore(openItem, prevSibling);
+                    }
+                } else if (direction === 'down') {
+                    const nextSibling = openItem.nextElementSibling;
+                    if (nextSibling) {
+                        openItem.parentNode.insertBefore(nextSibling, openItem);
+                    }
+                }
+                this.updateProviderOrder();
+            });
+        },
+
+        updateProviderOrder() {
+            const allProviders = Array.from(document.querySelectorAll('#provider-list .accordion-item'));
+            const activeProviders = allProviders.filter(item => item.dataset.active === 'true');
+
+            // Preenche os inputs ocultos com a ordem dos provedores ativos
+            const order = activeProviders.map(item => item.dataset.providerId);
+            document.getElementById('pix_provider_primary').value = order[0] || '';
+            document.getElementById('pix_provider_secondary').value = order[1] || '';
+            document.getElementById('pix_provider_tertiary').value = order[2] || '';
+
+            // Habilita/desabilita botões de ordenação
+            const openItem = document.querySelector('.accordion-item.open');
+            const upBtn = document.querySelector('.order-btn[data-direction="up"]');
+            const downBtn = document.querySelector('.order-btn[data-direction="down"]');
+
+            if (openItem && openItem.dataset.active === 'true') {
+                const currentIndex = activeProviders.indexOf(openItem);
+                upBtn.disabled = currentIndex <= 0;
+                downBtn.disabled = currentIndex >= activeProviders.length - 1 || currentIndex === -1;
+            } else {
+                upBtn.disabled = true;
+                downBtn.disabled = true;
+            }
+        },
+
+        async testPixConnection(provider, button) {
+            const originalText = button.innerHTML;
+            button.innerHTML = 'Testando...';
+            button.disabled = true;
+            this.updatePixStatusIndicator(provider, 'testing');
+
+            const form = document.getElementById('pixSettingsForm');
+            const formData = Object.fromEntries(new FormData(form).entries());
+
+            try {
+                await this.apiRequest('/api/pix/test-provider', 'POST', { 
+                    provider: provider,
+                    credentials: formData 
+                });
+                localStorage.setItem(`pix_status_${provider}`, 'success');
+                this.showToast(`Conexão com ${provider.toUpperCase()} bem-sucedida!`, 'success');
+            } catch (error) {
+                localStorage.setItem(`pix_status_${provider}`, 'failure');
+                const modalContent = `
+                    <div class="text-left">
+                        <p class="text-md text-gray-300 mb-4">O teste de conexão com <strong class="font-bold text-sky-400">${provider.toUpperCase()}</strong> falhou.</p>
+                        <p class="text-sm text-gray-400 mb-2">Log de Erro:</p>
+                        <pre class="bg-slate-900 p-3 rounded-md text-red-400 text-xs overflow-x-auto">${error.message || 'Ocorreu um erro desconhecido.'}</pre>
+                    </div>`;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Falha no Teste de Conexão', modalContent);
+            } finally {
+                localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
+                button.innerHTML = originalText;
+                button.disabled = false;
+                this.updatePixStatusIndicator(provider);
+            }
+        },
+        
+        updatePixStatusIndicator(provider, mode) {
+            const indicator = document.getElementById(`status-indicator-${provider}`);
+            if (!indicator) return;
+
+            if (mode === 'testing') {
+                indicator.textContent = 'Testando...';
+                indicator.className = 'status-indicator testing';
+                return;
+            }
+            
+            const status = localStorage.getItem(`pix_status_${provider}`);
+            if (status === 'success') {
+                indicator.textContent = `Ativo`;
+                indicator.className = 'status-indicator success';
+            } else if (status === 'failure') {
+                indicator.textContent = `Falhou`;
+                indicator.className = 'status-indicator failure';
+            } else {
+                indicator.textContent = 'Não testado';
+                indicator.className = 'status-indicator unknown';
+            }
         },
 
         async apiRequest(endpoint, method = 'GET', body = null) {
@@ -560,9 +562,15 @@
                 if (!response.ok) throw new Error(data.message || 'Erro');
                 return data;
             } catch (error) {
-                this.showToast(error.message, 'error');
-                if (error.message.includes('inválido') || error.message.includes('expirado')) this.logout();
-                throw error;
+                // Tenta tratar o erro como JSON, se falhar, mostra a mensagem de erro bruta
+                let errorMessage = error.message;
+                if (error instanceof SyntaxError) {
+                    errorMessage = "Resposta inesperada do servidor. Verifique o console para detalhes.";
+                    console.error("Failed to parse JSON response:", error);
+                }
+                this.showToast(errorMessage, 'error');
+                if (errorMessage.includes('inválido') || errorMessage.includes('expirado')) this.logout();
+                throw new Error(errorMessage);
             }
         },
         
@@ -574,7 +582,6 @@
                 await this.init();
             } catch (e) {}
         },
-        
         async register(name, email, password) {
             try {
                 await this.apiRequest('/api/sellers/register', 'POST', { name, email, password });
@@ -582,26 +589,26 @@
                 this.renderLogin('login');
             } catch (e) {}
         },
-
         logout() {
             this.state.token = null;
             localStorage.removeItem('hottrack_token');
             this.init();
         },
-
+        
         navigateTo(page) {
             this.state.currentPage = page;
-            this.handleFilterChange(page, 'all');
             const contentContainer = document.getElementById('content');
             if (contentContainer && this.templates[page]) {
                 contentContainer.innerHTML = this.templates[page]();
-                if (page === 'dashboard') this.fetchDashboardMetrics();
-                else if (page === 'transactions') this.fetchTransactions();
-                else if (page === 'settings') {
-                    this.updateAllPixStatusIndicators();
-                    this.addDragAndDropListeners();
+
+                if (page === 'settings') {
+                    ['pushinpay', 'cnpay', 'oasyfy'].forEach(p => this.updatePixStatusIndicator(p));
+                    this.addSettingsEventListeners();
                     this.updateProviderOrder();
+                } else if (page === 'dashboard') {
+                    this.fetchDashboardMetrics();
                 }
+
                 document.querySelectorAll('.nav-link').forEach(item => { item.classList.toggle('active', item.dataset.target === page); });
             }
         },
@@ -628,232 +635,6 @@
                 }
             } catch (e) { console.error("Erro ao carregar métricas do painel:", e); }
         },
-        async fetchTransactions() {
-            const tableBody = document.getElementById('transactions-table-body');
-            tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Carregando transações...</td></tr>';
-            try {
-                const transactions = await this.apiRequest('/api/transactions');
-                this.state.data.transactions = transactions;
-                this.renderTransactionsTable();
-            } catch (e) {
-                console.error("Erro ao buscar transações:", e);
-                tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-red-400">Erro ao carregar transações.</td></tr>';
-            }
-        },
-        renderTransactionsTable() {
-            const tableBody = document.getElementById('transactions-table-body');
-            if (!tableBody) return;
-
-            const { period, startDate, endDate } = this.state.dateFilter;
-            let filteredTransactions = this.state.data.transactions;
-
-            if (period !== 'all') {
-                const now = new Date();
-                let start, end;
-                
-                switch(period) {
-                    case 'today':
-                        start = new Date(now.setHours(0, 0, 0, 0));
-                        end = new Date(new Date().setHours(23, 59, 59, 999));
-                        break;
-                    case 'last7days':
-                        end = new Date();
-                        end.setHours(23, 59, 59, 999);
-                        start = new Date();
-                        start.setDate(end.getDate() - 6);
-                        start.setHours(0, 0, 0, 0);
-                        break;
-                    case 'thisMonth':
-                        start = new Date(now.getFullYear(), now.getMonth(), 1);
-                        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                        end.setHours(23, 59, 59, 999);
-                        break;
-                    case 'custom':
-                        start = new Date(`${startDate}T00:00:00`);
-                        end = new Date(`${endDate}T23:59:59`);
-                        break;
-                }
-
-                if (start && end) {
-                    filteredTransactions = this.state.data.transactions.filter(t => {
-                        const transactionDate = new Date(t.created_at);
-                        return transactionDate >= start && transactionDate <= end;
-                    });
-                }
-            }
-
-            if (filteredTransactions.length > 0) {
-                tableBody.innerHTML = filteredTransactions.map(t => {
-                    const statusColor = t.status === 'paid' ? 'text-green-400' : 'text-yellow-400';
-                    const statusText = t.status === 'paid' ? 'Pago' : 'Pendente';
-                    const formattedValue = `R$ ${parseFloat(t.pix_value).toFixed(2).replace('.', ',')}`;
-                    const formattedDate = new Date(t.created_at).toLocaleString('pt-BR');
-                    return `<tr class="hover:bg-slate-800/50"><td class="${statusColor}">${statusText}</td><td>${formattedValue}</td><td>${t.bot_name}</td><td>${t.provider.toUpperCase()}</td><td>${formattedDate}</td></tr>`;
-                }).join('');
-            } else {
-                tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Nenhuma transação encontrada.</td></tr>';
-            }
-        },
-        handleFilterChange(page, period, startDate, endDate) {
-            this.state.dateFilter.period = period;
-            this.state.dateFilter.startDate = startDate || null;
-            this.state.dateFilter.endDate = endDate || null;
-            
-            const filterContainer = document.getElementById(`${page}-date-filter`);
-            if (filterContainer) {
-                const newFilterHTML = this.templates.dateFilterComponent(page);
-                filterContainer.outerHTML = newFilterHTML;
-            }
-
-            if (page === 'transactions') {
-                this.renderTransactionsTable();
-            } else if (page === 'dashboard' && period !== 'all') {
-                this.showToast('Filtro visual. Métricas não são afetadas sem alteração na API.', 'info');
-            }
-        },
-        generatePresselCode(pressel) {
-            const { pixels, bots, settings } = this.state.data;
-            const bot = bots.find(b => b.id === pressel.bot_id);
-            const presselPixels = pressel.pixel_ids.map(pid => pixels.find(p => p.id === pid)).filter(Boolean).map(p => ({ id: p.pixel_id }));
-            const htmlContent = `...`; // Content is omitted for brevity but present in the full code
-            const modalContent = `<p class="text-sm ...">${htmlContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>...</div>`;
-            document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
-        },
-        
-        // =========================================================================
-        // INÍCIO DAS NOVAS FUNÇÕES JAVASCRIPT
-        // =========================================================================
-        
-        addDragAndDropListeners() {
-            const activeList = document.getElementById('active-providers-list');
-            const inactiveList = document.getElementById('inactive-providers-list');
-            let draggedItem = null;
-
-            document.querySelectorAll('.provider-item').forEach(item => {
-                item.addEventListener('dragstart', (e) => {
-                    draggedItem = e.target;
-                    setTimeout(() => e.target.classList.add('dragging'), 0);
-                });
-                item.addEventListener('dragend', () => {
-                    draggedItem.classList.remove('dragging');
-                    draggedItem = null;
-                    this.updateProviderOrder();
-                    [activeList, inactiveList].forEach(list => {
-                        const placeholder = list.querySelector('p');
-                        if (placeholder && list.children.length > 1) placeholder.style.display = 'none';
-                        else if (placeholder) placeholder.style.display = 'block';
-                    });
-                });
-            });
-
-            [activeList, inactiveList].forEach(list => {
-                list.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    const afterElement = [...list.querySelectorAll('.provider-item:not(.dragging)')].reduce((closest, child) => {
-                        const box = child.getBoundingClientRect();
-                        const offset = e.clientY - box.top - box.height / 2;
-                        if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
-                        else return closest;
-                    }, { offset: Number.NEGATIVE_INFINITY }).element;
-                    
-                    if (afterElement == null) {
-                        list.appendChild(draggedItem);
-                    } else {
-                        list.insertBefore(draggedItem, afterElement);
-                    }
-                });
-            });
-        },
-
-        updateProviderOrder() {
-            const activeProviders = Array.from(document.querySelectorAll('#active-providers-list .provider-item'));
-            const order = activeProviders.map(item => item.dataset.providerId);
-            
-            document.getElementById('pix_provider_primary').value = order[0] || '';
-            document.getElementById('pix_provider_secondary').value = order[1] || '';
-            document.getElementById('pix_provider_tertiary').value = order[2] || '';
-        },
-        
-        async testPixConnection(provider, button) {
-            const originalText = button.innerHTML;
-            button.innerHTML = 'Testando...';
-            button.disabled = true;
-            this.updatePixStatusIndicator(provider, 'testing');
-
-            const form = document.getElementById('pixSettingsForm');
-            const formData = Object.fromEntries(new FormData(form).entries());
-
-            try {
-                // Endpoint para teste individual. Adapte se necessário no seu backend.
-                const result = await this.apiRequest('/api/pix/test-provider', 'POST', { 
-                    provider: provider,
-                    credentials: formData 
-                });
-                
-                localStorage.setItem(`pix_status_${provider}`, 'success');
-                localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
-                this.showToast(`Conexão com ${provider.toUpperCase()} bem-sucedida!`, 'success');
-
-            } catch (error) {
-                localStorage.setItem(`pix_status_${provider}`, 'failure');
-                localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
-                
-                const modalContent = `
-                    <div class="text-left">
-                        <p class="text-md text-gray-300 mb-4">O teste de conexão com <strong class="font-bold text-sky-400">${provider.toUpperCase()}</strong> falhou.</p>
-                        <p class="text-sm text-gray-400 mb-2">Log de Erro:</p>
-                        <pre class="bg-slate-900 p-3 rounded-md text-red-400 text-xs overflow-x-auto">${error.message || 'Ocorreu um erro desconhecido.'}</pre>
-                        <p class="text-xs text-gray-500 mt-4">Verifique se as credenciais inseridas estão corretas e tente novamente.</p>
-                    </div>`;
-                document.getElementById('modal-container').innerHTML = this.templates.modal('Falha no Teste de Conexão', modalContent);
-
-            } finally {
-                button.innerHTML = originalText;
-                button.disabled = false;
-                this.updatePixStatusIndicator(provider);
-            }
-        },
-        
-        updateAllPixStatusIndicators() {
-            ['pushinpay', 'cnpay', 'oasyfy'].forEach(provider => this.updatePixStatusIndicator(provider));
-        },
-
-        updatePixStatusIndicator(provider, mode) {
-            const indicator = document.getElementById(`status-indicator-${provider}`);
-            if (!indicator) return;
-
-            if (mode === 'testing') {
-                indicator.textContent = 'Testando...';
-                indicator.className = 'status-indicator testing';
-                return;
-            }
-            
-            const status = localStorage.getItem(`pix_status_${provider}`);
-            const timestamp = localStorage.getItem(`pix_timestamp_${provider}`);
-
-            if (status === 'success' && timestamp) {
-                indicator.textContent = `Ativo`;
-                indicator.className = 'status-indicator success';
-            } else if (status === 'failure' && timestamp) {
-                indicator.textContent = `Falhou`;
-                indicator.className = 'status-indicator failure';
-            } else {
-                indicator.textContent = 'Não testado';
-                indicator.className = 'status-indicator unknown';
-            }
-        },
-
-        formatTimeAgo(timestamp) {
-            const seconds = Math.floor((Date.now() - timestamp) / 1000);
-            if (seconds < 60) return "agora";
-            const minutes = Math.floor(seconds / 60);
-            if (minutes < 60) return `há ${minutes} min`;
-            const hours = Math.floor(minutes / 60);
-            if (hours < 24) return `há ${hours}h`;
-            const days = Math.floor(hours / 24);
-            return `há ${days}d`;
-        },
-        
         showToast(message, type = 'success') {
             const toast = document.createElement('div');
             let bgColor = '';
@@ -863,7 +644,7 @@
                 case 'info': bgColor = 'bg-sky-600'; break;
                 default: bgColor = 'bg-gray-700';
             }
-            toast.className = `fixed bottom-5 right-5 ${bgColor} text-white py-2 px-4 rounded-lg shadow-lg animate-fade-in`;
+            toast.className = `fixed bottom-5 right-5 ${bgColor} text-white py-2 px-4 rounded-lg shadow-lg animate-fade-in z-50`;
             toast.textContent = message;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 5000);
