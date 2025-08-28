@@ -691,7 +691,7 @@
                                 const checkoutName = shortcode.slice(1, -1);
                                 const checkout = this.state.data.checkouts.find(c => c.name.toLowerCase() === checkoutName.toLowerCase());
                                 if(checkout) {
-                                    let checkoutUrl = `https://SEU_DOMINIO_DE_CHECKOUT/checkout.html?checkoutId=${checkout.id}&apiKey=${this.state.data.settings.api_key}`;
+                                    let checkoutUrl = `https://hottracker.netlify.app/checkout.html?checkoutId=${checkout.id}&apiKey=${this.state.data.settings.api_key}`;
                                     if(checkout.value_type === 'fixed') {
                                         checkoutUrl += `&value=${checkout.fixed_value_cents}`;
                                     }
@@ -743,11 +743,9 @@
         
                 const response = await fetch(`${this.state.API_BASE_URL}${endpoint}`, options);
         
-                if (response.status === 304) {
-                    return {}; 
-                }
-                if (response.status === 204) {
-                    return null;
+                // Respostas sem conteúdo são um sucesso, mas não devem ser parseadas como JSON
+                if (response.status === 204 || response.status === 304) {
+                    return this.state.data; // Retorna os dados já existentes no estado
                 }
         
                 const data = await response.json();
@@ -757,7 +755,7 @@
                 }
                 return data;
             } catch (error) {
-                // Se o erro for de JSON parsing (ex: resposta 304 vazia), não mostre o toast genérico.
+                // Evita mostrar toast de erro para falhas de parsing de JSON (ex: resposta 304)
                 if (!(error instanceof SyntaxError)) {
                     this.showToast(error.message || 'Falha na conexão', 'error');
                 }
@@ -773,7 +771,7 @@
                 const data = await this.apiRequest('/api/sellers/login', 'POST', { email, password });
                 if (data && data.token) {
                     localStorage.setItem('hottrack_token', data.token);
-                    await this.init();
+                    await this.init(); // Recarrega o app internamente sem refresh da página
                 } else {
                     this.showToast('Resposta de login inválida recebida do servidor.', 'error');
                 }
@@ -792,7 +790,8 @@
 
         logout() {
             localStorage.removeItem('hottrack_token');
-            window.location.reload();
+            this.state.token = null;
+            this.renderLogin(); // Renderiza a tela de login sem recarregar a página inteira
         },
 
         navigateTo(page) {
