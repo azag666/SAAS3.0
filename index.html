@@ -66,6 +66,7 @@
         .status-indicator.failure { background-color: rgba(248, 113, 113, 0.1); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.2); }
         .status-indicator.unknown { background-color: rgba(100, 116, 139, 0.1); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
         .status-indicator.testing { background-color: rgba(56, 189, 248, 0.1); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.2); }
+        .provider-item.dragging { opacity: 0.5; }
     </style>
 </head>
 <body>
@@ -262,62 +263,87 @@
                     <div class="card p-6 rounded-lg"><div id="transactions-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Status</th><th>Valor</th><th>Bot</th><th>Provedor PIX</th><th>Data</th></tr></thead><tbody id="transactions-table-body"><tr><td colspan="5" class="text-center text-gray-500">Carregando transações...</td></tr></tbody></table></div></div>
                 </div>`;
             },
+            // =========================================================================
+            // INÍCIO DO TEMPLATE MODIFICADO
+            // =========================================================================
             settings() {
                 const { settings } = App.state.data;
-                const providers = [
-                    { value: 'pushinpay', text: 'PushinPay' },
-                    { value: 'cnpay', text: 'CN Pay' },
-                    { value: 'oasyfy', text: 'Oasy.fy' }
+                const allProviders = [
+                    { id: 'pushinpay', name: 'PushinPay' },
+                    { id: 'cnpay', name: 'CN Pay' },
+                    { id: 'oasyfy', name: 'Oasy.fy' }
                 ];
-                const createSelect = (name, selectedValue) => {
-                    const options = providers.map(p => `<option value="${p.value}" ${p.value === selectedValue ? 'selected' : ''}>${p.text}</option>`).join('');
-                    return `<select name="${name}" class="form-select w-full p-2 rounded-md">${options}<option value="" ${!selectedValue ? 'selected' : ''}>Nenhum</option></select>`;
-                };
+
+                const savedOrder = [settings.pix_provider_primary, settings.pix_provider_secondary, settings.pix_provider_tertiary].filter(Boolean);
+                const activeProviders = savedOrder.map(id => allProviders.find(p => p.id === id)).filter(Boolean);
+                const inactiveProviders = allProviders.filter(p => !savedOrder.includes(p.id));
+
+                const renderProviderItem = (provider) => `
+                    <div class="provider-item flex items-center justify-between p-3 bg-slate-800 rounded-md cursor-grab" draggable="true" data-provider-id="${provider.id}">
+                        <div class="flex items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
+                            <span class="font-medium text-white pointer-events-none">${provider.name}</span>
+                        </div>
+                        <span id="status-indicator-${provider.id}" class="status-indicator unknown pointer-events-none">Não testado</span>
+                    </div>
+                `;
+
                 return `
                 <div class="animate-fade-in">
                     <h1 class="text-3xl font-bold text-white mb-6">API PIX</h1>
                     <form id="pixSettingsForm" class="space-y-8 max-w-3xl">
+
                         <div class="card p-6 rounded-lg">
                             <h2 class="text-xl font-semibold mb-2 text-white">Ordem de Prioridade dos Provedores</h2>
-                            <p class="text-sm text-gray-400 mb-4">Defina a ordem em que o sistema tentará gerar o PIX. Se o Provedor Primário falhar, o sistema automaticamente tentará o Secundário.</p>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <p class="text-sm text-gray-400 mb-4">Arraste os provedores para definir a ordem de tentativa. O sistema usará o primeiro da lista e, em caso de falha, tentará os próximos na sequência.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label class="block mb-2 text-sm font-medium text-gray-400">1º - Provedor Primário</label>
-                                    ${createSelect('pix_provider_primary', settings.pix_provider_primary)}
+                                    <h3 class="font-semibold text-gray-300 mb-3 text-center">Provedores Ativos (Ordem de Prioridade)</h3>
+                                    <div id="active-providers-list" class="min-h-[150px] p-2 bg-slate-900/50 rounded-lg space-y-2">
+                                        ${activeProviders.map(renderProviderItem).join('') || '<p class="text-center text-gray-500 p-4 pointer-events-none">Arraste um provedor aqui.</p>'}
+                                    </div>
                                 </div>
                                 <div>
-                                    <label class="block mb-2 text-sm font-medium text-gray-400">2º - Provedor Secundário</label>
-                                    ${createSelect('pix_provider_secondary', settings.pix_provider_secondary)}
-                                </div>
-                                <div>
-                                    <label class="block mb-2 text-sm font-medium text-gray-400">3º - Provedor Terciário</label>
-                                    ${createSelect('pix_provider_tertiary', settings.pix_provider_tertiary)}
+                                    <h3 class="font-semibold text-gray-300 mb-3 text-center">Provedores Inativos</h3>
+                                    <div id="inactive-providers-list" class="min-h-[150px] p-2 bg-slate-900/50 rounded-lg space-y-2">
+                                        ${inactiveProviders.map(renderProviderItem).join('')}
+                                    </div>
                                 </div>
                             </div>
+                            <input type="hidden" name="pix_provider_primary" id="pix_provider_primary">
+                            <input type="hidden" name="pix_provider_secondary" id="pix_provider_secondary">
+                            <input type="hidden" name="pix_provider_tertiary" id="pix_provider_tertiary">
                         </div>
+
                         <div class="card p-6 rounded-lg">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h2 class="text-xl font-semibold text-white">Credenciais</h2>
-                                    <p class="text-sm text-gray-400 mt-1">O teste verifica a conexão na ordem de prioridade definida acima.</p>
-                                </div>
-                                <button type="button" id="testPixConnectionBtn" class="btn btn-green text-sm py-2 px-3 flex-shrink-0">Testar Conexão</button>
-                            </div>
+                            <h2 class="text-xl font-semibold text-white">Credenciais dos Provedores</h2>
+                            <p class="text-sm text-gray-400 mt-1 mb-6">Insira as credenciais abaixo e use o botão de teste individual para verificar a conexão.</p>
                             <div class="space-y-6">
                                 <div>
-                                    <h3 class="text-lg font-medium text-sky-400 mb-2 inline-block">PushinPay</h3><span id="status-indicator-pushinpay"></span>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h3 class="text-lg font-medium text-sky-400">PushinPay</h3>
+                                        <button type="button" data-provider="pushinpay" class="test-provider-btn btn btn-secondary text-xs py-1 px-3">Testar</button>
+                                    </div>
                                     <label class="block mb-2 text-sm text-gray-400">Bearer Token</label>
                                     <input name="pushinpay_token" type="password" value="${settings.pushinpay_token || ''}" class="form-input w-full p-2 rounded-md">
                                 </div><hr class="border-slate-700">
+
                                 <div>
-                                    <h3 class="text-lg font-medium text-sky-400 mb-2 inline-block">CN Pay</h3><span id="status-indicator-cnpay"></span>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h3 class="text-lg font-medium text-sky-400">CN Pay</h3>
+                                        <button type="button" data-provider="cnpay" class="test-provider-btn btn btn-secondary text-xs py-1 px-3">Testar</button>
+                                    </div>
                                     <label class="block mb-2 text-sm text-gray-400">Chave Pública (public-key)</label>
                                     <input name="cnpay_public_key" type="password" value="${settings.cnpay_public_key || ''}" class="form-input w-full p-2 rounded-md">
                                     <label class="block mt-4 mb-2 text-sm text-gray-400">Chave Privada (secret-key)</label>
                                     <input name="cnpay_secret_key" type="password" value="${settings.cnpay_secret_key || ''}" class="form-input w-full p-2 rounded-md">
                                 </div><hr class="border-slate-700">
+                                
                                 <div>
-                                    <h3 class="text-lg font-medium text-sky-400 mb-2 inline-block">Oasy.fy</h3><span id="status-indicator-oasyfy"></span>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h3 class="text-lg font-medium text-sky-400">Oasy.fy</h3>
+                                        <button type="button" data-provider="oasyfy" class="test-provider-btn btn btn-secondary text-xs py-1 px-3">Testar</button>
+                                    </div>
                                     <label class="block mb-2 text-sm text-gray-400">Chave Pública (public-key)</label>
                                     <input name="oasyfy_public_key" type="password" value="${settings.oasyfy_public_key || ''}" class="form-input w-full p-2 rounded-md">
                                     <label class="block mt-4 mb-2 text-sm text-gray-400">Chave Privada (secret-key)</label>
@@ -329,6 +355,9 @@
                     </form>
                 </div>`;
             },
+            // =========================================================================
+            // FIM DO TEMPLATE MODIFICADO
+            // =========================================================================
             integrations() {
                 const { settings } = App.state.data;
                 return `
@@ -395,8 +424,15 @@
                 if (e.target.id === 'closeModalBtn') document.getElementById('modal-container').innerHTML = '';
                 if (e.target.id === 'refreshDashboardBtn') this.fetchDashboardMetrics();
                 if (e.target.id === 'refreshTransactionsBtn') this.fetchTransactions();
-                if (e.target.id === 'testPixConnectionBtn') this.testPixConnection();
                 
+                // === INÍCIO DAS MODIFICAÇÕES NO LISTENER ===
+                const testButton = e.target.closest('.test-provider-btn');
+                if (testButton) {
+                    const provider = testButton.dataset.provider;
+                    this.testPixConnection(provider, testButton);
+                }
+                // === FIM DAS MODIFICAÇÕES NO LISTENER ===
+
                 const sidebarLink = e.target.closest('.nav-link');
                 if (sidebarLink) this.navigateTo(sidebarLink.dataset.target);
 
@@ -563,6 +599,8 @@
                 else if (page === 'transactions') this.fetchTransactions();
                 else if (page === 'settings') {
                     this.updateAllPixStatusIndicators();
+                    this.addDragAndDropListeners();
+                    this.updateProviderOrder();
                 }
                 document.querySelectorAll('.nav-link').forEach(item => { item.classList.toggle('active', item.dataset.target === page); });
             }
@@ -680,73 +718,129 @@
             const htmlContent = `...`; // Content is omitted for brevity but present in the full code
             const modalContent = `<p class="text-sm ...">${htmlContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>...</div>`;
             document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
-            // ... copy button event listener
         },
-        async testPixConnection() {
-            const btn = document.getElementById('testPixConnectionBtn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = 'Testando...';
-            btn.disabled = true;
-            this.updateAllPixStatusIndicators('testing');
+        
+        // =========================================================================
+        // INÍCIO DAS NOVAS FUNÇÕES JAVASCRIPT
+        // =========================================================================
+        
+        addDragAndDropListeners() {
+            const activeList = document.getElementById('active-providers-list');
+            const inactiveList = document.getElementById('inactive-providers-list');
+            let draggedItem = null;
+
+            document.querySelectorAll('.provider-item').forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    draggedItem = e.target;
+                    setTimeout(() => e.target.classList.add('dragging'), 0);
+                });
+                item.addEventListener('dragend', () => {
+                    draggedItem.classList.remove('dragging');
+                    draggedItem = null;
+                    this.updateProviderOrder();
+                    [activeList, inactiveList].forEach(list => {
+                        const placeholder = list.querySelector('p');
+                        if (placeholder && list.children.length > 1) placeholder.style.display = 'none';
+                        else if (placeholder) placeholder.style.display = 'block';
+                    });
+                });
+            });
+
+            [activeList, inactiveList].forEach(list => {
+                list.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const afterElement = [...list.querySelectorAll('.provider-item:not(.dragging)')].reduce((closest, child) => {
+                        const box = child.getBoundingClientRect();
+                        const offset = e.clientY - box.top - box.height / 2;
+                        if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+                        else return closest;
+                    }, { offset: Number.NEGATIVE_INFINITY }).element;
+                    
+                    if (afterElement == null) {
+                        list.appendChild(draggedItem);
+                    } else {
+                        list.insertBefore(draggedItem, afterElement);
+                    }
+                });
+            });
+        },
+
+        updateProviderOrder() {
+            const activeProviders = Array.from(document.querySelectorAll('#active-providers-list .provider-item'));
+            const order = activeProviders.map(item => item.dataset.providerId);
+            
+            document.getElementById('pix_provider_primary').value = order[0] || '';
+            document.getElementById('pix_provider_secondary').value = order[1] || '';
+            document.getElementById('pix_provider_tertiary').value = order[2] || '';
+        },
+        
+        async testPixConnection(provider, button) {
+            const originalText = button.innerHTML;
+            button.innerHTML = 'Testando...';
+            button.disabled = true;
+            this.updatePixStatusIndicator(provider, 'testing');
 
             const form = document.getElementById('pixSettingsForm');
-            const primaryProvider = new FormData(form).get('pix_provider_primary');
+            const formData = Object.fromEntries(new FormData(form).entries());
 
             try {
-                const result = await this.apiRequest('/api/pix/test-generate', 'POST');
-                const successfulProvider = result.provider.toLowerCase();
-                
-                ['pushinpay', 'cnpay', 'oasyfy'].forEach(p => {
-                    localStorage.removeItem(`pix_status_${p}`);
-                    localStorage.removeItem(`pix_timestamp_${p}`);
+                // Endpoint para teste individual. Adapte se necessário no seu backend.
+                const result = await this.apiRequest('/api/pix/test-provider', 'POST', { 
+                    provider: provider,
+                    credentials: formData 
                 });
-
-                localStorage.setItem(`pix_status_${successfulProvider}`, 'success');
-                localStorage.setItem(`pix_timestamp_${successfulProvider}`, Date.now());
                 
-                this.showToast(`Conexão com ${result.provider.toUpperCase()} bem-sucedida!`, 'success');
+                localStorage.setItem(`pix_status_${provider}`, 'success');
+                localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
+                this.showToast(`Conexão com ${provider.toUpperCase()} bem-sucedida!`, 'success');
 
             } catch (error) {
-                if (primaryProvider) {
-                    ['pushinpay', 'cnpay', 'oasyfy'].forEach(p => localStorage.removeItem(`pix_status_${p}`));
-                    localStorage.setItem(`pix_status_${primaryProvider}`, 'failure');
-                    localStorage.setItem(`pix_timestamp_${primaryProvider}`, Date.now());
-                }
-                const modalContent = `<div class="text-center"><p class="text-lg font-medium text-red-400 mb-2">Falha na Conexão</p><p class="text-sm text-gray-400">${error.message || 'Ocorreu um erro.'}</p></div>`;
-                document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste de Conexão', modalContent);
+                localStorage.setItem(`pix_status_${provider}`, 'failure');
+                localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
+                
+                const modalContent = `
+                    <div class="text-left">
+                        <p class="text-md text-gray-300 mb-4">O teste de conexão com <strong class="font-bold text-sky-400">${provider.toUpperCase()}</strong> falhou.</p>
+                        <p class="text-sm text-gray-400 mb-2">Log de Erro:</p>
+                        <pre class="bg-slate-900 p-3 rounded-md text-red-400 text-xs overflow-x-auto">${error.message || 'Ocorreu um erro desconhecido.'}</pre>
+                        <p class="text-xs text-gray-500 mt-4">Verifique se as credenciais inseridas estão corretas e tente novamente.</p>
+                    </div>`;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Falha no Teste de Conexão', modalContent);
+
             } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                this.updateAllPixStatusIndicators();
+                button.innerHTML = originalText;
+                button.disabled = false;
+                this.updatePixStatusIndicator(provider);
             }
         },
         
-        updateAllPixStatusIndicators(mode) {
-            const providers = ['pushinpay', 'cnpay', 'oasyfy'];
-            providers.forEach(provider => {
-                const indicator = document.getElementById(`status-indicator-${provider}`);
-                if (!indicator) return;
+        updateAllPixStatusIndicators() {
+            ['pushinpay', 'cnpay', 'oasyfy'].forEach(provider => this.updatePixStatusIndicator(provider));
+        },
 
-                if (mode === 'testing') {
-                    indicator.textContent = 'Testando...';
-                    indicator.className = 'status-indicator testing';
-                    return;
-                }
+        updatePixStatusIndicator(provider, mode) {
+            const indicator = document.getElementById(`status-indicator-${provider}`);
+            if (!indicator) return;
 
-                const status = localStorage.getItem(`pix_status_${provider}`);
-                const timestamp = localStorage.getItem(`pix_timestamp_${provider}`);
+            if (mode === 'testing') {
+                indicator.textContent = 'Testando...';
+                indicator.className = 'status-indicator testing';
+                return;
+            }
+            
+            const status = localStorage.getItem(`pix_status_${provider}`);
+            const timestamp = localStorage.getItem(`pix_timestamp_${provider}`);
 
-                if (status === 'success' && timestamp) {
-                    indicator.textContent = `Ativo (Testado ${this.formatTimeAgo(timestamp)})`;
-                    indicator.className = 'status-indicator success';
-                } else if (status === 'failure' && timestamp) {
-                    indicator.textContent = `Falhou (Testado ${this.formatTimeAgo(timestamp)})`;
-                    indicator.className = 'status-indicator failure';
-                } else {
-                    indicator.textContent = 'Não testado';
-                    indicator.className = 'status-indicator unknown';
-                }
-            });
+            if (status === 'success' && timestamp) {
+                indicator.textContent = `Ativo`;
+                indicator.className = 'status-indicator success';
+            } else if (status === 'failure' && timestamp) {
+                indicator.textContent = `Falhou`;
+                indicator.className = 'status-indicator failure';
+            } else {
+                indicator.textContent = 'Não testado';
+                indicator.className = 'status-indicator unknown';
+            }
         },
 
         formatTimeAgo(timestamp) {
