@@ -511,8 +511,15 @@
                             const payload = { ...data, pixel_ids };
                             const newPressel = await this.apiRequest('/api/pressels', 'POST', payload);
                             if (newPressel) {
+                                // Add to state and re-render list manually to avoid full navigation
                                 this.state.data.pressels.unshift(newPressel);
-                                this.navigateTo('pressels');
+                                const presselListContainer = document.getElementById('pressel-list');
+                                if (presselListContainer) {
+                                    const presselList = this.state.data.pressels.map(pr => `<div class="p-3 card flex justify-between items-center text-sm"><div><p class="font-semibold">${pr.name}</p><p class="text-xs text-gray-400">Bot: ${pr.bot_name}</p></div><div class="space-x-2"><button data-id="${pr.id}" class="generate-code-btn btn text-xs py-1 px-2">Ver Código</button><button data-id="${pr.id}" class="delete-pressel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
+                                    presselListContainer.innerHTML = presselList.length ? presselList : '<p class="text-gray-500 text-sm">Nenhuma pressel criada.</p>';
+                                }
+                                form.reset(); // Clear the form
+                                // Now, generate and show the code
                                 this.generatePresselCode(newPressel);
                             }
                         }
@@ -690,15 +697,80 @@
                 this.showToast('Filtro visual. Métricas não são afetadas sem alteração na API.', 'info');
             }
         },
+        
         generatePresselCode(pressel) {
-            const { pixels, bots, settings } = this.state.data;
+            const { bots, settings } = this.state.data;
             const bot = bots.find(b => b.id === pressel.bot_id);
-            const presselPixels = pressel.pixel_ids.map(pid => pixels.find(p => p.id === pid)).filter(Boolean).map(p => ({ id: p.pixel_id }));
-            const htmlContent = `...`; // Content is omitted for brevity but present in the full code
-            const modalContent = `<p class="text-sm ...">${htmlContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>...</div>`;
+            const botLink = `https://t.me/${bot.bot_name}?start=`;
+            const sellerApiKey = settings.api_key;
+            const apiBaseUrl = this.state.API_BASE_URL;
+
+            const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecionando...</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+    </script>
+    </head>
+<body>
+    <p>Aguarde um instante, estamos te redirecionando...</p>
+    <script>
+        const config = {
+            API_BASE_URL: '${apiBaseUrl}',
+            sellerApiKey: '${sellerApiKey}',
+            presselId: ${pressel.id},
+            whitePageUrl: '${pressel.white_page_url}',
+            botLink: '${botLink}'
+        };
+
+        async function registerClickAndRedirect() {
+            try {
+                const response = await fetch(config.API_BASE_URL + '/api/registerClick', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sellerApiKey: config.sellerApiKey,
+                        presselId: config.presselId,
+                        referer: document.referrer,
+                        user_agent: navigator.userAgent,
+                        fbclid: new URLSearchParams(window.location.search).get('fbclid'),
+                        fbp: document.cookie.split('; ').find(row => row.startsWith('_fbp='))?.split('=')[1],
+                        fbc: document.cookie.split('; ').find(row => row.startsWith('_fbc='))?.split('=')[1]
+                    })
+                });
+                if (!response.ok) throw new Error('Failed to register click');
+                const data = await response.json();
+                window.location.href = config.botLink + data.click_id;
+            } catch (error) {
+                console.error('Redirect Error:', error);
+                window.location.href = config.whitePageUrl;
+            }
+        }
+        
+        registerClickAndRedirect();
+    </script>
+</body>
+</html>`;
+
+            const modalContent = `
+                <p class="text-sm text-gray-400 mb-4">Copie e cole este código no HTML da sua página.</p>
+                <textarea id="pressel-code-textarea" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="12" readonly>${htmlContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
+                <button class="copy-btn btn w-full mt-4 py-2" data-target="#pressel-code-textarea">Copiar Código</button>
+            `;
             document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
-            // ... copy button event listener
         },
+
         async testPixConnection() {
             const btn = document.getElementById('testPixConnectionBtn');
             const originalText = btn.innerHTML;
