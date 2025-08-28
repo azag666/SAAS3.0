@@ -688,7 +688,7 @@
                             const checkout = this.state.data.checkouts.find(c => c.name.toLowerCase() === checkoutName.toLowerCase());
                             if(checkout) {
                                 // Lembre-se de substituir 'SEU_DOMINIO_DE_CHECKOUT' pelo domínio real onde os checkouts serão hospedados
-                                let checkoutUrl = `https://SEU_DOMINIO_DE_CHECKOUT/checkout.html?checkoutId=${checkout.id}&apiKey=${this.state.data.settings.api_key}`;
+                                let checkoutUrl = `https://seusite.com/checkout.html?checkoutId=${checkout.id}&apiKey=${this.state.data.settings.api_key}`;
                                 if(checkout.value_type === 'fixed') {
                                     checkoutUrl += `&value=${checkout.fixed_value_cents}`;
                                 }
@@ -768,7 +768,6 @@
 
         logout() {
             localStorage.removeItem('hottrack_token');
-            // Força um recarregamento limpo para a página de login
             window.location.href = window.location.pathname;
         },
 
