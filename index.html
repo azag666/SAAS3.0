@@ -681,7 +681,7 @@
                     else if (form.id === 'broadcastForm') {
                         const botId = data.botId;
                         let messageText = data.messageText;
-                        const checkoutShortcodes = messageText.match(/\\[([a-zA-Z0-9_-]+)\\]/g) || [];
+                        const checkoutShortcodes = messageText.match(/\[([a-zA-Z0-9_-]+)\]/g) || [];
                         
                         for(const shortcode of checkoutShortcodes) {
                             const checkoutName = shortcode.slice(1, -1);
@@ -692,6 +692,9 @@
                                     checkoutUrl += `&value=${checkout.fixed_value_cents}`;
                                 }
                                 messageText = messageText.replace(shortcode, `[${checkout.product_name}](${checkoutUrl})`);
+                            } else {
+                                this.showToast(`Checkout com o nome "${checkoutName}" não encontrado.`, 'error');
+                                throw new Error("Checkout not found");
                             }
                         }
 
@@ -699,7 +702,7 @@
                         await this.apiRequest('/api/broadcasts', 'POST', payload);
                         await this.loadBroadcastHistory(botId);
                     }
-                } catch(e) { /* Errors are handled by apiRequest */ }
+                } catch(e) { /* Errors are handled by apiRequest or custom logic */ }
                 finally {
                     if(button) {
                         button.innerHTML = originalButtonText;
