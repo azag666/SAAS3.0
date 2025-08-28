@@ -224,7 +224,17 @@
                 </div>`;
             },
             bots() {
-                 const botListHTML = App.state.data.bots.map(b => `<div class="p-3 bg-slate-900/50 rounded flex justify-between items-center"><span class="text-sm font-medium">${b.bot_name}</span><div class="space-x-2"><button data-id="${b.id}" class="delete-bot-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
+                 const botListHTML = App.state.data.bots.map(b => `
+                    <div class="p-3 bg-slate-900/50 rounded flex justify-between items-center">
+                        <div>
+                            <span class="text-sm font-medium">${b.bot_name}</span>
+                            <span id="status-indicator-bot-${b.id}"></span>
+                        </div>
+                        <div class="space-x-2">
+                            <button data-id="${b.id}" class="test-bot-btn btn-green text-xs py-1 px-2">Testar</button>
+                            <button data-id="${b.id}" class="delete-bot-btn btn btn-red text-xs py-1 px-2">Excluir</button>
+                        </div>
+                    </div>`).join('');
                 return `
                 <div class="animate-fade-in">
                     <h1 class="text-3xl font-bold text-white mb-6">Gerenciar Bots</h1>
@@ -427,6 +437,11 @@
                     const pressel = this.state.data.pressels.find(p => p.id == presselId);
                     if (pressel) this.generatePresselCode(pressel);
                 }
+                
+                if (e.target.classList.contains('test-bot-btn')) {
+                    const botId = e.target.dataset.id;
+                    this.testBotConnection(botId, e.target);
+                }
 
                 if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-bot-btn') || e.target.classList.contains('delete-pressel-btn')) {
                     const id = e.target.dataset.id;
@@ -563,6 +578,8 @@
                 else if (page === 'transactions') this.fetchTransactions();
                 else if (page === 'settings') {
                     this.updateAllPixStatusIndicators();
+                } else if (page === 'bots') {
+                    this.updateAllBotStatusIndicators();
                 }
                 document.querySelectorAll('.nav-link').forEach(item => { item.classList.toggle('active', item.dataset.target === page); });
             }
@@ -721,6 +738,60 @@
             }
         },
         
+        async testBotConnection(botId, button) {
+            const originalText = button.innerHTML;
+            button.innerHTML = '...';
+            button.disabled = true;
+            this.updateBotStatusIndicator(botId, 'testing');
+
+            try {
+                const result = await this.apiRequest('/api/bots/test-connection', 'POST', { bot_id: botId });
+                localStorage.setItem(`bot_status_${botId}`, 'success');
+                localStorage.setItem(`bot_timestamp_${botId}`, Date.now());
+                this.showToast(result.message, 'success');
+            } catch (error) {
+                localStorage.setItem(`bot_status_${botId}`, 'failure');
+                localStorage.setItem(`bot_timestamp_${botId}`, Date.now());
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+                this.updateBotStatusIndicator(botId);
+            }
+        },
+
+        updateAllBotStatusIndicators() {
+            if (this.state.data.bots && this.state.data.bots.length > 0) {
+                this.state.data.bots.forEach(bot => {
+                    this.updateBotStatusIndicator(bot.id);
+                });
+            }
+        },
+        
+        updateBotStatusIndicator(botId, mode) {
+            const indicator = document.getElementById(`status-indicator-bot-${botId}`);
+            if (!indicator) return;
+
+            if (mode === 'testing') {
+                indicator.textContent = 'Testando...';
+                indicator.className = 'status-indicator testing';
+                return;
+            }
+
+            const status = localStorage.getItem(`bot_status_${botId}`);
+            const timestamp = localStorage.getItem(`bot_timestamp_${botId}`);
+
+            if (status === 'success' && timestamp) {
+                indicator.textContent = `Online (${this.formatTimeAgo(timestamp)})`;
+                indicator.className = 'status-indicator success';
+            } else if (status === 'failure' && timestamp) {
+                indicator.textContent = `Offline (${this.formatTimeAgo(timestamp)})`;
+                indicator.className = 'status-indicator failure';
+            } else {
+                indicator.textContent = 'Não testado';
+                indicator.className = 'status-indicator unknown';
+            }
+        },
+
         updateAllPixStatusIndicators(mode) {
             const providers = ['pushinpay', 'cnpay', 'oasyfy'];
             providers.forEach(provider => {
