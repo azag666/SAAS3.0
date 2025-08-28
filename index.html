@@ -317,6 +317,9 @@
                                         ${createSelect('pix_provider_tertiary', settings.pix_provider_tertiary)}
                                     </div>
                                 </div>
+                                <div class="mt-6 pt-6 border-t border-slate-700">
+                                     <button type="button" id="testPriorityRouteBtn" class="btn btn-green w-full md:w-auto">Testar Rota de Prioridade</button>
+                                </div>
                             </div>
                         </div>
 
@@ -474,6 +477,10 @@
                     const provider = e.target.dataset.provider;
                     this.testIndividualPixConnection(provider, e.target);
                 }
+                
+                if (e.target.id === 'testPriorityRouteBtn') {
+                    this.testPriorityRoute(e.target);
+                }
 
                 const tabButton = e.target.closest('.tab-button');
                 if (tabButton) {
@@ -582,11 +589,11 @@
                 const response = await fetch(`${this.state.API_BASE_URL}${endpoint}`, options);
                 if (response.status === 204) return null;
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.message || 'Erro na requisição');
+                if (!response.ok) throw data; // Throw the whole data object on error
                 return data;
             } catch (error) {
                 this.showToast(error.message || 'Falha na conexão', 'error');
-                if (error.message.includes('inválido') || error.message.includes('expirado')) this.logout();
+                if (error.message && (error.message.includes('inválido') || error.message.includes('expirado'))) this.logout();
                 throw error;
             }
         },
@@ -816,7 +823,6 @@
             button.disabled = true;
             this.updatePixStatusIndicator(provider, 'testing');
             
-            // É importante salvar antes de testar para garantir que as credenciais mais recentes sejam usadas
             const form = document.getElementById('pixSettingsForm');
             const formData = Object.fromEntries(new FormData(form).entries());
             try {
@@ -842,7 +848,7 @@
                         <div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Tempo de Resposta:</span> <span class="text-white">${result.responseTime}s</span></div>
                         <hr class="border-slate-700">
                         <div>
-                            <p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 0,50):</p>
+                            <p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 0,05):</p>
                             <textarea id="pix-test-key" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="4" readonly>${result.qr_code_text}</textarea>
                             <button class="copy-btn btn w-full mt-2 py-2 text-sm" data-target="#pix-test-key">Copiar Chave PIX</button>
                         </div>
@@ -862,6 +868,69 @@
             }
         },
         
+        async testPriorityRoute(button) {
+            const originalText = button.innerHTML;
+            button.innerHTML = 'Testando Rota...';
+            button.disabled = true;
+
+            const form = document.getElementById('pixSettingsForm');
+            const formData = Object.fromEntries(new FormData(form).entries());
+            try {
+                await this.apiRequest('/api/settings/pix', 'POST', formData);
+                App.state.data.settings = { ...App.state.data.settings, ...formData };
+            } catch (e) {
+                this.showToast('Erro ao salvar as configurações antes do teste.', 'error');
+                button.innerHTML = originalText;
+                button.disabled = false;
+                return;
+            }
+
+            try {
+                const result = await this.apiRequest('/api/pix/test-priority-route', 'POST');
+                const logHTML = result.log.map(line => {
+                    const color = line.startsWith('SUCESSO') ? 'text-green-400' : 'text-red-400';
+                    return `<li class="${color}">${line}</li>`;
+                }).join('');
+
+                const successModalContent = `
+                    <div class="space-y-4 text-sm">
+                        <div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Provedor de Sucesso:</span> <span class="text-white">${result.provider} (${result.position})</span></div>
+                        <div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Tempo de Resposta:</span> <span class="text-white">${result.responseTime}s</span></div>
+                        <hr class="border-slate-700">
+                        <div>
+                            <p class="font-semibold text-gray-400 mb-2">Log de Tentativas:</p>
+                            <ul class="text-xs font-mono list-disc list-inside space-y-1">${logHTML}</ul>
+                        </div>
+                        <hr class="border-slate-700">
+                        <div>
+                            <p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 0,05):</p>
+                            <textarea id="pix-test-key" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="3" readonly>${result.qr_code_text}</textarea>
+                            <button class="copy-btn btn w-full mt-2 py-2 text-sm" data-target="#pix-test-key">Copiar Chave PIX</button>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Teste da Rota Concluído!', successModalContent);
+
+            } catch (error) {
+                const logHTML = error.log ? error.log.map(line => `<li class="text-red-400">${line}</li>`).join('') : '<li>Nenhum log disponível.</li>';
+                const errorModalContent = `
+                    <div class="space-y-4 text-sm">
+                         <p class="text-lg font-medium text-red-400 text-center mb-2">Falha na Rota de Prioridade</p>
+                         <p class="text-gray-400 text-center">${error.message}</p>
+                         <hr class="border-slate-700">
+                         <div>
+                            <p class="font-semibold text-gray-400 mb-2">Log de Tentativas:</p>
+                            <ul class="text-xs font-mono list-disc list-inside space-y-1">${logHTML}</ul>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste', errorModalContent);
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        },
+
         async testBotConnection(botId, button) {
             const originalText = button.innerHTML;
             button.innerHTML = '...';
