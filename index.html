@@ -108,13 +108,16 @@
             this.state.token = localStorage.getItem('hottrack_token');
             const appContainer = document.getElementById('app');
             appContainer.innerHTML = `<div class="flex h-screen items-center justify-center"><p>Carregando...</p></div>`;
-            if (this.state.token && this.state.token !== 'undefined') {
+
+            if (this.state.token && this.state.token !== 'undefined' && this.state.token !== null) {
                 try {
                     const staticData = await this.apiRequest('/api/dashboard/data');
                     this.state.data = { ...this.state.data, ...staticData };
                     this.renderLayout();
                     this.navigateTo('dashboard');
-                } catch (e) { this.logout(); }
+                } catch (e) { 
+                    this.logout(); 
+                }
             } else {
                 this.renderLogin();
             }
@@ -687,8 +690,7 @@
                             const checkoutName = shortcode.slice(1, -1);
                             const checkout = this.state.data.checkouts.find(c => c.name.toLowerCase() === checkoutName.toLowerCase());
                             if(checkout) {
-                                // Lembre-se de substituir 'SEU_DOMINIO_DE_CHECKOUT' pelo domínio real onde os checkouts serão hospedados
-                                let checkoutUrl = `https://seusite.com/checkout.html?checkoutId=${checkout.id}&apiKey=${this.state.data.settings.api_key}`;
+                                let checkoutUrl = `https://hottracker.netlify.app/checkout.html?checkoutId=${checkout.id}&apiKey=${this.state.data.settings.api_key}`;
                                 if(checkout.value_type === 'fixed') {
                                     checkoutUrl += `&value=${checkout.fixed_value_cents}`;
                                 }
@@ -749,7 +751,7 @@
                 const data = await this.apiRequest('/api/sellers/login', 'POST', { email, password });
                 if (data && data.token) {
                     localStorage.setItem('hottrack_token', data.token);
-                    window.location.href = window.location.pathname;
+                    window.location.reload();
                 } else {
                     this.showToast('Resposta de login inválida recebida do servidor.', 'error');
                 }
@@ -768,7 +770,7 @@
 
         logout() {
             localStorage.removeItem('hottrack_token');
-            window.location.href = window.location.pathname;
+            window.location.reload();
         },
 
         navigateTo(page) {
