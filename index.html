@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HotTrack SAAS</title>
 
+    <meta name="google-site-verification" content="1c25uoh17TujBN13F7rzI7Z1KtmUiZRv4SduV-7Odlo" />
+
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#020617"/>
 
@@ -86,7 +88,7 @@
             data: { 
                 pixels: [], 
                 bots: [], 
-                campaignPages: [], // <-- ALTERADO: de 'pressels' para 'campaignPages'
+                campaignPages: [],
                 checkouts: [],
                 settings: {}, 
                 transactions: [],
@@ -112,7 +114,6 @@
             if (this.state.token && this.state.token !== 'undefined' && this.state.token !== null) {
                 try {
                     const staticData = await this.apiRequest('/api/dashboard/data');
-                    // Manter a compatibilidade com a API, mas usar o novo nome no frontend
                     staticData.campaignPages = staticData.pressels || [];
                     delete staticData.pressels;
                     this.state.data = { ...this.state.data, ...staticData };
@@ -275,7 +276,6 @@
                     </div>
                 </div>`;
             },
-            // <-- INÍCIO DA SEÇÃO MODIFICADA -->
             campaignPages() {
                 const { pixels, bots, campaignPages } = App.state.data;
                 const botOptions = bots.map(b => `<option value="${b.id}">${b.bot_name}</option>`).join('');
@@ -302,7 +302,6 @@
                     </div>
                 </div>`;
             },
-            // <-- FIM DA SEÇÃO MODIFICADA -->
             checkouts() {
                 const { pixels, checkouts } = App.state.data;
                 const pixelCheckboxes = pixels.map(p => `<label class="flex items-center space-x-2 text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" name="pixel_ids" value="${p.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500"><span>${p.account_name}</span></label>`).join('');
@@ -572,7 +571,6 @@
                         : `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
                 }
 
-                // <-- ALTERADO: de 'pressel' para 'campaign' -->
                 if (e.target.classList.contains('generate-campaign-code-btn')) {
                     const campaignId = e.target.dataset.id;
                     const campaignPage = this.state.data.campaignPages.find(p => p.id == campaignId);
@@ -607,13 +605,12 @@
                     document.getElementById(`tab-${tabName}`).classList.add('active');
                 }
 
-                // <-- ALTERADO: de 'pressel' para 'campaign' -->
                 if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-bot-btn') || e.target.classList.contains('delete-campaign-btn') || e.target.classList.contains('delete-checkout-btn')) {
                     const id = e.target.dataset.id;
                     let type = '', endpoint = '';
                     if (e.target.classList.contains('delete-pixel-btn')) { type = 'pixels'; endpoint = 'pixels'; }
                     if (e.target.classList.contains('delete-bot-btn')) { type = 'bots'; endpoint = 'bots'; }
-                    if (e.target.classList.contains('delete-campaign-btn')) { type = 'campaignPages'; endpoint = 'pressels'; } // A API ainda usa 'pressels'
+                    if (e.target.classList.contains('delete-campaign-btn')) { type = 'campaignPages'; endpoint = 'pressels'; }
                     if (e.target.classList.contains('delete-checkout-btn')) { type = 'checkouts'; endpoint = 'checkouts'; }
 
                     if (confirm(`Tem certeza que deseja excluir este item?`)) {
@@ -669,17 +666,15 @@
                         const newBot = await this.apiRequest('/api/bots', 'POST', data);
                         if (newBot) { this.state.data.bots.unshift(newBot); this.navigateTo('bots'); }
                     }
-                    // <-- ALTERADO: de 'pressel' para 'campaignPage' -->
                     else if (form.id === 'campaignPageForm') {
                         const pixel_ids = Array.from(form.querySelectorAll('input[name="pixel_ids"]:checked')).map(cb => cb.value);
                         if (pixel_ids.length === 0) {
                              this.showToast('Selecione ao menos um pixel.', 'error');
                         } else {
-                            // Renomeia fallback_url para white_page_url para manter compatibilidade com a API
                             const payload = { ...data, pixel_ids, white_page_url: data.fallback_url };
                             delete payload.fallback_url;
                             
-                            const newCampaignPage = await this.apiRequest('/api/pressels', 'POST', payload); // A API ainda usa '/api/pressels'
+                            const newCampaignPage = await this.apiRequest('/api/pressels', 'POST', payload);
                             if (newCampaignPage) {
                                 this.state.data.campaignPages.unshift(newCampaignPage);
                                 this.navigateTo('campaignPages');
@@ -811,7 +806,6 @@
         },
 
         navigateTo(page) {
-            // Renomeei 'pressels' para 'campaignPages' para consistência
             if (page === 'pressels') page = 'campaignPages';
 
             this.state.currentPage = page;
@@ -970,14 +964,12 @@
             });
         },
         
-        // <-- FUNÇÃO MODIFICADA E RENOMEADA -->
         generateCampaignCode(campaignPage) {
             const { settings } = this.state.data;
-            const fallbackUrl = campaignPage.white_page_url; // API ainda usa 'white_page_url'
+            const fallbackUrl = campaignPage.white_page_url;
             const sellerApiKey = settings.api_key;
             const apiBaseUrl = this.state.API_BASE_URL;
 
-            // Este é o código que será colado na página do usuário. Ele é mais limpo e transparente.
             const htmlContent = `<!DOCTYPE html><html><head><title>Redirecionando...</title><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('track', 'PageView');fbq('track', 'ViewContent');<\/script></head><body><p>Aguarde um instante...</p><script>
 const config = { 
     API_BASE_URL: '${apiBaseUrl}', 
@@ -990,7 +982,7 @@ async function trackAndRedirect() {
         const urlParams = new URLSearchParams(window.location.search); 
         const bodyPayload = { 
             sellerApiKey: config.sellerApiKey, 
-            presselId: config.campaignId, // O endpoint da API ainda espera 'presselId'
+            presselId: config.campaignId,
             referer: document.referrer, 
             user_agent: navigator.userAgent, 
             fbclid: urlParams.get('fbclid'), 
@@ -1013,7 +1005,6 @@ async function trackAndRedirect() {
         if (!response.ok) throw new Error('API request failed'); 
         
         const data = await response.json(); 
-        // A API deve retornar a URL final no campo 'redirect_url'. Se não, usa o fallback.
         window.location.href = data.redirect_url || config.fallbackUrl; 
     } catch (error) { 
         console.error('Redirect Error:', error); 
