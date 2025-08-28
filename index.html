@@ -160,6 +160,10 @@
                 </div>`;
             },
             layout() {
+                const recuperadorLink = this.state.data.settings.has_recuperador_access 
+                    ? `<div data-target="recuperador" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>Recuperador</div>` 
+                    : '';
+
                 return `
                 <div class="flex h-screen">
                     <aside class="w-64 card p-4 flex flex-col">
@@ -169,6 +173,7 @@
                         </div>
                         <nav id="sidebarNav" class="flex flex-col space-y-2">
                             <div data-target="dashboard" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10v11h18V10M3 10l9-7 9 7M3 10h18" /></svg>Dashboard</div>
+                            ${recuperadorLink}
                             <div data-target="checkouts" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h6m3-3.75l-3 3m0 0l-3-3m3 3V15m6 1.125c1.02.392 2.132.526 3.25.526a9.75 9.75 0 000-19.5 9.75 9.75 0 00-3.25.526" /></svg>Criador de Checkout</div>
                             <div data-target="pressels" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>Criador de Pressel</div>
                             <div data-target="pixels" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 12l4.179 2.25M6.429 9.75l5.571 3 5.571-3m0 0l4.179-2.25L12 5.25 7.821 7.5" /></svg>Gerenciar Pixels</div>
@@ -327,6 +332,34 @@
                         <div class="card p-6 rounded-lg">
                             <h2 class="text-xl font-bold mb-4 text-white">Checkouts Criados</h2>
                             <div id="checkout-list" class="space-y-3">${checkoutList.length ? checkoutList : '<p class="text-gray-500 text-sm">Nenhum checkout criado.</p>'}</div>
+                        </div>
+                    </div>
+                </div>`;
+            },
+            recuperador() {
+                const { bots } = App.state.data;
+                const botOptions = bots.map(b => `<option value="${b.id}">${b.bot_name}</option>`).join('');
+
+                return `
+                <div class="animate-fade-in">
+                    <h1 class="text-3xl font-bold text-white mb-6">Recuperador de Leads</h1>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="card p-6 rounded-lg">
+                            <h2 class="text-xl font-bold mb-4 text-white">Nova Campanha de Recuperação</h2>
+                            <form id="broadcastForm" class="space-y-4">
+                                <select name="botId" id="broadcast-bot-selector" class="form-select w-full p-2 rounded-md" required>
+                                    <option value="">Selecione o Bot Abandonado</option>
+                                    ${botOptions}
+                                </select>
+                                <textarea name="messageText" class="form-input w-full p-2 rounded-md" rows="8" placeholder="Escreva sua mensagem de reengajamento aqui...&#10;Dica: Use [NomeDoCheckout] para inserir um link de checkout.&#10;Ex: [OfertaEspecial]" required></textarea>
+                                <button type="submit" class="btn w-full p-3 font-bold">Disparar Campanha</button>
+                            </form>
+                        </div>
+                        <div class="card p-6 rounded-lg">
+                            <h2 class="text-xl font-bold mb-4 text-white">Histórico de Campanhas</h2>
+                            <div id="broadcast-history" class="space-y-3 overflow-y-auto max-h-96">
+                                <p class="text-gray-500 text-sm">Selecione um bot para ver o histórico.</p>
+                            </div>
                         </div>
                     </div>
                 </div>`;
@@ -645,6 +678,27 @@
                             }
                         }
                     }
+                    else if (form.id === 'broadcastForm') {
+                        const botId = data.botId;
+                        let messageText = data.messageText;
+                        const checkoutShortcodes = messageText.match(/\\[([a-zA-Z0-9_-]+)\\]/g) || [];
+                        
+                        for(const shortcode of checkoutShortcodes) {
+                            const checkoutName = shortcode.slice(1, -1);
+                            const checkout = this.state.data.checkouts.find(c => c.name.toLowerCase() === checkoutName.toLowerCase());
+                            if(checkout) {
+                                let checkoutUrl = `https://SEU_DOMINIO_DE_CHECKOUT/checkout.html?checkoutId=${checkout.id}&apiKey=${this.state.data.settings.api_key}`;
+                                if(checkout.value_type === 'fixed') {
+                                    checkoutUrl += `&value=${checkout.fixed_value_cents}`;
+                                }
+                                messageText = messageText.replace(shortcode, `[${checkout.product_name}](${checkoutUrl})`);
+                            }
+                        }
+
+                        const payload = { botId, messageText };
+                        await this.apiRequest('/api/broadcasts', 'POST', payload);
+                        await this.loadBroadcastHistory(botId);
+                    }
                 } catch(e) { /* Errors are handled by apiRequest */ }
                 finally {
                     if(button) {
@@ -654,12 +708,16 @@
                 }
             });
             
-            document.addEventListener('change', e => {
+            document.addEventListener('change', async e => {
                 if (e.target.id === 'value-type-selector') {
                     const container = document.getElementById('fixed-value-container');
                     if (container) {
                         container.style.display = e.target.value === 'fixed' ? 'block' : 'none';
                     }
+                }
+                if (e.target.id === 'broadcast-bot-selector') {
+                    const botId = e.target.value;
+                    if (botId) await App.loadBroadcastHistory(botId);
                 }
             });
         },
@@ -1099,6 +1157,31 @@
                 toast.style.opacity = '0';
                 toast.addEventListener('transitionend', () => toast.remove());
             }, 5000);
+        },
+        
+        async loadBroadcastHistory(botId) {
+            const historyEl = document.getElementById('broadcast-history');
+            historyEl.innerHTML = '<p class="text-sm text-gray-400">Carregando histórico...</p>';
+            try {
+                const history = await this.apiRequest(`/api/broadcasts/${botId}`);
+                if (history.length === 0) {
+                    historyEl.innerHTML = '<p class="text-sm text-gray-500">Nenhuma campanha enviada para este bot.</p>';
+                    return;
+                }
+                historyEl.innerHTML = history.map(item => `
+                    <div class="p-3 bg-slate-900/50 rounded">
+                        <p class="text-sm text-gray-300 truncate">${item.message_text}</p>
+                        <div class="text-xs text-gray-500 mt-2 flex justify-between">
+                            <span>${new Date(item.created_at).toLocaleString('pt-BR')}</span>
+                            <span class="font-semibold ${item.status === 'completed' ? 'text-green-400' : 'text-yellow-400'}">
+                                ${item.status}: ${item.sent_count}/${item.total_recipients} enviados | ${item.recovered_leads} recuperados
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                historyEl.innerHTML = '<p class="text-sm text-red-400">Erro ao carregar histórico.</p>';
+            }
         }
     };
 
