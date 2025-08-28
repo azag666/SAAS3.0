@@ -686,18 +686,20 @@
                         let messageText = data.messageText;
                         const checkoutShortcodes = messageText.match(/\[([a-zA-Z0-9_-]+)\]/g) || [];
                         
-                        for(const shortcode of checkoutShortcodes) {
-                            const checkoutName = shortcode.slice(1, -1);
-                            const checkout = this.state.data.checkouts.find(c => c.name.toLowerCase() === checkoutName.toLowerCase());
-                            if(checkout) {
-                                let checkoutUrl = `https://hottracker.netlify.app/checkout.html?checkoutId=${checkout.id}&apiKey=${this.state.data.settings.api_key}`;
-                                if(checkout.value_type === 'fixed') {
-                                    checkoutUrl += `&value=${checkout.fixed_value_cents}`;
+                        if(checkoutShortcodes) {
+                            for(const shortcode of checkoutShortcodes) {
+                                const checkoutName = shortcode.slice(1, -1);
+                                const checkout = this.state.data.checkouts.find(c => c.name.toLowerCase() === checkoutName.toLowerCase());
+                                if(checkout) {
+                                    let checkoutUrl = `https://SEU_DOMINIO_DE_CHECKOUT/checkout.html?checkoutId=${checkout.id}&apiKey=${this.state.data.settings.api_key}`;
+                                    if(checkout.value_type === 'fixed') {
+                                        checkoutUrl += `&value=${checkout.fixed_value_cents}`;
+                                    }
+                                    messageText = messageText.replace(shortcode, `[${checkout.product_name}](${checkoutUrl})`);
+                                } else {
+                                    this.showToast(`Checkout com o nome "${checkoutName}" não encontrado.`, 'error');
+                                    throw new Error("Checkout not found");
                                 }
-                                messageText = messageText.replace(shortcode, `[${checkout.product_name}](${checkoutUrl})`);
-                            } else {
-                                this.showToast(`Checkout com o nome "${checkoutName}" não encontrado.`, 'error');
-                                throw new Error("Checkout not found");
                             }
                         }
 
@@ -731,17 +733,37 @@
         async apiRequest(endpoint, method = 'GET', body = null) {
             try {
                 const headers = { 'Content-Type': 'application/json' };
-                if (this.state.token) { headers['Authorization'] = `Bearer ${this.state.token}`; }
+                if (this.state.token) {
+                    headers['Authorization'] = `Bearer ${this.state.token}`;
+                }
                 const options = { method, headers };
-                if (body) { options.body = JSON.stringify(body); }
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+        
                 const response = await fetch(`${this.state.API_BASE_URL}${endpoint}`, options);
-                if (response.status === 204) return null;
+        
+                if (response.status === 304) {
+                    return {}; 
+                }
+                if (response.status === 204) {
+                    return null;
+                }
+        
                 const data = await response.json();
-                if (!response.ok) throw data;
+        
+                if (!response.ok) {
+                    throw data;
+                }
                 return data;
             } catch (error) {
-                this.showToast(error.message || 'Falha na conexão', 'error');
-                if (error.message && (error.message.includes('inválido') || error.message.includes('expirado'))) this.logout();
+                // Se o erro for de JSON parsing (ex: resposta 304 vazia), não mostre o toast genérico.
+                if (!(error instanceof SyntaxError)) {
+                    this.showToast(error.message || 'Falha na conexão', 'error');
+                }
+                if (error.message && (error.message.includes('inválido') || error.message.includes('expirado'))) {
+                    this.logout();
+                }
                 throw error;
             }
         },
@@ -751,7 +773,7 @@
                 const data = await this.apiRequest('/api/sellers/login', 'POST', { email, password });
                 if (data && data.token) {
                     localStorage.setItem('hottrack_token', data.token);
-                    window.location.reload();
+                    await this.init();
                 } else {
                     this.showToast('Resposta de login inválida recebida do servidor.', 'error');
                 }
