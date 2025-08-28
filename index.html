@@ -86,7 +86,7 @@
             data: { 
                 pixels: [], 
                 bots: [], 
-                pressels: [], 
+                campaignPages: [], // <-- ALTERADO: de 'pressels' para 'campaignPages'
                 checkouts: [],
                 settings: {}, 
                 transactions: [],
@@ -112,6 +112,9 @@
             if (this.state.token && this.state.token !== 'undefined' && this.state.token !== null) {
                 try {
                     const staticData = await this.apiRequest('/api/dashboard/data');
+                    // Manter a compatibilidade com a API, mas usar o novo nome no frontend
+                    staticData.campaignPages = staticData.pressels || [];
+                    delete staticData.pressels;
                     this.state.data = { ...this.state.data, ...staticData };
                     this.renderLayout();
                     this.navigateTo('dashboard');
@@ -178,7 +181,7 @@
                             <div data-target="dashboard" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10v11h18V10M3 10l9-7 9 7M3 10h18" /></svg>Dashboard</div>
                             ${recuperadorLink}
                             <div data-target="checkouts" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h6m3-3.75l-3 3m0 0l-3-3m3 3V15m6 1.125c1.02.392 2.132.526 3.25.526a9.75 9.75 0 000-19.5 9.75 9.75 0 00-3.25.526" /></svg>Criador de Checkout</div>
-                            <div data-target="pressels" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>Criador de Pressel</div>
+                            <div data-target="campaignPages" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>Páginas de Campanha</div>
                             <div data-target="pixels" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 12l4.179 2.25M6.429 9.75l5.571 3 5.571-3m0 0l4.179-2.25L12 5.25 7.821 7.5" /></svg>Gerenciar Pixels</div>
                             <div data-target="bots" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Gerenciar Bots</div>
                             <div data-target="transactions" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.01 60.01 0 0110.875-3.004m-.89 6.002c-.087-.665-.544-1.284-1.2-1.76l-.427-.36a4.5 4.5 0 01-1.272-3.138v-.686m12.446 3.004c-.66.087-1.284.544-1.76 1.2l-.36.427a4.5 4.5 0 01-3.138 1.272h-.686m0-15.558a.75.75 0 00-.75-.75H12a.75.75 0 00-.75.75v.686a4.5 4.5 0 01-1.272 3.138l-.36.427c-.476.66-.544 1.284-.36 1.76M21.75 12a.75.75 0 00-.75-.75H12a.75.75 0 00-.75.75v.686a4.5 4.5 0 01-3.138 1.272l-.36.427c-.476.66-.544 1.284-.36 1.76m0-4.5a.75.75 0 00-.75-.75H12a.75.75 0 00-.75.75v.686a4.5 4.5 0 01-1.272 3.138l-.36.427c-.476.66-.544 1.284-.36 1.76M21.75 12a.75.75 0 00-.75-.75H12a.75.75 0 00-.75.75v.686a4.5 4.5 0 01-3.138 1.272l-.36.427c-.476.66-.544 1.284-.36 1.76" /></svg>Transações</div>
@@ -242,7 +245,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="card p-6 rounded-lg">
                             <h2 class="text-xl font-semibold mb-4 text-white">Adicionar Pixel</h2>
-                            <form id="pixelForm" class="space-y-3"><input name="account_name" placeholder="Nome do Pixel (Ex: Produto Y)" class="form-input w-full p-2 rounded-md" required><input name="pixel_id" placeholder="ID do Pixel da Meta" class="form-input w-full p-2 rounded-md" required><textarea name="meta_api_token" placeholder="Token da API de Conversões" class="form-input w-full p-2 rounded-md" rows="2" required></textarea><button type="submit" class="btn w-full p-2 rounded-md">Adicionar Pixel</button></form>
+                            <form id="pixelForm" class="space-y-3"><input name="account_name" placeholder="Nome do Pixel (Ex: Produto Y)" class="form-input w-full p-2 rounded-md" required><input name="pixel_id" placeholder="ID do Pixel da Meta" class="form-input w-full p-2 rounded-md" required><textarea name="meta_api_token" placeholder="Token da API de Conversões (armazenado com segurança)" class="form-input w-full p-2 rounded-md" rows="2" required></textarea><button type="submit" class="btn w-full p-2 rounded-md">Adicionar Pixel</button></form>
                         </div>
                         <div class="card p-6 rounded-lg"><h2 class="text-xl font-semibold text-white mb-4">Pixels Salvos</h2><div id="pixel-list" class="space-y-2">${pixelListHTML.length ? pixelListHTML : '<p class="text-gray-500 text-sm">Nenhum pixel salvo.</p>'}</div></div>
                     </div>
@@ -272,23 +275,34 @@
                     </div>
                 </div>`;
             },
-            pressels() {
-                const { pixels, bots, pressels } = App.state.data;
+            // <-- INÍCIO DA SEÇÃO MODIFICADA -->
+            campaignPages() {
+                const { pixels, bots, campaignPages } = App.state.data;
                 const botOptions = bots.map(b => `<option value="${b.id}">${b.bot_name}</option>`).join('');
                 const pixelCheckboxes = pixels.map(p => `<label class="flex items-center space-x-2 text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" name="pixel_ids" value="${p.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500"><span>${p.account_name}</span></label>`).join('');
-                const presselList = pressels.map(pr => `<div class="p-3 card flex justify-between items-center text-sm"><div><p class="font-semibold">${pr.name}</p><p class="text-xs text-gray-400">Bot: ${pr.bot_name}</p></div><div class="space-x-2"><button data-id="${pr.id}" class="generate-pressel-code-btn btn text-xs py-1 px-2">Ver Código</button><button data-id="${pr.id}" class="delete-pressel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
+                const campaignPageList = campaignPages.map(cp => `<div class="p-3 card flex justify-between items-center text-sm"><div><p class="font-semibold">${cp.name}</p><p class="text-xs text-gray-400">Bot: ${cp.bot_name}</p></div><div class="space-x-2"><button data-id="${cp.id}" class="generate-campaign-code-btn btn text-xs py-1 px-2">Ver Código</button><button data-id="${cp.id}" class="delete-campaign-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
                 return `
                 <div class="animate-fade-in">
-                    <h1 class="text-3xl font-bold text-white mb-6">Criador de Pressel</h1>
+                    <h1 class="text-3xl font-bold text-white mb-6">Criador de Páginas de Campanha</h1>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div class="card p-6 rounded-lg">
-                            <h2 class="text-xl font-bold mb-4 text-white">Criar Nova Pressel</h2>
-                            <form id="presselForm" class="space-y-4"><input name="name" placeholder="Nome da Pressel (Ex: Campanha Black Friday)" class="form-input w-full p-2 rounded-md" required><input name="white_page_url" type="url" placeholder="URL da Página Branca (Fallback)" class="form-input w-full p-2 rounded-md" required><select name="bot_id" class="form-input w-full p-2 rounded-md" required><option value="">Selecione um Bot</option>${botOptions}</select><div class="card p-3"><p class="font-semibold mb-2">Selecione os Pixels:</p><div class="space-y-2">${pixelCheckboxes.length ? pixelCheckboxes : '<p class="text-gray-500 text-sm">Cadastre um pixel primeiro.</p>'}</div></div><button type="submit" class="btn w-full p-3 rounded-md text-base font-bold">Salvar e Gerar Código</button></form>
+                            <h2 class="text-xl font-bold mb-4 text-white">Nova Página de Campanha</h2>
+                            <form id="campaignPageForm" class="space-y-4">
+                                <input name="name" placeholder="Nome da Campanha (Ex: Black Friday)" class="form-input w-full p-2 rounded-md" required>
+                                <input name="fallback_url" type="url" placeholder="URL de Fallback (em caso de erro na API)" class="form-input w-full p-2 rounded-md" required>
+                                <select name="bot_id" class="form-input w-full p-2 rounded-md" required><option value="">Selecione um Bot de Destino</option>${botOptions}</select>
+                                <div class="card p-3"><p class="font-semibold mb-2">Selecione os Pixels para Rastreamento:</p><div class="space-y-2">${pixelCheckboxes.length ? pixelCheckboxes : '<p class="text-gray-500 text-sm">Cadastre um pixel primeiro.</p>'}</div></div>
+                                <button type="submit" class="btn w-full p-3 rounded-md text-base font-bold">Salvar e Gerar Código</button>
+                            </form>
                         </div>
-                        <div class="card p-6 rounded-lg"><h2 class="text-xl font-bold mb-4 text-white">Pressels Criadas</h2><div id="pressel-list" class="space-y-3">${presselList.length ? presselList : '<p class="text-gray-500 text-sm">Nenhuma pressel criada.</p>'}</div></div>
+                        <div class="card p-6 rounded-lg">
+                            <h2 class="text-xl font-bold mb-4 text-white">Páginas Criadas</h2>
+                            <div id="campaign-page-list" class="space-y-3">${campaignPageList.length ? campaignPageList : '<p class="text-gray-500 text-sm">Nenhuma página de campanha criada.</p>'}</div>
+                        </div>
                     </div>
                 </div>`;
             },
+            // <-- FIM DA SEÇÃO MODIFICADA -->
             checkouts() {
                 const { pixels, checkouts } = App.state.data;
                 const pixelCheckboxes = pixels.map(p => `<label class="flex items-center space-x-2 text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" name="pixel_ids" value="${p.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500"><span>${p.account_name}</span></label>`).join('');
@@ -429,7 +443,7 @@
                                     <button type="button" data-provider="pushinpay" class="test-pix-btn btn btn-secondary text-xs py-1 px-3">Testar Conexão</button>
                                 </div>
                                 <label class="block mb-2 text-sm text-gray-400">Bearer Token</label>
-                                <input name="pushinpay_token" type="password" value="${settings.pushinpay_token || ''}" class="form-input w-full p-2 rounded-md">
+                                <input name="pushinpay_token" type="password" value="${settings.pushinpay_token || ''}" placeholder="Cole seu Bearer Token aqui" class="form-input w-full p-2 rounded-md">
                             </div>
 
                             <div class="card p-6 rounded-lg">
@@ -441,9 +455,9 @@
                                     <button type="button" data-provider="cnpay" class="test-pix-btn btn btn-secondary text-xs py-1 px-3">Testar Conexão</button>
                                 </div>
                                 <label class="block mb-2 text-sm text-gray-400">Chave Pública (public-key)</label>
-                                <input name="cnpay_public_key" type="password" value="${settings.cnpay_public_key || ''}" class="form-input w-full p-2 rounded-md">
+                                <input name="cnpay_public_key" type="password" value="${settings.cnpay_public_key || ''}" placeholder="Cole sua chave pública aqui" class="form-input w-full p-2 rounded-md">
                                 <label class="block mt-4 mb-2 text-sm text-gray-400">Chave Privada (secret-key)</label>
-                                <input name="cnpay_secret_key" type="password" value="${settings.cnpay_secret_key || ''}" class="form-input w-full p-2 rounded-md">
+                                <input name="cnpay_secret_key" type="password" value="${settings.cnpay_secret_key || ''}" placeholder="Cole sua chave privada aqui" class="form-input w-full p-2 rounded-md">
                             </div>
                             
                             <div class="card p-6 rounded-lg">
@@ -455,9 +469,9 @@
                                     <button type="button" data-provider="oasyfy" class="test-pix-btn btn btn-secondary text-xs py-1 px-3">Testar Conexão</button>
                                 </div>
                                 <label class="block mb-2 text-sm text-gray-400">Chave Pública (public-key)</label>
-                                <input name="oasyfy_public_key" type="password" value="${settings.oasyfy_public_key || ''}" class="form-input w-full p-2 rounded-md">
+                                <input name="oasyfy_public_key" type="password" value="${settings.oasyfy_public_key || ''}" placeholder="Cole sua chave pública aqui" class="form-input w-full p-2 rounded-md">
                                 <label class="block mt-4 mb-2 text-sm text-gray-400">Chave Privada (secret-key)</label>
-                                <input name="oasyfy_secret_key" type="password" value="${settings.oasyfy_secret_key || ''}" class="form-input w-full p-2 rounded-md">
+                                <input name="oasyfy_secret_key" type="password" value="${settings.oasyfy_secret_key || ''}" placeholder="Cole sua chave privada aqui" class="form-input w-full p-2 rounded-md">
                             </div>
                         </div>
                         
@@ -558,10 +572,11 @@
                         : `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
                 }
 
-                if (e.target.classList.contains('generate-pressel-code-btn')) {
-                    const presselId = e.target.dataset.id;
-                    const pressel = this.state.data.pressels.find(p => p.id == presselId);
-                    if (pressel) this.generatePresselCode(pressel);
+                // <-- ALTERADO: de 'pressel' para 'campaign' -->
+                if (e.target.classList.contains('generate-campaign-code-btn')) {
+                    const campaignId = e.target.dataset.id;
+                    const campaignPage = this.state.data.campaignPages.find(p => p.id == campaignId);
+                    if (campaignPage) this.generateCampaignCode(campaignPage);
                 }
 
                 if (e.target.classList.contains('generate-checkout-code-btn')) {
@@ -592,12 +607,13 @@
                     document.getElementById(`tab-${tabName}`).classList.add('active');
                 }
 
-                if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-bot-btn') || e.target.classList.contains('delete-pressel-btn') || e.target.classList.contains('delete-checkout-btn')) {
+                // <-- ALTERADO: de 'pressel' para 'campaign' -->
+                if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-bot-btn') || e.target.classList.contains('delete-campaign-btn') || e.target.classList.contains('delete-checkout-btn')) {
                     const id = e.target.dataset.id;
                     let type = '', endpoint = '';
                     if (e.target.classList.contains('delete-pixel-btn')) { type = 'pixels'; endpoint = 'pixels'; }
                     if (e.target.classList.contains('delete-bot-btn')) { type = 'bots'; endpoint = 'bots'; }
-                    if (e.target.classList.contains('delete-pressel-btn')) { type = 'pressels'; endpoint = 'pressels'; }
+                    if (e.target.classList.contains('delete-campaign-btn')) { type = 'campaignPages'; endpoint = 'pressels'; } // A API ainda usa 'pressels'
                     if (e.target.classList.contains('delete-checkout-btn')) { type = 'checkouts'; endpoint = 'checkouts'; }
 
                     if (confirm(`Tem certeza que deseja excluir este item?`)) {
@@ -653,17 +669,21 @@
                         const newBot = await this.apiRequest('/api/bots', 'POST', data);
                         if (newBot) { this.state.data.bots.unshift(newBot); this.navigateTo('bots'); }
                     }
-                    else if (form.id === 'presselForm') {
+                    // <-- ALTERADO: de 'pressel' para 'campaignPage' -->
+                    else if (form.id === 'campaignPageForm') {
                         const pixel_ids = Array.from(form.querySelectorAll('input[name="pixel_ids"]:checked')).map(cb => cb.value);
                         if (pixel_ids.length === 0) {
                              this.showToast('Selecione ao menos um pixel.', 'error');
                         } else {
-                            const payload = { ...data, pixel_ids };
-                            const newPressel = await this.apiRequest('/api/pressels', 'POST', payload);
-                            if (newPressel) {
-                                this.state.data.pressels.unshift(newPressel);
-                                this.navigateTo('pressels');
-                                this.generatePresselCode(newPressel);
+                            // Renomeia fallback_url para white_page_url para manter compatibilidade com a API
+                            const payload = { ...data, pixel_ids, white_page_url: data.fallback_url };
+                            delete payload.fallback_url;
+                            
+                            const newCampaignPage = await this.apiRequest('/api/pressels', 'POST', payload); // A API ainda usa '/api/pressels'
+                            if (newCampaignPage) {
+                                this.state.data.campaignPages.unshift(newCampaignPage);
+                                this.navigateTo('campaignPages');
+                                this.generateCampaignCode(newCampaignPage);
                             }
                         }
                     }
@@ -743,9 +763,8 @@
         
                 const response = await fetch(`${this.state.API_BASE_URL}${endpoint}`, options);
         
-                // Respostas sem conteúdo são um sucesso, mas não devem ser parseadas como JSON
                 if (response.status === 204 || response.status === 304) {
-                    return this.state.data; // Retorna os dados já existentes no estado
+                    return this.state.data;
                 }
         
                 const data = await response.json();
@@ -755,7 +774,6 @@
                 }
                 return data;
             } catch (error) {
-                // Evita mostrar toast de erro para falhas de parsing de JSON (ex: resposta 304)
                 if (!(error instanceof SyntaxError)) {
                     this.showToast(error.message || 'Falha na conexão', 'error');
                 }
@@ -771,13 +789,11 @@
                 const data = await this.apiRequest('/api/sellers/login', 'POST', { email, password });
                 if (data && data.token) {
                     localStorage.setItem('hottrack_token', data.token);
-                    await this.init(); // Recarrega o app internamente sem refresh da página
+                    await this.init();
                 } else {
                     this.showToast('Resposta de login inválida recebida do servidor.', 'error');
                 }
-            } catch (e) {
-                // O erro já é tratado e exibido pela função apiRequest
-            }
+            } catch (e) {}
         },
         
         async register(name, email, password) {
@@ -791,10 +807,13 @@
         logout() {
             localStorage.removeItem('hottrack_token');
             this.state.token = null;
-            this.renderLogin(); // Renderiza a tela de login sem recarregar a página inteira
+            this.renderLogin();
         },
 
         navigateTo(page) {
+            // Renomeei 'pressels' para 'campaignPages' para consistência
+            if (page === 'pressels') page = 'campaignPages';
+
             this.state.currentPage = page;
             const contentContainer = document.getElementById('content');
             if (contentContainer && this.templates[page]) {
@@ -951,17 +970,62 @@
             });
         },
         
-        generatePresselCode(pressel) {
+        // <-- FUNÇÃO MODIFICADA E RENOMEADA -->
+        generateCampaignCode(campaignPage) {
             const { settings } = this.state.data;
-            const botLink = `https://t.me/${pressel.bot_name}?start=`;
+            const fallbackUrl = campaignPage.white_page_url; // API ainda usa 'white_page_url'
             const sellerApiKey = settings.api_key;
             const apiBaseUrl = this.state.API_BASE_URL;
 
-            const htmlContent = `<!DOCTYPE html><html><head><title>Redirecionando...</title><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('track', 'PageView');fbq('track', 'ViewContent');<\/script></head><body><p>Aguarde um instante...</p><script>const config = { API_BASE_URL: '${apiBaseUrl}', sellerApiKey: '${sellerApiKey}', presselId: ${pressel.id}, whitePageUrl: '${pressel.white_page_url}', botLink: '${botLink}' };async function registerClickAndRedirect() { try { const urlParams = new URLSearchParams(window.location.search); const bodyPayload = { sellerApiKey: config.sellerApiKey, presselId: config.presselId, referer: document.referrer, user_agent: navigator.userAgent, fbclid: urlParams.get('fbclid'), fbp: document.cookie.split('; ').find(row => row.startsWith('_fbp='))?.split('=')[1], fbc: document.cookie.split('; ').find(row => row.startsWith('_fbc='))?.split('=')[1], utm_source: urlParams.get('utm_source'), utm_campaign: urlParams.get('utm_campaign'), utm_medium: urlParams.get('utm_medium'), utm_content: urlParams.get('utm_content'), utm_term: urlParams.get('utm_term')}; Object.keys(bodyPayload).forEach(key => (bodyPayload[key] === null || bodyPayload[key] === undefined) && delete bodyPayload[key]); const response = await fetch(config.API_BASE_URL + '/api/registerClick', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyPayload) }); if (!response.ok) throw new Error('Failed to register click'); const data = await response.json(); window.location.href = config.botLink + data.click_id; } catch (error) { console.error('Redirect Error:', error); window.location.href = config.whitePageUrl; } } registerClickAndRedirect();<\/script></body></html>`;
+            // Este é o código que será colado na página do usuário. Ele é mais limpo e transparente.
+            const htmlContent = `<!DOCTYPE html><html><head><title>Redirecionando...</title><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('track', 'PageView');fbq('track', 'ViewContent');<\/script></head><body><p>Aguarde um instante...</p><script>
+const config = { 
+    API_BASE_URL: '${apiBaseUrl}', 
+    sellerApiKey: '${sellerApiKey}', 
+    campaignId: ${campaignPage.id}, 
+    fallbackUrl: '${fallbackUrl}' 
+};
+async function trackAndRedirect() { 
+    try { 
+        const urlParams = new URLSearchParams(window.location.search); 
+        const bodyPayload = { 
+            sellerApiKey: config.sellerApiKey, 
+            presselId: config.campaignId, // O endpoint da API ainda espera 'presselId'
+            referer: document.referrer, 
+            user_agent: navigator.userAgent, 
+            fbclid: urlParams.get('fbclid'), 
+            fbp: document.cookie.split('; ').find(row => row.startsWith('_fbp='))?.split('=')[1], 
+            fbc: document.cookie.split('; ').find(row => row.startsWith('_fbc='))?.split('=')[1], 
+            utm_source: urlParams.get('utm_source'), 
+            utm_campaign: urlParams.get('utm_campaign'), 
+            utm_medium: urlParams.get('utm_medium'), 
+            utm_content: urlParams.get('utm_content'), 
+            utm_term: urlParams.get('utm_term')
+        }; 
+        Object.keys(bodyPayload).forEach(key => (bodyPayload[key] === null || bodyPayload[key] === undefined) && delete bodyPayload[key]); 
+        
+        const response = await fetch(config.API_BASE_URL + '/api/registerClick', { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(bodyPayload) 
+        }); 
+        
+        if (!response.ok) throw new Error('API request failed'); 
+        
+        const data = await response.json(); 
+        // A API deve retornar a URL final no campo 'redirect_url'. Se não, usa o fallback.
+        window.location.href = data.redirect_url || config.fallbackUrl; 
+    } catch (error) { 
+        console.error('Redirect Error:', error); 
+        window.location.href = config.fallbackUrl; 
+    } 
+} 
+trackAndRedirect();
+<\/script></body></html>`;
 
-            const modalContent = `<p class="text-sm text-gray-400 mb-4">Copie e cole este código no HTML da sua página. Lembre-se de adicionar os IDs dos seus pixels no local indicado.</p><textarea id="pressel-code-textarea" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="12" readonly>${htmlContent}</textarea><button class="copy-btn btn w-full mt-4 py-2" data-target="#pressel-code-textarea">Copiar Código</button>`;
+            const modalContent = `<p class="text-sm text-gray-400 mb-4">Copie e cole este código no HTML da sua página de campanha. A lógica de redirecionamento foi simplificada para ser mais transparente.</p><textarea id="campaign-code-textarea" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="12" readonly>${htmlContent}</textarea><button class="copy-btn btn w-full mt-4 py-2" data-target="#campaign-code-textarea">Copiar Código</button>`;
             
-            document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
+            document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Página: ${campaignPage.name}`, modalContent);
         },
 
         generateCheckoutHTML(checkoutId) {
