@@ -108,7 +108,7 @@
             this.state.token = localStorage.getItem('hottrack_token');
             const appContainer = document.getElementById('app');
             appContainer.innerHTML = `<div class="flex h-screen items-center justify-center"><p>Carregando...</p></div>`;
-            if (this.state.token) {
+            if (this.state.token && this.state.token !== 'undefined') {
                 try {
                     const staticData = await this.apiRequest('/api/dashboard/data');
                     this.state.data = { ...this.state.data, ...staticData };
@@ -747,11 +747,14 @@
         async login(email, password) {
             try {
                 const data = await this.apiRequest('/api/sellers/login', 'POST', { email, password });
-                this.state.token = data.token;
-                localStorage.setItem('hottrack_token', data.token);
-                window.location.href = window.location.pathname; 
+                if (data && data.token) {
+                    localStorage.setItem('hottrack_token', data.token);
+                    window.location.href = window.location.pathname;
+                } else {
+                    this.showToast('Resposta de login inválida recebida do servidor.', 'error');
+                }
             } catch (e) {
-                // error is handled by apiRequest
+                // O erro já é tratado e exibido pela função apiRequest
             }
         },
         
@@ -764,9 +767,9 @@
         },
 
         logout() {
-            this.state.token = null;
             localStorage.removeItem('hottrack_token');
-            this.init();
+            // Força um recarregamento limpo para a página de login
+            window.location.href = window.location.pathname;
         },
 
         navigateTo(page) {
