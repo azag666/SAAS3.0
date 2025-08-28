@@ -79,6 +79,23 @@
     <div id="modal-container"></div>
 
     <script>
+    // --- SCRIPT PARA DESABILITAR INSPEÇÃO ---
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.onkeydown = function(e) {
+        if (e.keyCode == 123) { // F12
+            return false;
+        }
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { // Ctrl+Shift+I
+            return false;
+        }
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { // Ctrl+Shift+J
+            return false;
+        }
+        if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { // Ctrl+U
+            return false;
+        }
+    };
+
     const App = {
         state: {
             API_BASE_URL: 'https://novaapi-one.vercel.app',
@@ -171,7 +188,7 @@
                             <div data-target="pressels" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>Criador de Pressel</div>
                             <div data-target="pixels" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 12l4.179 2.25M6.429 9.75l5.571 3 5.571-3m0 0l4.179-2.25L12 5.25 7.821 7.5" /></svg>Gerenciar Pixels</div>
                             <div data-target="bots" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Gerenciar Bots</div>
-                            <div data-target="transactions" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.01 60.01 0 0110.875-3.004m-.89 6.002c-.087-.665-.544-1.284-1.2-1.76l-.427-.36a4.5 4.5 0 01-1.272-3.138v-.686m12.446 3.004c-.66.087-1.284.544-1.76 1.2l-.36.427a4.5 4.5 0 01-3.138 1.272h-.686m0-15.558a.75.75 0 00-.75-.75H12a.75.75 0 00-.75.75v.686a4.5 4.5 0 01-1.272 3.138l-.36.427c-.476.66-.544 1.284-.36 1.76M21.75 12a.75.75 0 00-.75-.75H12a.75.75 0 00-.75.75v.686a4.5 4.5 0 01-3.138 1.272l-.36.427c-.476.66-.544 1.284-.36 1.76m0-4.5a.75.75 0 00-.75-.75H12a.75.75 0 00-.75.75v.686a4.5 4.5 0 01-1.272 3.138l-.36.427c-.476.66-.544 1.284-.36 1.76M21.75 12a.75.75 0 00-.75-.75H12a.75.75 0 00-.75.75v.686a4.5 4.5 0 01-3.138 1.272l-.36.427c-.476.66-.544 1.284-.36 1.76" /></svg>Transações</div>
+                            <div data-target="transactions" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 21Z" /></svg>Transações</div>
                             <div class="h-px bg-slate-700 my-2"></div>
                             <div data-target="settings" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg>API PIX</div>
                             <div data-target="integrations" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>Integrações</div>
@@ -207,12 +224,13 @@
                         <h1 class="text-3xl font-bold text-white">Painel de Métricas</h1>
                     </div>
                     ${this.dateFilterComponent('dashboard')}
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
                         <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">Cliques na Página</h3><p id="metric-clicks" class="text-4xl font-bold text-sky-400 mt-2">...</p></div>
                         <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">PIX Gerados</h3><p id="metric-generated" class="text-4xl font-bold text-yellow-400 mt-2">...</p></div>
-                        <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">Faturamento Total</h3><p id="metric-total-revenue" class="text-4xl font-bold text-sky-400 mt-2">...</p></div>
                         <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">PIX Pagos</h3><p id="metric-paid" class="text-4xl font-bold text-green-400 mt-2">...</p></div>
+                        <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">Taxa de Conversão</h3><p id="metric-conversion-rate" class="text-4xl font-bold text-cyan-400 mt-2">...</p></div>
                         <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">Faturamento Pago</h3><p id="metric-paid-revenue" class="text-4xl font-bold text-green-400 mt-2">...</p></div>
+                        <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">Faturamento Total</h3><p id="metric-total-revenue" class="text-4xl font-bold text-sky-400 mt-2">...</p></div>
                     </div>
                     <div class="card p-6 rounded-lg mb-8">
                         <h2 class="text-xl font-semibold text-white mb-4">Desempenho de Faturamento</h2>
@@ -635,9 +653,8 @@
                 
                 document.querySelectorAll('.nav-link').forEach(item => { item.classList.toggle('active', item.dataset.target === page); });
                 
-                // Pós-renderização
-                if (page === 'dashboard') this.handleFilterChange(page, 'last7days'); // Inicia com filtro
-                else if (page === 'transactions') this.fetchTransactions(); // Transações ainda não usam filtro global
+                if (page === 'dashboard') this.handleFilterChange(page, 'last7days');
+                else if (page === 'transactions') this.handleFilterChange(page, 'all');
                 else if (page === 'settings') this.updateAllPixStatusIndicators();
                 else if (page === 'bots') this.updateAllBotStatusIndicators();
             }
@@ -654,23 +671,22 @@
                 const metrics = await this.apiRequest(`/api/dashboard/metrics?${query}`);
                 this.state.data.dashboard = metrics;
 
-                // Atualiza os cards
-                document.getElementById('metric-clicks').textContent = metrics.total_clicks || '0';
-                document.getElementById('metric-generated').textContent = metrics.total_pix_generated || '0';
-                document.getElementById('metric-paid').textContent = metrics.total_pix_paid || '0';
+                document.getElementById('metric-clicks').textContent = (metrics.total_clicks || 0).toLocaleString('pt-BR');
+                document.getElementById('metric-generated').textContent = (metrics.total_pix_generated || 0).toLocaleString('pt-BR');
+                document.getElementById('metric-paid').textContent = (metrics.total_pix_paid || 0).toLocaleString('pt-BR');
+                document.getElementById('metric-conversion-rate').textContent = `${(metrics.conversion_rate || 0).toFixed(2).replace('.', ',')}%`;
                 document.getElementById('metric-total-revenue').textContent = `R$ ${(metrics.total_revenue || 0).toFixed(2).replace('.', ',')}`;
                 document.getElementById('metric-paid-revenue').textContent = `R$ ${(metrics.paid_revenue || 0).toFixed(2).replace('.', ',')}`;
                 
-                // Atualiza as tabelas
                 const botsTableBody = document.getElementById('bots-performance-table');
                 if (metrics.bots_performance && metrics.bots_performance.length > 0) {
-                    botsTableBody.innerHTML = metrics.bots_performance.map(b => `<tr class="hover:bg-slate-800/50"><td>${b.bot_name}</td><td>${b.total_clicks || '0'}</td><td>${b.total_pix_paid || '0'}</td><td>R$ ${(b.paid_revenue || 0).toFixed(2).replace('.', ',')}</td></tr>`).join('');
+                    botsTableBody.innerHTML = metrics.bots_performance.map(b => `<tr class="hover:bg-slate-800/50"><td>${b.bot_name}</td><td>${(b.total_clicks || 0).toLocaleString('pt-BR')}</td><td>${(b.total_pix_paid || 0).toLocaleString('pt-BR')}</td><td>R$ ${(b.paid_revenue || 0).toFixed(2).replace('.', ',')}</td></tr>`).join('');
                 } else {
                     botsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">Nenhum dado de bot.</td></tr>';
                 }
                 const trafficTableBody = document.getElementById('traffic-by-state-table');
                 if (metrics.clicks_by_state && metrics.clicks_by_state.length > 0) {
-                    trafficTableBody.innerHTML = metrics.clicks_by_state.map(s => `<tr class="hover:bg-slate-800/50"><td>${s.state}</td><td>${s.total_clicks}</td></tr>`).join('');
+                    trafficTableBody.innerHTML = metrics.clicks_by_state.map(s => `<tr class="hover:bg-slate-800/50"><td>${s.state}</td><td>${s.total_clicks.toLocaleString('pt-BR')}</td></tr>`).join('');
                 } else {
                     trafficTableBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-500">Nenhum tráfego registrado por estado.</td></tr>';
                 }
@@ -762,7 +778,7 @@
             if (page === 'dashboard') {
                 this.fetchDashboardMetrics();
             } else if (page === 'transactions') {
-                this.renderTransactionsTable(); // Atualiza a tabela de transações com o novo filtro
+                this.fetchTransactions(); // Recarrega os dados e depois filtra
             }
         },
         
@@ -770,9 +786,14 @@
             const ctx = document.getElementById('revenueChart');
             if (!ctx) return;
             
-            const data = this.state.data.dashboard.daily_revenue || [];
+            let data = this.state.data.dashboard.daily_revenue || [];
             
-            // Mapeia os dados para o formato do Chart.js
+            // Filtra os dados do gráfico pelo dateFilter do frontend
+            const { startDate, endDate } = this.state.dateFilter;
+            if (startDate && endDate) {
+                data = data.filter(item => item.date >= startDate && item.date <= endDate);
+            }
+            
             const labels = data.map(item => new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }));
             const revenues = data.map(item => item.revenue);
 
