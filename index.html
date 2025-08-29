@@ -278,7 +278,7 @@
                             <span id="status-indicator-bot-${b.id}"></span>
                         </div>
                         <div class="space-x-2">
-                            <button data-id="${b.id}" class="view-contacts-btn btn-secondary text-xs py-1 px-2">Ver Contatos</button>
+                            <button data-id="${b.id}" class="view-contacts-btn btn-secondary text-xs py-1 px-2">Contatos</button>
                             <button data-id="${b.id}" class="test-bot-btn btn-green text-xs py-1 px-2">Testar</button>
                             <button data-id="${b.id}" class="delete-bot-btn btn btn-red text-xs py-1 px-2">Excluir</button>
                         </div>
@@ -501,19 +501,16 @@
                 </div>`;
             },
             modal(title, content) {
-                return `<div id="modal" class="modal active"><div class="card p-6 rounded-lg w-full max-w-lg animate-fade-in"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-white">${title}</h2><button id="closeModalBtn" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>${content}</div></div>`;
+                return `<div id="modal" class="modal active"><div class="card p-6 rounded-lg w-full max-w-2xl animate-fade-in"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-white">${title}</h2><button id="closeModalBtn" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>${content}</div></div>`;
             }
         },
 
         addAuthEventListeners() {
             const container = document.getElementById('app');
-            
             let registrationData = {};
-
             container.addEventListener('click', async (e) => {
                 if (e.target.id === 'showRegister') { e.preventDefault(); this.renderLogin('register'); }
                 if (e.target.id === 'showLogin') { e.preventDefault(); this.renderLogin('login'); }
-                
                 const button = e.target.closest('button');
                 if (button && button.id === 'sendCodeBtn') {
                     e.preventDefault();
@@ -523,15 +520,12 @@
                         this.showToast('Por favor, preencha todos os campos.', 'error');
                         return;
                     }
-                    
                     let phoneNumber = data.phoneNumber.replace(/\D/g, '');
                     if (!phoneNumber.startsWith('55')) {
                         phoneNumber = '55' + phoneNumber;
                     }
                     data.phoneNumber = '+' + phoneNumber;
-
                     registrationData = data;
-                    
                     try {
                         button.disabled = true;
                         button.innerHTML = 'Enviando...';
@@ -547,7 +541,6 @@
                     }
                 }
             });
-            
             container.addEventListener('submit', async (e) => {
                 const form = e.target;
                 if(form.id === 'loginForm' || form.id === 'verificationForm') {
@@ -557,14 +550,12 @@
                     const originalButtonText = button.innerHTML;
                     button.innerHTML = 'Verificando...';
                     button.disabled = true;
-
                     if (form.id === 'loginForm') {
                         await this.login(data.email, data.password);
                     }
                     if (form.id === 'verificationForm') {
                         await this.register(registrationData.name, registrationData.email, registrationData.password, registrationData.phoneNumber, data.verificationCode);
                     }
-                    
                     button.innerHTML = originalButtonText;
                     button.disabled = false;
                 }
@@ -575,10 +566,8 @@
             document.addEventListener('click', async (e) => {
                 if (e.target.id === 'logoutButton') this.logout();
                 if (e.target.closest('#closeModalBtn')) document.getElementById('modal-container').innerHTML = '';
-                
                 const sidebarLink = e.target.closest('.nav-link');
                 if (sidebarLink) this.navigateTo(sidebarLink.dataset.target);
-
                 const copyBtn = e.target.closest('.copy-btn');
                 if (copyBtn) {
                     const targetInput = document.querySelector(copyBtn.dataset.target);
@@ -591,7 +580,6 @@
                         });
                     }
                 }
-                
                 const toggleBtn = e.target.closest('.toggle-visibility-btn');
                 if (toggleBtn) {
                     const targetInput = document.querySelector(toggleBtn.dataset.target);
@@ -601,51 +589,45 @@
                         ? `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243L6.228 6.228" /></svg>` 
                         : `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
                 }
-
                 if (e.target.classList.contains('generate-pressel-code-btn')) {
                     const presselId = e.target.dataset.id;
                     const pressel = this.state.data.pressels.find(p => p.id == presselId);
                     if (pressel) this.generatePresselCode(pressel);
                 }
-
                 if (e.target.classList.contains('generate-checkout-code-btn')) {
                     const checkoutId = e.target.dataset.id;
                     this.generateCheckoutHTML(checkoutId);
                 }
-                
                 if (e.target.classList.contains('test-bot-btn')) {
                     const botId = e.target.dataset.id;
                     this.testBotConnection(botId, e.target);
                 }
-
-                // NOVO: Gatilho para ver contatos
                 if (e.target.classList.contains('view-contacts-btn')) {
                     const botId = e.target.dataset.id;
                     this.viewBotContacts(botId);
                 }
-
-                // NOVO: Gatilho para enviar mensagem em massa
                 if (e.target.id === 'send-mass-message-btn') {
                     const botId = e.target.dataset.botId;
                     const message = document.getElementById('mass-message-textarea').value;
+                    const buttonText = document.getElementById('mass-message-btn-text').value;
+                    const buttonUrl = document.getElementById('mass-message-btn-url').value;
                     if (!message) {
-                        this.showToast('A mensagem não pode estar vazia.', 'error');
-                        return;
+                        this.showToast('A mensagem não pode estar vazia.', 'error'); return;
                     }
-                    if (confirm(`Tem certeza que deseja enviar esta mensagem para todos os contatos do bot? Esta ação não pode ser desfeita.`)) {
-                        this.sendMassMessage(botId, message, e.target);
+                    if (buttonText && !buttonUrl) {
+                        this.showToast('A URL do botão é obrigatória se o texto do botão for preenchido.', 'error'); return;
+                    }
+                    if (confirm(`Tem certeza que deseja enviar esta mensagem?`)) {
+                        this.sendMassMessage(botId, message, buttonText, buttonUrl, e.target);
                     }
                 }
-
                 if (e.target.classList.contains('test-pix-btn')) {
                     const provider = e.target.dataset.provider;
                     this.testIndividualPixConnection(provider, e.target);
                 }
-                
                 if (e.target.id === 'testPriorityRouteBtn') {
                     this.testPriorityRoute(e.target);
                 }
-
                 const tabButton = e.target.closest('.tab-button');
                 if (tabButton) {
                     const tabName = tabButton.dataset.tab;
@@ -654,7 +636,6 @@
                     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
                     document.getElementById(`tab-${tabName}`).classList.add('active');
                 }
-
                 if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-bot-btn') || e.target.classList.contains('delete-pressel-btn') || e.target.classList.contains('delete-checkout-btn')) {
                     const id = e.target.dataset.id;
                     let type = '', endpoint = '';
@@ -662,7 +643,6 @@
                     if (e.target.classList.contains('delete-bot-btn')) { type = 'bots'; endpoint = 'bots'; }
                     if (e.target.classList.contains('delete-pressel-btn')) { type = 'pressels'; endpoint = 'pressels'; }
                     if (e.target.classList.contains('delete-checkout-btn')) { type = 'checkouts'; endpoint = 'checkouts'; }
-
                     if (confirm(`Tem certeza que deseja excluir este item?`)) {
                         try {
                             await this.apiRequest(`/api/${endpoint}/${id}`, 'DELETE');
@@ -672,7 +652,6 @@
                         } catch(err) {}
                     }
                 }
-                
                 const filterContainer = e.target.closest('#transactions-date-filter, #dashboard-date-filter');
                 if (filterContainer) {
                     const page = filterContainer.id.split('-')[0];
@@ -689,13 +668,11 @@
             document.addEventListener('submit', async (e) => {
                 const form = e.target.closest('form');
                 if (!form || form.id === 'loginForm' || form.id === 'registerForm' || form.id === 'verificationForm') return;
-                
                 e.preventDefault();
                 const button = form.querySelector('button[type="submit"]');
                 const originalButtonText = button.innerHTML;
                 button.innerHTML = 'Salvando...';
                 button.disabled = true;
-
                 let data = Object.fromEntries(new FormData(form).entries());
                 try {
                     if (form.id === 'pixSettingsForm') {
@@ -786,18 +763,13 @@
                 const data = await this.apiRequest('/api/sellers/login', 'POST', { email, password });
                 this.state.token = data.token;
                 localStorage.setItem('hottrack_token', data.token);
-
                 const appContainer = document.getElementById('app');
                 appContainer.innerHTML = `<div class="flex h-screen items-center justify-center"><p>Carregando...</p></div>`;
-                
                 const staticData = await this.apiRequest('/api/dashboard/data');
                 this.state.data = { ...this.state.data, ...staticData };
                 this.renderLayout();
                 this.navigateTo('dashboard');
-
-            } catch (e) {
-                // Se o login falhar, o apiRequest já mostra a notificação de erro.
-            }
+            } catch (e) {}
         },
         
         async register(name, email, password, phoneNumber, verificationCode) {
@@ -814,96 +786,79 @@
             this.init();
         },
 
-        // ... as outras funções continuam aqui ...
-        
-        // NOVO: Função para ver os contatos de um bot
         async viewBotContacts(botId) {
             const bot = this.state.data.bots.find(b => b.id == botId);
             const modalContainer = document.getElementById('modal-container');
-            modalContainer.innerHTML = this.templates.modal(`Contatos do Bot: ${bot.bot_name}`, '<p>Carregando contatos...</p>');
+            modalContainer.innerHTML = this.templates.modal(`Disparador e Contatos: @${bot.bot_name}`, '<p>Carregando...</p>');
+            
             try {
-                const users = await this.apiRequest(`/api/bots/${botId}/users`);
-                let content;
-                if (users.length === 0) {
-                    content = '<p class="text-gray-500">Nenhum contato salvo para este bot ainda.</p>';
-                } else {
-                    const userRows = users.map(user => `
-                        <tr class="hover:bg-slate-800/50">
-                            <td>${user.first_name || ''} ${user.last_name || ''}</td>
-                            <td>${user.username ? `@${user.username}` : 'N/A'}</td>
-                            <td class="font-mono text-xs">${user.chat_id}</td>
-                        </tr>
-                    `).join('');
-                    
-                    const table = `
-                        <div class="overflow-y-auto max-h-64 border border-slate-700 rounded-lg">
-                            <table class="table-custom w-full text-sm">
-                                <thead><tr><th>Nome</th><th>Username</th><th>Chat ID</th></tr></thead>
-                                <tbody>${userRows}</tbody>
-                            </table>
+                const [users, history] = await Promise.all([
+                    this.apiRequest(`/api/bots/${botId}/users`),
+                    this.apiRequest(`/api/bots/${botId}/mass-sends`)
+                ]);
+                
+                const massMessageSection = `
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2 text-white">Novo Disparo</h3>
+                        <p class="text-sm text-gray-400 mb-4">A mensagem abaixo será enviada para <strong>${users.length}</strong> contato(s). Use tags HTML como &lt;b&gt;texto&lt;/b&gt; para negrito e &lt;i&gt;texto&lt;/i&gt; para itálico.</p>
+                        <textarea id="mass-message-textarea" class="form-input w-full p-2 rounded-md" rows="5" placeholder="Digite sua mensagem aqui..."></textarea>
+                        <div class="grid grid-cols-2 gap-4 mt-2">
+                            <input id="mass-message-btn-text" class="form-input w-full p-2 rounded-md" placeholder="Texto do Botão (Ex: Comprar Agora)">
+                            <input id="mass-message-btn-url" type="url" class="form-input w-full p-2 rounded-md" placeholder="https://seu-link.com">
                         </div>
-                    `;
+                        <button id="send-mass-message-btn" data-bot-id="${botId}" class="btn w-full mt-3 py-2 font-semibold">Enviar para ${users.length} Contato(s)</button>
+                    </div>
+                `;
 
-                    const massMessageSection = `
-                        <div class="mt-6 pt-4 border-t border-slate-700">
-                            <h3 class="text-lg font-semibold mb-2 text-white">Disparo em Massa</h3>
-                            <p class="text-sm text-gray-400 mb-4">A mensagem abaixo será enviada para todos os <strong>${users.length}</strong> contatos deste bot. Use com cuidado.</p>
-                            <textarea id="mass-message-textarea" class="form-input w-full p-2 rounded-md" rows="4" placeholder="Digite sua mensagem aqui... Você pode usar tags HTML básicas como <b></b> e <i></i>."></textarea>
-                            <button id="send-mass-message-btn" data-bot-id="${botId}" class="btn w-full mt-2 py-2 font-semibold">Enviar para ${users.length} Contato(s)</button>
+                const historySection = `
+                    <div class="mt-6 pt-4 border-t border-slate-700">
+                        <h3 class="text-lg font-semibold mb-2 text-white">Histórico de Disparos</h3>
+                        <div id="history-list" class="overflow-y-auto max-h-48 space-y-2 pr-2">
+                            ${history.length > 0 ? history.map(h => `
+                                <div class="p-3 bg-slate-900/50 rounded-lg text-sm">
+                                    <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
+                                        <span>${new Date(h.sent_at).toLocaleString('pt-BR')}</span>
+                                        <span><span class="text-green-400">${h.success_count} enviados</span>, <span class="text-red-400">${h.failure_count} falhas</span></span>
+                                    </div>
+                                    <p class="whitespace-pre-wrap">${h.message_content}</p>
+                                    ${h.button_text && h.button_url ? `<a href="${h.button_url}" target="_blank" class="inline-block mt-2 text-xs bg-sky-600/50 text-white py-1 px-2 rounded">${h.button_text}</a>` : ''}
+                                </div>
+                            `).join('') : '<p class="text-sm text-gray-500">Nenhum disparo realizado.</p>'}
                         </div>
-                    `;
+                    </div>
+                `;
 
-                    content = table + massMessageSection;
-                }
-                modalContainer.innerHTML = this.templates.modal(`Contatos do Bot: ${bot.bot_name}`, content);
+                const content = massMessageSection + historySection;
+                modalContainer.innerHTML = this.templates.modal(`Disparador e Contatos: @${bot.bot_name}`, content);
+
             } catch (e) {
-                modalContainer.innerHTML = this.templates.modal('Erro', '<p class="text-red-400">Não foi possível carregar os contatos.</p>');
+                modalContainer.innerHTML = this.templates.modal('Erro', '<p class="text-red-400">Não foi possível carregar os dados.</p>');
             }
         },
 
-        // NOVO: Função para enviar mensagem em massa
-        async sendMassMessage(botId, message, button) {
+        async sendMassMessage(botId, message, buttonText, buttonUrl, button) {
             const originalButtonText = button.innerHTML;
             button.disabled = true;
+            button.innerHTML = 'Iniciando disparo...';
 
             try {
-                const users = await this.apiRequest(`/api/bots/${botId}/users`);
-                if (users.length === 0) {
-                    this.showToast('Nenhum usuário para enviar mensagem.', 'error');
-                    return;
-                }
-
-                let successCount = 0;
-                let errorCount = 0;
-
-                for (const [index, user] of users.entries()) {
-                    button.innerHTML = `Enviando... (${index + 1}/${users.length})`;
-                    try {
-                        await this.apiRequest('/api/telegram/send-message', 'POST', {
-                            botId: botId,
-                            chatId: user.chat_id,
-                            message: message
-                        });
-                        successCount++;
-                    } catch (e) {
-                        console.error(`Falha ao enviar para chat_id ${user.chat_id}:`, e);
-                        errorCount++;
-                    }
-                    // Adiciona um pequeno atraso para não sobrecarregar a API do Telegram
-                    await new Promise(resolve => setTimeout(resolve, 300)); 
-                }
+                const response = await this.apiRequest(`/api/bots/${botId}/mass-send`, 'POST', {
+                    message,
+                    buttonText,
+                    buttonUrl
+                });
                 
-                this.showToast(`Disparo concluído! Sucessos: ${successCount}, Falhas: ${errorCount}`, 'success');
-
+                this.showToast(response.message, 'success');
+                document.getElementById('modal-container').innerHTML = ''; // Fecha o modal
+                
             } catch (e) {
-                this.showToast('Erro ao buscar a lista de usuários para o disparo.', 'error');
+                // Erro já tratado pelo apiRequest
             } finally {
                 button.innerHTML = originalButtonText;
                 button.disabled = false;
             }
         },
-
-        // O restante do seu código App (navigateTo, fetchDashboardMetrics, etc.) continua aqui...
+        
         navigateTo(page) {
             this.state.currentPage = page;
             const contentContainer = document.getElementById('content');
