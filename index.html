@@ -607,20 +607,10 @@
                     this.viewBotContacts(botId);
                 }
                 if (e.target.id === 'send-mass-message-btn') {
+                    e.preventDefault();
                     const botId = e.target.dataset.botId;
-                    const message = document.getElementById('mass-message-textarea').value;
-                    const buttonText = document.getElementById('mass-message-btn-text').value;
-                    const buttonUrl = document.getElementById('mass-message-btn-url').value;
-                    const pixCode = document.getElementById('mass-message-pix-code').value;
-
-                    if (!message && !pixCode) {
-                        this.showToast('A mensagem ou o código PIX não podem estar vazios.', 'error'); return;
-                    }
-                    if (buttonText && !buttonUrl) {
-                        this.showToast('A URL do botão é obrigatória se o texto do botão for preenchido.', 'error'); return;
-                    }
-                    if (confirm(`Tem certeza que deseja enviar esta mensagem?`)) {
-                        this.sendMassMessage(botId, message, buttonText, buttonUrl, pixCode, e.target);
+                    if (confirm(`Tem certeza que deseja iniciar este disparo?`)) {
+                        this.sendMassMessage(botId, e.target);
                     }
                 }
                 if (e.target.classList.contains('test-pix-btn')) {
@@ -739,6 +729,39 @@
                         container.style.display = e.target.value === 'fixed' ? 'block' : 'none';
                     }
                 }
+
+                // *** NOVA LÓGICA PARA O SELETOR DE FLUXO DO DISPARADOR ***
+                if (e.target.id === 'flow-type-selector') {
+                    const container = document.getElementById('flow-config-container');
+                    if (!container) return;
+                    
+                    if (e.target.value === 'pix_flow') {
+                        container.innerHTML = `
+                            <div class="space-y-3">
+                                <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Etapa 1: Mensagem Inicial</h4>
+                                <textarea id="mass-message-initial-text" class="form-input w-full p-2 rounded-md" rows="3" placeholder="Mensagem principal que antecede o botão de gerar PIX..."></textarea>
+                                <input id="mass-message-cta-button-text" class="form-input w-full p-2 rounded-md" placeholder="Texto do Botão (Ex: Gerar PIX Agora)">
+                                
+                                <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Etapa 2: Geração do PIX</h4>
+                                <input id="mass-message-pix-value" type="number" step="0.01" class="form-input w-full p-2 rounded-md" placeholder="Valor do PIX em REAIS (Ex: 19.90)">
+                                
+                                <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Etapa 3: Confirmação</h4>
+                                <textarea id="mass-message-confirmation-text" class="form-input w-full p-2 rounded-md" rows="2" placeholder="Mensagem após o PIX ser gerado (Ex: Copie o código, pague e clique abaixo)."></textarea>
+                                <input id="mass-message-check-button-text" class="form-input w-full p-2 rounded-md" placeholder="Texto do Botão (Ex: Conferir Pagamento)">
+                            </div>
+                        `;
+                    } else { // external_link
+                        container.innerHTML = `
+                            <div class="space-y-3">
+                                <textarea id="mass-message-initial-text" class="form-input w-full p-2 rounded-md" rows="3" placeholder="Mensagem principal..."></textarea>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input id="mass-message-cta-button-text" class="form-input w-full p-2 rounded-md" placeholder="Texto do Botão (Ex: Comprar Agora)">
+                                    <input id="mass-message-external-url" type="url" class="form-input w-full p-2 rounded-md" placeholder="https://seu-link.com">
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
             });
         },
 
@@ -796,17 +819,26 @@
                     this.apiRequest(`/api/bots/${botId}/mass-sends`)
                 ]);
                 
+                // *** ATUALIZAÇÃO DA INTERFACE DE DISPARO ***
                 const massMessageSection = `
                     <div>
-                        <h3 class="text-lg font-semibold mb-2 text-white">Novo Disparo</h3>
-                        <p class="text-sm text-gray-400 mb-4">A mensagem abaixo será enviada para <strong>${users.length}</strong> contato(s). Use tags HTML como &lt;b&gt;texto&lt;/b&gt; para negrito.</p>
-                        <textarea id="mass-message-textarea" class="form-input w-full p-2 rounded-md" rows="3" placeholder="Mensagem principal..."></textarea>
-                        <textarea id="mass-message-pix-code" class="form-input w-full p-2 rounded-md mt-2 font-mono text-xs" rows="3" placeholder="(Opcional) Cole o PIX Copia e Cola aqui..."></textarea>
-                        <div class="grid grid-cols-2 gap-4 mt-2">
-                            <input id="mass-message-btn-text" class="form-input w-full p-2 rounded-md" placeholder="Texto do Botão (Ex: Comprar Agora)">
-                            <input id="mass-message-btn-url" type="url" class="form-input w-full p-2 rounded-md" placeholder="https://seu-link.com">
+                        <h3 class="text-lg font-semibold mb-2 text-white">Configurar Disparo</h3>
+                        <p class="text-sm text-gray-400 mb-4">A mensagem será enviada para <strong>${users.length}</strong> contato(s). Use tags HTML como &lt;b&gt;texto&lt;/b&gt; para negrito.</p>
+                        
+                        <div class="mb-4">
+                            <label class="block mb-2 text-sm font-medium text-gray-400">Tipo de Ação do Botão Principal</label>
+                            <select id="flow-type-selector" class="form-select w-full p-2 rounded-md">
+                                <option value="pix_flow">Iniciar Fluxo de PIX Interativo</option>
+                                <option value="external_link">Abrir um Link Externo</option>
+                            </select>
                         </div>
-                        <button id="send-mass-message-btn" data-bot-id="${botId}" class="btn w-full mt-3 py-2 font-semibold">Enviar para ${users.length} Contato(s)</button>
+
+                        <div id="flow-config-container" class="space-y-3">
+                           </div>
+
+                        <button id="send-mass-message-btn" data-bot-id="${botId}" class="btn w-full mt-4 py-2 font-semibold">
+                            Enviar para ${users.length} Contato(s)
+                        </button>
                     </div>
                 `;
                 
@@ -851,21 +883,44 @@
                 const content = '<div class="grid grid-cols-1 md:grid-cols-2 gap-8">' + massMessageSection + contactsSection + '</div>' + historySection;
                 modalContainer.innerHTML = this.templates.modal(`Disparador e Contatos: @${bot.bot_name}`, content);
 
+                // *** Dispara o evento 'change' para renderizar o formulário correto inicialmente ***
+                document.getElementById('flow-type-selector').dispatchEvent(new Event('change'));
+
             } catch (e) {
                 modalContainer.innerHTML = this.templates.modal('Erro', '<p class="text-red-400">Não foi possível carregar os dados.</p>');
             }
         },
 
-        async sendMassMessage(botId, message, buttonText, buttonUrl, pixCode, button) {
+        // *** ATUALIZAÇÃO DA FUNÇÃO DE ENVIO DE MENSAGEM ***
+        async sendMassMessage(botId, button) {
             const originalButtonText = button.innerHTML;
             button.disabled = true;
             button.innerHTML = 'Iniciando disparo...';
 
             try {
-                const payload = { message, pixCode };
-                if (buttonText && buttonUrl) {
-                    payload.buttonText = buttonText;
-                    payload.buttonUrl = buttonUrl;
+                const flowType = document.getElementById('flow-type-selector').value;
+                let payload = { flowType };
+
+                if (flowType === 'pix_flow') {
+                    payload.initialText = document.getElementById('mass-message-initial-text').value;
+                    payload.ctaButtonText = document.getElementById('mass-message-cta-button-text').value;
+                    payload.pixValue = document.getElementById('mass-message-pix-value').value;
+                    payload.confirmationText = document.getElementById('mass-message-confirmation-text').value;
+                    payload.checkButtonText = document.getElementById('mass-message-check-button-text').value;
+
+                    if (!payload.initialText || !payload.ctaButtonText || !payload.pixValue || !payload.confirmationText || !payload.checkButtonText) {
+                         this.showToast('Por favor, preencha todos os campos do fluxo.', 'error');
+                         return;
+                    }
+                } else { // external_link
+                    payload.initialText = document.getElementById('mass-message-initial-text').value;
+                    payload.externalButtonText = document.getElementById('mass-message-cta-button-text').value;
+                    payload.externalLink = document.getElementById('mass-message-external-url').value;
+                    
+                    if (!payload.initialText || !payload.externalButtonText || !payload.externalLink) {
+                        this.showToast('Por favor, preencha todos os campos.', 'error');
+                        return;
+                    }
                 }
                 
                 const response = await this.apiRequest(`/api/bots/${botId}/mass-send`, 'POST', payload);
