@@ -532,16 +532,20 @@
                 </div>`;
             },
             modal(title, content) {
-                return `<div id="modal" class="modal active"><div class="card p-6 rounded-lg w-full max-w-4xl animate-fade-in"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-white">${title}</h2><button id="closeModalBtn" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>${content}</div></div>`;
+                return `<div id="modal" class="modal active"><div class="card p-6 rounded-lg w-full max-w-lg animate-fade-in"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-white">${title}</h2><button id="closeModalBtn" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>${content}</div></div>`;
             }
         },
 
         addAuthEventListeners() {
             const container = document.getElementById('app');
+            
+            // Armazenar os dados do formulário de registro temporariamente
             let registrationData = {};
+
             container.addEventListener('click', async (e) => {
                 if (e.target.id === 'showRegister') { e.preventDefault(); this.renderLogin('register'); }
                 if (e.target.id === 'showLogin') { e.preventDefault(); this.renderLogin('login'); }
+                
                 const button = e.target.closest('button');
                 if (button && button.id === 'sendCodeBtn') {
                     e.preventDefault();
@@ -551,12 +555,17 @@
                         this.showToast('Por favor, preencha todos os campos.', 'error');
                         return;
                     }
+                    
+                    // --- CORREÇÃO: Formatar o número de telefone para o padrão E.164 da Twilio
                     let phoneNumber = data.phoneNumber.replace(/\D/g, '');
                     if (!phoneNumber.startsWith('55')) {
                         phoneNumber = '55' + phoneNumber;
                     }
                     data.phoneNumber = '+' + phoneNumber;
+                    // --- FIM DA CORREÇÃO
+
                     registrationData = data;
+                    
                     try {
                         button.disabled = true;
                         button.innerHTML = 'Enviando...';
@@ -572,6 +581,7 @@
                     }
                 }
             });
+            
             container.addEventListener('submit', async (e) => {
                 const form = e.target;
                 if(form.id === 'loginForm' || form.id === 'verificationForm') {
@@ -581,12 +591,14 @@
                     const originalButtonText = button.innerHTML;
                     button.innerHTML = 'Verificando...';
                     button.disabled = true;
+
                     if (form.id === 'loginForm') {
                         await this.login(data.email, data.password);
                     }
                     if (form.id === 'verificationForm') {
                         await this.register(registrationData.name, registrationData.email, registrationData.password, registrationData.phoneNumber, data.verificationCode);
                     }
+                    
                     button.innerHTML = originalButtonText;
                     button.disabled = false;
                 }
@@ -597,8 +609,10 @@
             document.addEventListener('click', async (e) => {
                 if (e.target.id === 'logoutButton') this.logout();
                 if (e.target.closest('#closeModalBtn')) document.getElementById('modal-container').innerHTML = '';
+                
                 const sidebarLink = e.target.closest('.nav-link');
                 if (sidebarLink) this.navigateTo(sidebarLink.dataset.target);
+
                 const copyBtn = e.target.closest('.copy-btn');
                 if (copyBtn) {
                     const targetInput = document.querySelector(copyBtn.dataset.target);
@@ -611,6 +625,7 @@
                         });
                     }
                 }
+                
                 const toggleBtn = e.target.closest('.toggle-visibility-btn');
                 if (toggleBtn) {
                     const targetInput = document.querySelector(toggleBtn.dataset.target);
@@ -620,45 +635,32 @@
                         ? `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243L6.228 6.228" /></svg>` 
                         : `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
                 }
+
                 if (e.target.classList.contains('generate-pressel-code-btn')) {
                     const presselId = e.target.dataset.id;
                     const pressel = this.state.data.pressels.find(p => p.id == presselId);
                     if (pressel) this.generatePresselCode(pressel);
                 }
+
                 if (e.target.classList.contains('generate-checkout-code-btn')) {
                     const checkoutId = e.target.dataset.id;
                     this.generateCheckoutHTML(checkoutId);
                 }
+                
                 if (e.target.classList.contains('test-bot-btn')) {
                     const botId = e.target.dataset.id;
                     this.testBotConnection(botId, e.target);
                 }
-                if (e.target.classList.contains('view-contacts-btn')) {
-                    const botId = e.target.dataset.id;
-                    this.viewBotContacts(botId);
-                }
-                if (e.target.id === 'send-mass-message-btn') {
-                    const botId = e.target.dataset.botId;
-                    const message = document.getElementById('mass-message-textarea').value;
-                    const buttonText = document.getElementById('mass-message-btn-text').value;
-                    const buttonUrl = document.getElementById('mass-message-btn-url').value;
-                    if (!message) {
-                        this.showToast('A mensagem não pode estar vazia.', 'error'); return;
-                    }
-                    if (buttonText && !buttonUrl) {
-                        this.showToast('A URL do botão é obrigatória se o texto do botão for preenchido.', 'error'); return;
-                    }
-                    if (confirm(`Tem certeza que deseja enviar esta mensagem?`)) {
-                        this.sendMassMessage(botId, message, buttonText, buttonUrl, e.target);
-                    }
-                }
+
                 if (e.target.classList.contains('test-pix-btn')) {
                     const provider = e.target.dataset.provider;
                     this.testIndividualPixConnection(provider, e.target);
                 }
+                
                 if (e.target.id === 'testPriorityRouteBtn') {
                     this.testPriorityRoute(e.target);
                 }
+
                 const tabButton = e.target.closest('.tab-button');
                 if (tabButton) {
                     const tabName = tabButton.dataset.tab;
@@ -667,6 +669,7 @@
                     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
                     document.getElementById(`tab-${tabName}`).classList.add('active');
                 }
+
                 if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-bot-btn') || e.target.classList.contains('delete-pressel-btn') || e.target.classList.contains('delete-checkout-btn')) {
                     const id = e.target.dataset.id;
                     let type = '', endpoint = '';
@@ -674,6 +677,7 @@
                     if (e.target.classList.contains('delete-bot-btn')) { type = 'bots'; endpoint = 'bots'; }
                     if (e.target.classList.contains('delete-pressel-btn')) { type = 'pressels'; endpoint = 'pressels'; }
                     if (e.target.classList.contains('delete-checkout-btn')) { type = 'checkouts'; endpoint = 'checkouts'; }
+
                     if (confirm(`Tem certeza que deseja excluir este item?`)) {
                         try {
                             await this.apiRequest(`/api/${endpoint}/${id}`, 'DELETE');
@@ -683,6 +687,7 @@
                         } catch(err) {}
                     }
                 }
+                
                 const filterContainer = e.target.closest('#transactions-date-filter, #dashboard-date-filter');
                 if (filterContainer) {
                     const page = filterContainer.id.split('-')[0];
@@ -699,11 +704,13 @@
             document.addEventListener('submit', async (e) => {
                 const form = e.target.closest('form');
                 if (!form || form.id === 'loginForm' || form.id === 'registerForm' || form.id === 'verificationForm') return;
+                
                 e.preventDefault();
                 const button = form.querySelector('button[type="submit"]');
                 const originalButtonText = button.innerHTML;
                 button.innerHTML = 'Salvando...';
                 button.disabled = true;
+
                 let data = Object.fromEntries(new FormData(form).entries());
                 try {
                     if (form.id === 'pixSettingsForm') {
@@ -794,13 +801,10 @@
                 const data = await this.apiRequest('/api/sellers/login', 'POST', { email, password });
                 this.state.token = data.token;
                 localStorage.setItem('hottrack_token', data.token);
-                const appContainer = document.getElementById('app');
-                appContainer.innerHTML = `<div class="flex h-screen items-center justify-center"><p>Carregando...</p></div>`;
-                const staticData = await this.apiRequest('/api/dashboard/data');
-                this.state.data = { ...this.state.data, ...staticData };
-                this.renderLayout();
-                this.navigateTo('dashboard');
-            } catch (e) {}
+                window.location.href = window.location.pathname; 
+            } catch (e) {
+                // error is handled by apiRequest
+            }
         },
         
         async register(name, email, password, phoneNumber, verificationCode) {
@@ -817,102 +821,6 @@
             this.init();
         },
 
-        async viewBotContacts(botId) {
-            const bot = this.state.data.bots.find(b => b.id == botId);
-            const modalContainer = document.getElementById('modal-container');
-            modalContainer.innerHTML = this.templates.modal(`Disparador e Contatos: @${bot.bot_name}`, '<p>Carregando...</p>');
-            
-            try {
-                const [users, history] = await Promise.all([
-                    this.apiRequest(`/api/bots/${botId}/users`),
-                    this.apiRequest(`/api/bots/${botId}/mass-sends`)
-                ]);
-                
-                const massMessageSection = `
-                    <div>
-                        <h3 class="text-lg font-semibold mb-2 text-white">Novo Disparo</h3>
-                        <p class="text-sm text-gray-400 mb-4">A mensagem abaixo será enviada para <strong>${users.length}</strong> contato(s). Use tags HTML como &lt;b&gt;texto&lt;/b&gt; para negrito.</p>
-                        <textarea id="mass-message-textarea" class="form-input w-full p-2 rounded-md" rows="3" placeholder="Mensagem principal..."></textarea>
-                        <textarea id="mass-message-pix-code" class="form-input w-full p-2 rounded-md mt-2 font-mono text-xs" rows="3" placeholder="(Opcional) Cole o PIX Copia e Cola aqui..."></textarea>
-                        <div class="grid grid-cols-2 gap-4 mt-2">
-                            <input id="mass-message-btn-text" class="form-input w-full p-2 rounded-md" placeholder="Texto do Botão (Ex: Comprar Agora)">
-                            <input id="mass-message-btn-url" type="url" class="form-input w-full p-2 rounded-md" placeholder="https://seu-link.com">
-                        </div>
-                        <button id="send-mass-message-btn" data-bot-id="${botId}" class="btn w-full mt-3 py-2 font-semibold">Enviar para ${users.length} Contato(s)</button>
-                    </div>
-                `;
-                
-                const userRows = users.map(user => `
-                    <tr class="hover:bg-slate-800/50">
-                        <td>${user.first_name || ''} ${user.last_name || ''}</td>
-                        <td>${user.username ? `@${user.username}` : 'N/A'}</td>
-                    </tr>
-                `).join('');
-
-                const contactsSection = `
-                     <div>
-                        <h3 class="text-lg font-semibold mb-2 text-white">Contatos Ativos (${users.length})</h3>
-                         <div class="overflow-y-auto max-h-96 border border-slate-700 rounded-lg">
-                            <table class="table-custom w-full text-sm">
-                                <thead><tr><th>Nome</th><th>Username</th></tr></thead>
-                                <tbody>${users.length > 0 ? userRows : '<tr><td colspan="2" class="text-center text-gray-500">Nenhum contato.</td></tr>'}</tbody>
-                            </table>
-                        </div>
-                    </div>
-                `;
-
-                const historySection = `
-                    <div class="mt-6 pt-4 border-t border-slate-700 col-span-2">
-                        <h3 class="text-lg font-semibold mb-2 text-white">Histórico de Disparos</h3>
-                        <div id="history-list" class="overflow-y-auto max-h-48 space-y-2 pr-2">
-                            ${history.length > 0 ? history.map(h => `
-                                <div class="p-3 bg-slate-900/50 rounded-lg text-sm">
-                                    <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
-                                        <span>${new Date(h.sent_at).toLocaleString('pt-BR')}</span>
-                                        <span><span class="text-green-400">${h.success_count} enviados</span>, <span class="text-red-400">${h.failure_count} falhas</span></span>
-                                    </div>
-                                    <p class="whitespace-pre-wrap">${h.message_content}</p>
-                                    ${h.pix_code ? `<div class="mt-2 p-2 bg-slate-800 rounded font-mono text-xs text-gray-400"><code>${h.pix_code}</code></div>` : ''}
-                                    ${h.button_text && h.button_url ? `<a href="${h.button_url}" target="_blank" class="inline-block mt-2 text-xs bg-sky-600/50 text-white py-1 px-2 rounded">${h.button_text}</a>` : ''}
-                                </div>
-                            `).join('') : '<p class="text-sm text-gray-500">Nenhum disparo realizado.</p>'}
-                        </div>
-                    </div>
-                `;
-
-                const content = '<div class="grid grid-cols-1 md:grid-cols-2 gap-8">' + massMessageSection + contactsSection + '</div>' + historySection;
-                modalContainer.innerHTML = this.templates.modal(`Disparador e Contatos: @${bot.bot_name}`, content);
-
-            } catch (e) {
-                modalContainer.innerHTML = this.templates.modal('Erro', '<p class="text-red-400">Não foi possível carregar os dados.</p>');
-            }
-        },
-
-        async sendMassMessage(botId, message, buttonText, buttonUrl, pixCode, button) {
-            const originalButtonText = button.innerHTML;
-            button.disabled = true;
-            button.innerHTML = 'Iniciando disparo...';
-
-            try {
-                const payload = { message, pixCode };
-                if (buttonText && buttonUrl) {
-                    payload.buttonText = buttonText;
-                    payload.buttonUrl = buttonUrl;
-                }
-                
-                const response = await this.apiRequest(`/api/bots/${botId}/mass-send`, 'POST', payload);
-                
-                this.showToast(response.message, 'success');
-                document.getElementById('modal-container').innerHTML = '';
-                
-            } catch (e) {
-                // Erro já tratado pelo apiRequest
-            } finally {
-                button.innerHTML = originalButtonText;
-                button.disabled = false;
-            }
-        },
-        
         navigateTo(page) {
             this.state.currentPage = page;
             const contentContainer = document.getElementById('content');
