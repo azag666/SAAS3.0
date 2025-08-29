@@ -501,7 +501,7 @@
                 </div>`;
             },
             modal(title, content) {
-                return `<div id="modal" class="modal active"><div class="card p-6 rounded-lg w-full max-w-2xl animate-fade-in"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-white">${title}</h2><button id="closeModalBtn" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>${content}</div></div>`;
+                return `<div id="modal" class="modal active"><div class="card p-6 rounded-lg w-full max-w-3xl animate-fade-in"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-white">${title}</h2><button id="closeModalBtn" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>${content}</div></div>`;
             }
         },
 
@@ -796,7 +796,7 @@
                     this.apiRequest(`/api/bots/${botId}/users`),
                     this.apiRequest(`/api/bots/${botId}/mass-sends`)
                 ]);
-                
+
                 const massMessageSection = `
                     <div>
                         <h3 class="text-lg font-semibold mb-2 text-white">Novo Disparo</h3>
@@ -807,6 +807,25 @@
                             <input id="mass-message-btn-url" type="url" class="form-input w-full p-2 rounded-md" placeholder="https://seu-link.com">
                         </div>
                         <button id="send-mass-message-btn" data-bot-id="${botId}" class="btn w-full mt-3 py-2 font-semibold">Enviar para ${users.length} Contato(s)</button>
+                    </div>
+                `;
+                
+                const userRows = users.map(user => `
+                    <tr class="hover:bg-slate-800/50">
+                        <td>${user.first_name || ''} ${user.last_name || ''}</td>
+                        <td>${user.username ? `@${user.username}` : 'N/A'}</td>
+                    </tr>
+                `).join('');
+
+                const contactsSection = `
+                     <div class="mt-6 pt-4 border-t border-slate-700">
+                        <h3 class="text-lg font-semibold mb-2 text-white">Contatos Ativos (${users.length})</h3>
+                         <div class="overflow-y-auto max-h-48 border border-slate-700 rounded-lg">
+                            <table class="table-custom w-full text-sm">
+                                <thead><tr><th>Nome</th><th>Username</th></tr></thead>
+                                <tbody>${users.length > 0 ? userRows : '<tr><td colspan="2" class="text-center text-gray-500">Nenhum contato.</td></tr>'}</tbody>
+                            </table>
+                        </div>
                     </div>
                 `;
 
@@ -828,7 +847,7 @@
                     </div>
                 `;
 
-                const content = massMessageSection + historySection;
+                const content = '<div class="grid grid-cols-1 md:grid-cols-2 gap-8">' + massMessageSection + contactsSection + '</div>' + historySection;
                 modalContainer.innerHTML = this.templates.modal(`Disparador e Contatos: @${bot.bot_name}`, content);
 
             } catch (e) {
@@ -849,7 +868,7 @@
                 });
                 
                 this.showToast(response.message, 'success');
-                document.getElementById('modal-container').innerHTML = ''; // Fecha o modal
+                document.getElementById('modal-container').innerHTML = '';
                 
             } catch (e) {
                 // Erro já tratado pelo apiRequest
