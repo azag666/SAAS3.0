@@ -504,8 +504,10 @@
 
         addAuthEventListeners() {
             const container = document.getElementById('app');
+            
+            // Armazenar os dados do formulário de registro temporariamente
             let registrationData = {};
-        
+
             container.addEventListener('click', async (e) => {
                 if (e.target.id === 'showRegister') { e.preventDefault(); this.renderLogin('register'); }
                 if (e.target.id === 'showLogin') { e.preventDefault(); this.renderLogin('login'); }
@@ -519,6 +521,15 @@
                         this.showToast('Por favor, preencha todos os campos.', 'error');
                         return;
                     }
+                    
+                    // --- CORREÇÃO: Formatar o número de telefone para o padrão E.164 da Twilio
+                    let phoneNumber = data.phoneNumber.replace(/\D/g, '');
+                    if (!phoneNumber.startsWith('55')) {
+                        phoneNumber = '55' + phoneNumber;
+                    }
+                    data.phoneNumber = '+' + phoneNumber;
+                    // --- FIM DA CORREÇÃO
+
                     registrationData = data;
                     
                     try {
@@ -529,7 +540,7 @@
                         authFormsContainer.innerHTML = this.templates.verificationForm();
                         this.showToast('Código enviado com sucesso!', 'success');
                     } catch (err) {
-                        this.showToast('Falha ao enviar o código. Tente novamente.', 'error');
+                        this.showToast('Falha ao enviar o código. Verifique o número e tente novamente.', 'error');
                     } finally {
                         button.disabled = false;
                         button.innerHTML = 'Enviar Código de Verificação';
@@ -658,7 +669,7 @@
 
             document.addEventListener('submit', async (e) => {
                 const form = e.target.closest('form');
-                if (!form || form.id === 'loginForm' || form.id === 'registerForm') return;
+                if (!form || form.id === 'loginForm' || form.id === 'registerForm' || form.id === 'verificationForm') return;
                 
                 e.preventDefault();
                 const button = form.querySelector('button[type="submit"]');
