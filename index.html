@@ -72,7 +72,9 @@
         .tab-button.active { background-color: rgba(14, 165, 233, 0.1); border-color: #0ea5e9; color: white; font-weight: 600; }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.5s ease-out; }
+        /* Estilos para a Barra de Progresso Circular */
         .progress-ring { transition: stroke-dashoffset 0.5s; transform: rotate(-90deg); transform-origin: 50% 50%; }
+        /* Barra de Progresso Linear */
         .progress-bar { background-color: #334155; border-radius: 999px; overflow: hidden; height: 8px; }
         .progress-bar-inner { height: 100%; transition: width 0.5s ease; }
     </style>
@@ -179,17 +181,12 @@
                 </div>`;
             },
             layout() {
-                // return `
-                <div class="relative min-h-screen md:flex">
-                    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden" style="display: none;"></div>
-
-                    <aside id="sidebar" class="w-64 card p-4 flex flex-col fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-30">
-                        <div class="text-center mb-10 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <svg class="h-8 w-8 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
-                                <h1 class="text-2xl font-bold text-white">HotTrack</h1>
-                            </div>
-                            <button id="close-sidebar-btn" class="md:hidden text-gray-400 hover:text-white">&times;</button>
+                return `
+                <div class="flex h-screen">
+                    <aside class="w-64 card p-4 flex flex-col">
+                        <div class="text-center mb-10 flex items-center justify-center gap-2">
+                            <svg class="h-8 w-8 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+                            <h1 class="text-2xl font-bold text-white">HotTrack</h1>
                         </div>
                         <nav id="sidebarNav" class="flex flex-col space-y-2">
                             <div data-target="dashboard" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10v11h18V10M3 10l9-7 9 7M3 10h18" /></svg>Dashboard</div>
@@ -206,17 +203,7 @@
                         </nav>
                         <div class="mt-auto"><button id="logoutButton" class="w-full text-gray-400 hover:bg-red-900/50 hover:text-white font-semibold py-2 px-4 rounded-md flex items-center justify-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>Sair</button></div>
                     </aside>
-                    <div class="flex-1 flex flex-col">
-                        <header class="p-4 md:hidden card flex justify-between items-center">
-                             <button id="open-sidebar-btn" class="text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                                </svg>
-                             </button>
-                             <div class="text-lg font-bold">HotTrack</div>
-                        </header>
-                        <main id="content" class="flex-1 p-4 md:p-8 overflow-y-auto"></main>
-                    </div>
+                    <main id="content" class="flex-1 p-8 overflow-y-auto"></main>
                 </div>`;
             },
             dateFilterComponent(page) {
@@ -319,9 +306,8 @@
             dispatches() {
                 const { dispatches } = App.state.data;
                 const totalCampaigns = dispatches.length;
+                const totalSent = dispatches.reduce((acc, d) => acc + (d.success_count || 0) + (d.failure_count || 0), 0);
                 const totalSuccess = dispatches.reduce((acc, d) => acc + (d.success_count || 0), 0);
-                const totalFailure = dispatches.reduce((acc, d) => acc + (d.failure_count || 0), 0);
-                const totalSent = totalSuccess + totalFailure;
                 const deliveryRate = totalSent > 0 ? (totalSuccess / totalSent) * 100 : 0;
 
                 const dispatchListHTML = dispatches.map(d => {
@@ -662,18 +648,6 @@
 
         addDashboardEventListeners() {
             document.addEventListener('click', async (e) => {
-                // *** NOVO: Controle do menu responsivo ***
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('sidebar-overlay');
-                if (e.target.closest('#open-sidebar-btn')) {
-                    sidebar.classList.remove('-translate-x-full');
-                    overlay.style.display = 'block';
-                }
-                if (e.target.id === 'sidebar-overlay' || e.target.closest('#close-sidebar-btn') || e.target.closest('.nav-link')) {
-                    sidebar.classList.add('-translate-x-full');
-                    overlay.style.display = 'none';
-                }
-
                 if (e.target.id === 'logoutButton') this.logout();
                 if (e.target.closest('#closeModalBtn')) document.getElementById('modal-container').innerHTML = '';
                 const sidebarLink = e.target.closest('.nav-link');
@@ -1062,12 +1036,13 @@
                 } else if (page === 'dispatches') {
                     const dispatches = await this.apiRequest('/api/dispatches');
                     this.state.data.dispatches = dispatches;
-                    contentContainer.innerHTML = this.templates.dispatches();
-                    this.updateProgressRing();
+                    contentContainer.innerHTML = this.templates.dispatches(); // Re-renderiza com os dados
+                    this.updateProgressRing(); // Atualiza o anel de progresso
                 }
             }
         },
-        
+
+        // *** NOVO: Atualiza o anel de progresso ***
         updateProgressRing() {
             const circle = document.getElementById('progress-ring-circle');
             if (!circle) return;
