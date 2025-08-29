@@ -152,7 +152,6 @@
                     <div class="text-center mt-6"><a href="#" id="showRegister" class="text-sm text-sky-400 hover:text-sky-300">Não tem uma conta? Cadastre-se</a></div>
                 </div>`;
             },
-            // *** FORMULÁRIO DE REGISTRO SIMPLIFICADO ***
             registerForm() {
                 return `
                 <div class="card p-8 rounded-2xl shadow-lg animate-fade-in">
@@ -166,7 +165,6 @@
                     <div class="text-center mt-6"><a href="#" id="showLogin" class="text-sm text-sky-400 hover:text-sky-300">Já tem uma conta? Faça Login</a></div>
                 </div>`;
             },
-            // *** LAYOUT RESPONSIVO CORRIGIDO ***
             layout() {
                 return `
                 <div class="relative min-h-screen md:flex">
@@ -593,6 +591,7 @@
             }
         },
 
+        // *** LÓGICA DE EVENTOS DE AUTENTICAÇÃO ATUALIZADA ***
         addAuthEventListeners() {
             const container = document.getElementById('app');
             container.addEventListener('click', async (e) => {
@@ -620,7 +619,6 @@
                 }
             });
         },
-
 
         addDashboardEventListeners() {
             document.addEventListener('click', async (e) => {
@@ -869,7 +867,6 @@
             }
         },
         
-        // *** FUNÇÃO DE REGISTRO SIMPLIFICADA ***
         async register(name, email, password) {
             try {
                 await this.apiRequest('/api/sellers/register', 'POST', { name, email, password });
