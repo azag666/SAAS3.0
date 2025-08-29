@@ -73,7 +73,11 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.5s ease-out; }
     </style>
-    
+</head>
+<body>
+    <div id="app"></div>
+    <div id="modal-container"></div>
+
     <script>
     // Bloqueia o clique direito e alguns atalhos de teclado para inspecionar
     document.addEventListener('contextmenu', event => event.preventDefault());
@@ -82,13 +86,7 @@
             event.preventDefault();
         }
     });
-    </script>
-</head>
-<body>
-    <div id="app"></div>
-    <div id="modal-container"></div>
 
-    <script>
     const App = {
         state: {
             API_BASE_URL: 'https://novaapi-one.vercel.app',
@@ -935,7 +933,8 @@
                 options: {
                     responsive: true, maintainAspectRatio: true,
                     scales: {
-                        y: { beginAtZero: true, ticks: { color: '#94a3b8', callback: (value) => 'R$ ' + value.toFixed(2).replace('.', ',') }, grid: { color: 'rgba(51, 65, 85, 0.5)' } },
+                        y: { beginAtZero: true, ticks: { color: '#94a3b8', callback: (value) => 'R$ ' + value.toFixed(2).replace('.', ',') }, grid: { color: 'rgba(51, 65, 85, 0.5)' } }
+,
                         x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(51, 65, 85, 0.5)' } }
                     },
                     plugins: {
