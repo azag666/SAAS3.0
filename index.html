@@ -116,18 +116,15 @@
                     this.navigateTo('dashboard');
                 } catch (e) { this.logout(); }
             } else {
+                // CORREÇÃO: Os "escutadores" de evento agora são adicionados apenas uma vez aqui.
+                this.addAuthEventListeners();
                 this.renderLogin();
             }
         },
 
         renderLogin(page = 'login') {
             document.getElementById('app').innerHTML = this.templates.auth(page);
-            this.addAuthEventListeners();
-        },
-
-        renderLayout() {
-            document.getElementById('app').innerHTML = this.templates.layout();
-            this.addDashboardEventListeners();
+            // CORREÇÃO: A chamada para addAuthEventListeners() foi removida daqui.
         },
         
         templates: {
