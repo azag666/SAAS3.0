@@ -501,7 +501,7 @@
                 </div>`;
             },
             modal(title, content) {
-                return `<div id="modal" class="modal active"><div class="card p-6 rounded-lg w-full max-w-3xl animate-fade-in"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-white">${title}</h2><button id="closeModalBtn" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>${content}</div></div>`;
+                return `<div id="modal" class="modal active"><div class="card p-6 rounded-lg w-full max-w-4xl animate-fade-in"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-white">${title}</h2><button id="closeModalBtn" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>${content}</div></div>`;
             }
         },
 
@@ -796,7 +796,7 @@
                     this.apiRequest(`/api/bots/${botId}/users`),
                     this.apiRequest(`/api/bots/${botId}/mass-sends`)
                 ]);
-
+                
                 const massMessageSection = `
                     <div>
                         <h3 class="text-lg font-semibold mb-2 text-white">Novo Disparo</h3>
@@ -818,9 +818,9 @@
                 `).join('');
 
                 const contactsSection = `
-                     <div class="mt-6 pt-4 border-t border-slate-700">
+                     <div>
                         <h3 class="text-lg font-semibold mb-2 text-white">Contatos Ativos (${users.length})</h3>
-                         <div class="overflow-y-auto max-h-48 border border-slate-700 rounded-lg">
+                         <div class="overflow-y-auto max-h-96 border border-slate-700 rounded-lg">
                             <table class="table-custom w-full text-sm">
                                 <thead><tr><th>Nome</th><th>Username</th></tr></thead>
                                 <tbody>${users.length > 0 ? userRows : '<tr><td colspan="2" class="text-center text-gray-500">Nenhum contato.</td></tr>'}</tbody>
@@ -830,7 +830,7 @@
                 `;
 
                 const historySection = `
-                    <div class="mt-6 pt-4 border-t border-slate-700">
+                    <div class="mt-6 pt-4 border-t border-slate-700 col-span-2">
                         <h3 class="text-lg font-semibold mb-2 text-white">Histórico de Disparos</h3>
                         <div id="history-list" class="overflow-y-auto max-h-48 space-y-2 pr-2">
                             ${history.length > 0 ? history.map(h => `
@@ -861,11 +861,13 @@
             button.innerHTML = 'Iniciando disparo...';
 
             try {
-                const response = await this.apiRequest(`/api/bots/${botId}/mass-send`, 'POST', {
-                    message,
-                    buttonText,
-                    buttonUrl
-                });
+                const payload = { message };
+                if (buttonText && buttonUrl) {
+                    payload.buttonText = buttonText;
+                    payload.buttonUrl = buttonUrl;
+                }
+                
+                const response = await this.apiRequest(`/api/bots/${botId}/mass-send`, 'POST', payload);
                 
                 this.showToast(response.message, 'success');
                 document.getElementById('modal-container').innerHTML = '';
