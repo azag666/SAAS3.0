@@ -154,9 +154,22 @@
                         <div><label class="text-sm font-medium text-gray-400">Nome</label><input name="name" type="text" required class="form-input w-full p-3 mt-1 rounded-md"></div>
                         <div><label class="text-sm font-medium text-gray-400">E-mail</label><input name="email" type="email" required class="form-input w-full p-3 mt-1 rounded-md"></div>
                         <div><label class="text-sm font-medium text-gray-400">Senha</label><input name="password" type="password" required minlength="8" class="form-input w-full p-3 mt-1 rounded-md"></div>
-                        <button type="submit" class="btn w-full font-semibold py-3 rounded-md">Criar Conta</button>
+                        <div><label class="text-sm font-medium text-gray-400">Telefone (DDD + Número)</label><input name="phoneNumber" type="tel" required class="form-input w-full p-3 mt-1 rounded-md" placeholder="+5541999999999"></div>
+                        <button type="button" id="sendCodeBtn" class="btn w-full font-semibold py-3 rounded-md">Enviar Código de Verificação</button>
                     </form>
                     <div class="text-center mt-6"><a href="#" id="showLogin" class="text-sm text-sky-400 hover:text-sky-300">Já tem uma conta? Faça Login</a></div>
+                </div>`;
+            },
+            verificationForm() {
+                return `
+                <div class="card p-8 rounded-2xl shadow-lg animate-fade-in">
+                    <h1 class="text-3xl font-bold text-center text-white">Verificar Telefone</h1>
+                    <p class="text-sm text-gray-400 text-center mt-2">Um código foi enviado para o seu número. Insira-o abaixo para continuar.</p>
+                    <form id="verificationForm" class="space-y-6 mt-8">
+                        <div><label class="text-sm font-medium text-gray-400">Código</label><input name="verificationCode" type="text" required class="form-input w-full p-3 mt-1 rounded-md"></div>
+                        <button type="submit" class="btn w-full font-semibold py-3 rounded-md">Verificar e Criar Conta</button>
+                    </form>
+                    <div class="text-center mt-6"><a href="#" id="resendCodeBtn" class="text-sm text-sky-400 hover:text-sky-300">Reenviar Código</a></div>
                 </div>`;
             },
             layout() {
@@ -491,21 +504,62 @@
 
         addAuthEventListeners() {
             const container = document.getElementById('app');
-            container.addEventListener('click', (e) => {
+            let registrationData = {};
+        
+            container.addEventListener('click', async (e) => {
                 if (e.target.id === 'showRegister') { e.preventDefault(); this.renderLogin('register'); }
                 if (e.target.id === 'showLogin') { e.preventDefault(); this.renderLogin('login'); }
+                
+                const button = e.target.closest('button');
+                if (button && button.id === 'sendCodeBtn') {
+                    e.preventDefault();
+                    const form = document.getElementById('registerForm');
+                    const data = Object.fromEntries(new FormData(form).entries());
+                    if (!data.name || !data.email || !data.password || !data.phoneNumber) {
+                        this.showToast('Por favor, preencha todos os campos.', 'error');
+                        return;
+                    }
+                    registrationData = data;
+                    
+                    try {
+                        button.disabled = true;
+                        button.innerHTML = 'Enviando...';
+                        await this.apiRequest('/api/sellers/send-verification', 'POST', { phoneNumber: registrationData.phoneNumber });
+                        const authFormsContainer = document.getElementById('auth-forms-container');
+                        authFormsContainer.innerHTML = this.templates.verificationForm();
+                        this.showToast('Código enviado com sucesso!', 'success');
+                    } catch (err) {
+                        this.showToast('Falha ao enviar o código. Tente novamente.', 'error');
+                    } finally {
+                        button.disabled = false;
+                        button.innerHTML = 'Enviar Código de Verificação';
+                    }
+                }
             });
+            
             container.addEventListener('submit', async (e) => {
                 const form = e.target;
-                if(form.id === 'loginForm' || form.id === 'registerForm') {
+                if(form.id === 'loginForm' || form.id === 'verificationForm') {
                     e.preventDefault();
                     const data = Object.fromEntries(new FormData(form).entries());
-                    if (form.id === 'loginForm') await this.login(data.email, data.password);
-                    if (form.id === 'registerForm') await this.register(data.name, data.email, data.password);
+                    const button = form.querySelector('button[type="submit"]');
+                    const originalButtonText = button.innerHTML;
+                    button.innerHTML = 'Verificando...';
+                    button.disabled = true;
+
+                    if (form.id === 'loginForm') {
+                        await this.login(data.email, data.password);
+                    }
+                    if (form.id === 'verificationForm') {
+                        await this.register(registrationData.name, registrationData.email, registrationData.password, registrationData.phoneNumber, data.verificationCode);
+                    }
+                    
+                    button.innerHTML = originalButtonText;
+                    button.disabled = false;
                 }
             });
         },
-        
+
         addDashboardEventListeners() {
             document.addEventListener('click', async (e) => {
                 if (e.target.id === 'logoutButton') this.logout();
@@ -708,9 +762,9 @@
             }
         },
         
-        async register(name, email, password) {
+        async register(name, email, password, phoneNumber, verificationCode) {
             try {
-                await this.apiRequest('/api/sellers/register', 'POST', { name, email, password });
+                await this.apiRequest('/api/sellers/register', 'POST', { name, email, password, phoneNumber, verificationCode });
                 this.showToast('Cadastro realizado! Faça o login.', 'success');
                 this.renderLogin('login');
             } catch (e) {}
