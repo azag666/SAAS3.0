@@ -722,6 +722,7 @@
                 }
             });
             
+            // *** Listener CORRIGIDO e SIMPLIFICADO para o seletor de fluxo ***
             document.addEventListener('change', e => {
                 if (e.target.id === 'value-type-selector') {
                     const container = document.getElementById('fixed-value-container');
@@ -730,7 +731,6 @@
                     }
                 }
 
-                // *** NOVA LÓGICA PARA O SELETOR DE FLUXO DO DISPARADOR ***
                 if (e.target.id === 'flow-type-selector') {
                     const container = document.getElementById('flow-config-container');
                     if (!container) return;
@@ -739,15 +739,11 @@
                         container.innerHTML = `
                             <div class="space-y-3">
                                 <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Etapa 1: Mensagem Inicial</h4>
-                                <textarea id="mass-message-initial-text" class="form-input w-full p-2 rounded-md" rows="3" placeholder="Mensagem principal que antecede o botão de gerar PIX..."></textarea>
+                                <textarea id="mass-message-initial-text" class="form-input w-full p-2 rounded-md" rows="3" placeholder="Mensagem principal... Ex: Olá, gere seu PIX abaixo."></textarea>
                                 <input id="mass-message-cta-button-text" class="form-input w-full p-2 rounded-md" placeholder="Texto do Botão (Ex: Gerar PIX Agora)">
                                 
-                                <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Etapa 2: Geração do PIX</h4>
-                                <input id="mass-message-pix-value" type="number" step="0.01" class="form-input w-full p-2 rounded-md" placeholder="Valor do PIX em REAIS (Ex: 19.90)">
-                                
-                                <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Etapa 3: Confirmação</h4>
-                                <textarea id="mass-message-confirmation-text" class="form-input w-full p-2 rounded-md" rows="2" placeholder="Mensagem após o PIX ser gerado (Ex: Copie o código, pague e clique abaixo)."></textarea>
-                                <input id="mass-message-check-button-text" class="form-input w-full p-2 rounded-md" placeholder="Texto do Botão (Ex: Conferir Pagamento)">
+                                <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Etapa 2: Valor do PIX</h4>
+                                <input id="mass-message-pix-value" type="number" step="0.01" class="form-input w-full p-2 rounded-md" placeholder="Valor em REAIS (Ex: 19.90)">
                             </div>
                         `;
                     } else { // external_link
@@ -755,7 +751,7 @@
                             <div class="space-y-3">
                                 <textarea id="mass-message-initial-text" class="form-input w-full p-2 rounded-md" rows="3" placeholder="Mensagem principal..."></textarea>
                                 <div class="grid grid-cols-2 gap-2">
-                                    <input id="mass-message-cta-button-text" class="form-input w-full p-2 rounded-md" placeholder="Texto do Botão (Ex: Comprar Agora)">
+                                    <input id="mass-message-cta-button-text" class="form-input w-full p-2 rounded-md" placeholder="Texto do Botão (Ex: Acessar Site)">
                                     <input id="mass-message-external-url" type="url" class="form-input w-full p-2 rounded-md" placeholder="https://seu-link.com">
                                 </div>
                             </div>
@@ -819,7 +815,6 @@
                     this.apiRequest(`/api/bots/${botId}/mass-sends`)
                 ]);
                 
-                // *** ATUALIZAÇÃO DA INTERFACE DE DISPARO ***
                 const massMessageSection = `
                     <div>
                         <h3 class="text-lg font-semibold mb-2 text-white">Configurar Disparo</h3>
@@ -882,8 +877,7 @@
 
                 const content = '<div class="grid grid-cols-1 md:grid-cols-2 gap-8">' + massMessageSection + contactsSection + '</div>' + historySection;
                 modalContainer.innerHTML = this.templates.modal(`Disparador e Contatos: @${bot.bot_name}`, content);
-
-                // *** Dispara o evento 'change' para renderizar o formulário correto inicialmente ***
+                
                 document.getElementById('flow-type-selector').dispatchEvent(new Event('change'));
 
             } catch (e) {
@@ -891,11 +885,11 @@
             }
         },
 
-        // *** ATUALIZAÇÃO DA FUNÇÃO DE ENVIO DE MENSAGEM ***
+        // *** Função de Envio CORRIGIDA ***
         async sendMassMessage(botId, button) {
             const originalButtonText = button.innerHTML;
             button.disabled = true;
-            button.innerHTML = 'Iniciando disparo...';
+            button.innerHTML = 'Enviando...';
 
             try {
                 const flowType = document.getElementById('flow-type-selector').value;
@@ -905,21 +899,19 @@
                     payload.initialText = document.getElementById('mass-message-initial-text').value;
                     payload.ctaButtonText = document.getElementById('mass-message-cta-button-text').value;
                     payload.pixValue = document.getElementById('mass-message-pix-value').value;
-                    payload.confirmationText = document.getElementById('mass-message-confirmation-text').value;
-                    payload.checkButtonText = document.getElementById('mass-message-check-button-text').value;
 
-                    if (!payload.initialText || !payload.ctaButtonText || !payload.pixValue || !payload.confirmationText || !payload.checkButtonText) {
-                         this.showToast('Por favor, preencha todos os campos do fluxo.', 'error');
-                         return;
+                    if (!payload.initialText || !payload.ctaButtonText || !payload.pixValue) {
+                         this.showToast('Para o fluxo PIX, todos os campos são obrigatórios.', 'error');
+                         button.innerHTML = originalButtonText; button.disabled = false; return;
                     }
                 } else { // external_link
                     payload.initialText = document.getElementById('mass-message-initial-text').value;
-                    payload.externalButtonText = document.getElementById('mass-message-cta-button-text').value;
+                    payload.ctaButtonText = document.getElementById('mass-message-cta-button-text').value;
                     payload.externalLink = document.getElementById('mass-message-external-url').value;
                     
-                    if (!payload.initialText || !payload.externalButtonText || !payload.externalLink) {
-                        this.showToast('Por favor, preencha todos os campos.', 'error');
-                        return;
+                    if (!payload.initialText || !payload.ctaButtonText || !payload.externalLink) {
+                        this.showToast('Para link externo, todos os campos são obrigatórios.', 'error');
+                        button.innerHTML = originalButtonText; button.disabled = false; return;
                     }
                 }
                 
@@ -929,10 +921,12 @@
                 document.getElementById('modal-container').innerHTML = '';
                 
             } catch (e) {
-                // Erro já tratado pelo apiRequest
+                // Erro já é tratado pelo apiRequest
             } finally {
-                button.innerHTML = originalButtonText;
-                button.disabled = false;
+                if (!button.disabled) { // Evita erro caso a janela seja fechada
+                    button.innerHTML = originalButtonText;
+                    button.disabled = false;
+                }
             }
         },
         
