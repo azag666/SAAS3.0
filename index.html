@@ -613,6 +613,11 @@
                         this.sendMassMessage(botId, e.target);
                     }
                 }
+                // *** NOVO: Botão para atualizar histórico ***
+                if (e.target.id === 'refresh-history-btn') {
+                    e.preventDefault();
+                    this.refreshMassSendHistory(e.target.dataset.botId);
+                }
                 if (e.target.classList.contains('test-pix-btn')) {
                     const provider = e.target.dataset.provider;
                     this.testIndividualPixConnection(provider, e.target);
@@ -722,7 +727,6 @@
                 }
             });
             
-            // *** Listener CORRIGIDO e SIMPLIFICADO para o seletor de fluxo ***
             document.addEventListener('change', e => {
                 if (e.target.id === 'value-type-selector') {
                     const container = document.getElementById('fixed-value-container');
@@ -738,17 +742,19 @@
                     if (e.target.value === 'pix_flow') {
                         container.innerHTML = `
                             <div class="space-y-3">
-                                <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Etapa 1: Mensagem Inicial</h4>
-                                <textarea id="mass-message-initial-text" class="form-input w-full p-2 rounded-md" rows="3" placeholder="Mensagem principal... Ex: Olá, gere seu PIX abaixo."></textarea>
+                                <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Conteúdo da Mensagem</h4>
+                                <input id="mass-message-image-url" class="form-input w-full p-2 rounded-md" placeholder="URL da Imagem (Opcional)">
+                                <textarea id="mass-message-initial-text" class="form-input w-full p-2 rounded-md" rows="3" placeholder="Mensagem principal..."></textarea>
                                 <input id="mass-message-cta-button-text" class="form-input w-full p-2 rounded-md" placeholder="Texto do Botão (Ex: Gerar PIX Agora)">
                                 
-                                <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Etapa 2: Valor do PIX</h4>
+                                <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Valor do PIX</h4>
                                 <input id="mass-message-pix-value" type="number" step="0.01" class="form-input w-full p-2 rounded-md" placeholder="Valor em REAIS (Ex: 19.90)">
                             </div>
                         `;
                     } else { // external_link
                         container.innerHTML = `
                             <div class="space-y-3">
+                                <input id="mass-message-image-url" class="form-input w-full p-2 rounded-md" placeholder="URL da Imagem (Opcional)">
                                 <textarea id="mass-message-initial-text" class="form-input w-full p-2 rounded-md" rows="3" placeholder="Mensagem principal..."></textarea>
                                 <div class="grid grid-cols-2 gap-2">
                                     <input id="mass-message-cta-button-text" class="form-input w-full p-2 rounded-md" placeholder="Texto do Botão (Ex: Acessar Site)">
@@ -818,12 +824,12 @@
                 const massMessageSection = `
                     <div>
                         <h3 class="text-lg font-semibold mb-2 text-white">Configurar Disparo</h3>
-                        <p class="text-sm text-gray-400 mb-4">A mensagem será enviada para <strong>${users.length}</strong> contato(s). Use tags HTML como &lt;b&gt;texto&lt;/b&gt; para negrito.</p>
+                        <p class="text-sm text-gray-400 mb-4">A mensagem será enviada para <strong>${users.length}</strong> contato(s).</p>
                         
                         <div class="mb-4">
-                            <label class="block mb-2 text-sm font-medium text-gray-400">Tipo de Ação do Botão Principal</label>
+                            <label class="block mb-2 text-sm font-medium text-gray-400">Tipo de Ação do Botão</label>
                             <select id="flow-type-selector" class="form-select w-full p-2 rounded-md">
-                                <option value="pix_flow">Iniciar Fluxo de PIX Interativo</option>
+                                <option value="pix_flow" selected>Iniciar Fluxo de PIX Interativo</option>
                                 <option value="external_link">Abrir um Link Externo</option>
                             </select>
                         </div>
@@ -858,19 +864,12 @@
 
                 const historySection = `
                     <div class="mt-6 pt-4 border-t border-slate-700 col-span-2">
-                        <h3 class="text-lg font-semibold mb-2 text-white">Histórico de Disparos</h3>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-semibold text-white">Histórico de Disparos</h3>
+                            <button id="refresh-history-btn" data-bot-id="${botId}" class="btn-secondary text-xs py-1 px-2">Atualizar</button>
+                        </div>
                         <div id="history-list" class="overflow-y-auto max-h-48 space-y-2 pr-2">
-                            ${history.length > 0 ? history.map(h => `
-                                <div class="p-3 bg-slate-900/50 rounded-lg text-sm">
-                                    <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
-                                        <span>${new Date(h.sent_at).toLocaleString('pt-BR')}</span>
-                                        <span><span class="text-green-400">${h.success_count} enviados</span>, <span class="text-red-400">${h.failure_count} falhas</span></span>
-                                    </div>
-                                    <p class="whitespace-pre-wrap">${h.message_content}</p>
-                                    ${h.pix_code ? `<div class="mt-2 p-2 bg-slate-800 rounded font-mono text-xs text-gray-400"><code>${h.pix_code}</code></div>` : ''}
-                                    ${h.button_text && h.button_url ? `<a href="${h.button_url}" target="_blank" class="inline-block mt-2 text-xs bg-sky-600/50 text-white py-1 px-2 rounded">${h.button_text}</a>` : ''}
-                                </div>
-                            `).join('') : '<p class="text-sm text-gray-500">Nenhum disparo realizado.</p>'}
+                            ${this.renderHistoryList(history)}
                         </div>
                     </div>
                 `;
@@ -884,8 +883,33 @@
                 modalContainer.innerHTML = this.templates.modal('Erro', '<p class="text-red-400">Não foi possível carregar os dados.</p>');
             }
         },
+        
+        renderHistoryList(history) {
+            if (!history || history.length === 0) {
+                return '<p class="text-sm text-gray-500">Nenhum disparo realizado.</p>';
+            }
+            return history.map(h => `
+                <div class="p-3 bg-slate-900/50 rounded-lg text-sm">
+                    <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
+                        <span>${new Date(h.sent_at).toLocaleString('pt-BR')}</span>
+                        <span><span class="text-green-400">${h.success_count || 0} enviados</span>, <span class="text-red-400">${h.failure_count || 0} falhas</span></span>
+                    </div>
+                    <p class="whitespace-pre-wrap">${h.message_content}</p>
+                    ${h.button_text && h.button_url ? `<a href="${h.button_url}" target="_blank" class="inline-block mt-2 text-xs bg-sky-600/50 text-white py-1 px-2 rounded">${h.button_text}</a>` : ''}
+                </div>
+            `).join('');
+        },
 
-        // *** Função de Envio CORRIGIDA ***
+        async refreshMassSendHistory(botId) {
+            try {
+                const history = await this.apiRequest(`/api/bots/${botId}/mass-sends`);
+                document.getElementById('history-list').innerHTML = this.renderHistoryList(history);
+                this.showToast('Histórico atualizado!', 'success');
+            } catch(e) {
+                this.showToast('Erro ao atualizar o histórico.', 'error');
+            }
+        },
+
         async sendMassMessage(botId, button) {
             const originalButtonText = button.innerHTML;
             button.disabled = true;
@@ -893,40 +917,37 @@
 
             try {
                 const flowType = document.getElementById('flow-type-selector').value;
-                let payload = { flowType };
+                let payload = { 
+                    flowType,
+                    imageUrl: document.getElementById('mass-message-image-url').value || null,
+                    initialText: document.getElementById('mass-message-initial-text').value,
+                    ctaButtonText: document.getElementById('mass-message-cta-button-text').value,
+                };
 
                 if (flowType === 'pix_flow') {
-                    payload.initialText = document.getElementById('mass-message-initial-text').value;
-                    payload.ctaButtonText = document.getElementById('mass-message-cta-button-text').value;
                     payload.pixValue = document.getElementById('mass-message-pix-value').value;
-
                     if (!payload.initialText || !payload.ctaButtonText || !payload.pixValue) {
                          this.showToast('Para o fluxo PIX, todos os campos são obrigatórios.', 'error');
-                         button.innerHTML = originalButtonText; button.disabled = false; return;
+                         return; // Early return stops execution
                     }
                 } else { // external_link
-                    payload.initialText = document.getElementById('mass-message-initial-text').value;
-                    payload.ctaButtonText = document.getElementById('mass-message-cta-button-text').value;
                     payload.externalLink = document.getElementById('mass-message-external-url').value;
-                    
                     if (!payload.initialText || !payload.ctaButtonText || !payload.externalLink) {
                         this.showToast('Para link externo, todos os campos são obrigatórios.', 'error');
-                        button.innerHTML = originalButtonText; button.disabled = false; return;
+                        return; // Early return
                     }
                 }
                 
                 const response = await this.apiRequest(`/api/bots/${botId}/mass-send`, 'POST', payload);
-                
                 this.showToast(response.message, 'success');
-                document.getElementById('modal-container').innerHTML = '';
+                // Don't close modal, allow user to refresh history
+                this.refreshMassSendHistory(botId);
                 
             } catch (e) {
-                // Erro já é tratado pelo apiRequest
+                // Error is handled by apiRequest
             } finally {
-                if (!button.disabled) { // Evita erro caso a janela seja fechada
-                    button.innerHTML = originalButtonText;
-                    button.disabled = false;
-                }
+                button.innerHTML = originalButtonText;
+                button.disabled = false;
             }
         },
         
