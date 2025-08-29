@@ -72,6 +72,11 @@
         .tab-button.active { background-color: rgba(14, 165, 233, 0.1); border-color: #0ea5e9; color: white; font-weight: 600; }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.5s ease-out; }
+        /* Estilos para a Barra de Progresso Circular */
+        .progress-ring { transition: stroke-dashoffset 0.5s; transform: rotate(-90deg); transform-origin: 50% 50%; }
+        /* Barra de Progresso Linear */
+        .progress-bar { background-color: #334155; border-radius: 999px; overflow: hidden; height: 8px; }
+        .progress-bar-inner { height: 100%; transition: width 0.5s ease; }
     </style>
 </head>
 <body>
@@ -288,7 +293,6 @@
                 <div class="animate-fade-in">
                     <div class="flex justify-between items-center mb-6">
                         <h1 class="text-3xl font-bold text-white">Gerenciar Bots</h1>
-                        <button id="show-dispatch-modal-btn" class="btn">Criar Novo Disparo</button>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="card p-6 rounded-lg">
@@ -299,29 +303,73 @@
                     </div>
                 </div>`;
             },
-            // *** NOVA PÁGINA DE DISPAROS ***
             dispatches() {
-                const dispatchListHTML = App.state.data.dispatches.map(d => `
+                const { dispatches } = App.state.data;
+                const totalCampaigns = dispatches.length;
+                const totalSent = dispatches.reduce((acc, d) => acc + (d.success_count || 0) + (d.failure_count || 0), 0);
+                const totalSuccess = dispatches.reduce((acc, d) => acc + (d.success_count || 0), 0);
+                const deliveryRate = totalSent > 0 ? (totalSuccess / totalSent) * 100 : 0;
+
+                const dispatchListHTML = dispatches.map(d => {
+                    const total = (d.success_count || 0) + (d.failure_count || 0);
+                    const successRate = total > 0 ? ((d.success_count || 0) / total) * 100 : 0;
+                    return `
                     <tr class="hover:bg-slate-800/50">
                         <td>${new Date(d.sent_at).toLocaleString('pt-BR')}</td>
-                        <td><p class="truncate max-w-xs">${d.message_content}</p></td>
-                        <td><span class="text-green-400">${d.success_count || 0}</span></td>
-                        <td><span class="text-red-400">${d.failure_count || 0}</span></td>
-                        <td><button data-log-id="${d.id}" class="view-dispatch-details-btn btn-secondary text-xs py-1 px-2">Ver Detalhes</button></td>
+                        <td class="flex items-center gap-2">
+                            ${d.image_url ? '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14" /></svg>' : ''}
+                            <p class="truncate max-w-xs">${d.message_content}</p>
+                        </td>
+                        <td>${total}</td>
+                        <td class="w-40">
+                            <div class="progress-bar w-full">
+                                <div class="progress-bar-inner bg-green-500" style="width: ${successRate}%;"></div>
+                            </div>
+                        </td>
+                        <td><button data-log-id="${d.id}" class="view-dispatch-details-btn btn-secondary text-xs py-1 px-2">Ver Relatório</button></td>
                     </tr>
-                `).join('');
+                `}).join('');
 
                 return `
                 <div class="animate-fade-in">
                     <div class="flex justify-between items-center mb-6">
                         <h1 class="text-3xl font-bold text-white">Central de Disparos</h1>
-                         <button id="show-dispatch-modal-btn" class="btn">Criar Novo Disparo</button>
+                        <button id="show-dispatch-modal-btn" class="btn">Criar Novo Disparo</button>
                     </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="card p-6 rounded-lg">
+                            <h3 class="text-sm font-medium text-gray-400">Total de Campanhas</h3>
+                            <p id="stat-total-campaigns" class="text-4xl font-bold text-white mt-2">${totalCampaigns}</p>
+                        </div>
+                        <div class="card p-6 rounded-lg">
+                            <h3 class="text-sm font-medium text-gray-400">Total de Envios</h3>
+                            <p id="stat-total-sent" class="text-4xl font-bold text-white mt-2">${totalSent}</p>
+                        </div>
+                        <div class="card p-6 rounded-lg">
+                            <h3 class="text-sm font-medium text-gray-400">Envios com Sucesso</h3>
+                            <p id="stat-total-success" class="text-4xl font-bold text-green-400 mt-2">${totalSuccess}</p>
+                        </div>
+                        <div class="card p-6 rounded-lg flex items-center justify-center gap-4">
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-400">Taxa de Entrega</h3>
+                                <p id="stat-delivery-rate" class="text-4xl font-bold text-sky-400 mt-2">${deliveryRate.toFixed(1)}%</p>
+                            </div>
+                            <div class="relative w-24 h-24">
+                                <svg class="w-full h-full" viewBox="0 0 100 100">
+                                    <circle class="text-slate-700" stroke-width="10" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
+                                    <circle id="progress-ring-circle" class="progress-ring text-sky-400" stroke-width="10" stroke-linecap="round" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="card p-6 rounded-lg">
+                        <h2 class="text-xl font-semibold text-white mb-4">Histórico de Campanhas</h2>
                         <div class="overflow-x-auto">
                             <table class="table-custom w-full text-sm">
                                 <thead>
-                                    <tr><th>Data</th><th>Mensagem</th><th>Sucessos</th><th>Falhas</th><th>Ações</th></tr>
+                                    <tr><th>Data</th><th>Mensagem</th><th>Envios</th><th>Performance</th><th>Ações</th></tr>
                                 </thead>
                                 <tbody id="dispatches-table-body">
                                     ${dispatchListHTML.length ? dispatchListHTML : '<tr><td colspan="5" class="text-center text-gray-500">Nenhum disparo realizado ainda.</td></tr>'}
@@ -775,7 +823,7 @@
                     if (e.target.value === 'pix_flow') {
                         container.innerHTML = `
                             <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Conteúdo da Mensagem</h4>
-                            <input id="mass-message-image-url" type="url" class="form-input w-full p-2 rounded-md" placeholder="URL da Imagem (Opcional)">
+                             <input id="mass-message-image-url" type="url" class="form-input w-full p-2 rounded-md" placeholder="URL da Imagem (Opcional)">
                             <textarea id="mass-message-initial-text" class="form-input w-full p-2 rounded-md mt-2" rows="3" placeholder="Mensagem principal... Ex: Olá, gere seu PIX abaixo."></textarea>
                             <input id="mass-message-cta-button-text" class="form-input w-full p-2 rounded-md mt-2" placeholder="Texto do Botão (Ex: Gerar PIX Agora)">
                             <h4 class="text-md font-semibold mt-4 mb-1 text-sky-400">Valor do PIX</h4>
@@ -793,7 +841,6 @@
                         `;
                     }
                 }
-                 // *** NOVO: Listener para atualizar contagem de contatos no multi-bot ***
                 if (e.target.name === 'bot_ids[]') {
                     this.updateDispatchUserCount();
                 }
@@ -843,7 +890,6 @@
             this.init();
         },
 
-        // *** NOVO: Modal de Disparo Multi-Bot ***
         showDispatchModal() {
             const botCheckboxes = this.state.data.bots.map(b => `
                 <label class="flex items-center space-x-2 text-gray-400 hover:text-white cursor-pointer">
@@ -933,7 +979,7 @@
                 const response = await this.apiRequest(`/api/bots/mass-send`, 'POST', payload);
                 this.showToast(response.message, 'success');
                 document.getElementById('modal-container').innerHTML = '';
-                this.navigateTo('dispatches'); // Navega para a central de disparos
+                this.navigateTo('dispatches');
                 
             } catch (e) {
                 // Erro já é tratado pelo apiRequest
@@ -943,7 +989,6 @@
             }
         },
 
-        // *** NOVO: Ver detalhes do disparo ***
         async viewDispatchDetails(logId) {
             const modalContainer = document.getElementById('modal-container');
             modalContainer.innerHTML = this.templates.modal(`Relatório do Disparo #${logId}`, '<p>Carregando detalhes...</p>');
@@ -992,8 +1037,24 @@
                     const dispatches = await this.apiRequest('/api/dispatches');
                     this.state.data.dispatches = dispatches;
                     contentContainer.innerHTML = this.templates.dispatches(); // Re-renderiza com os dados
+                    this.updateProgressRing(); // Atualiza o anel de progresso
                 }
             }
+        },
+
+        // *** NOVO: Atualiza o anel de progresso ***
+        updateProgressRing() {
+            const circle = document.getElementById('progress-ring-circle');
+            if (!circle) return;
+
+            const radius = circle.r.baseVal.value;
+            const circumference = radius * 2 * Math.PI;
+            const rateText = document.getElementById('stat-delivery-rate').textContent;
+            const rate = parseFloat(rateText.replace('%', ''));
+
+            circle.style.strokeDasharray = `${circumference} ${circumference}`;
+            const offset = circumference - (rate / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
         },
         
         async fetchDashboardMetrics() {
