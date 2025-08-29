@@ -794,10 +794,13 @@
                 const data = await this.apiRequest('/api/sellers/login', 'POST', { email, password });
                 this.state.token = data.token;
                 localStorage.setItem('hottrack_token', data.token);
-                window.location.href = window.location.pathname; 
-            } catch (e) {
-                // error is handled by apiRequest
-            }
+                const appContainer = document.getElementById('app');
+                appContainer.innerHTML = `<div class="flex h-screen items-center justify-center"><p>Carregando...</p></div>`;
+                const staticData = await this.apiRequest('/api/dashboard/data');
+                this.state.data = { ...this.state.data, ...staticData };
+                this.renderLayout();
+                this.navigateTo('dashboard');
+            } catch (e) {}
         },
         
         async register(name, email, password, phoneNumber, verificationCode) {
