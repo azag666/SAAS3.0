@@ -73,6 +73,16 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.5s ease-out; }
     </style>
+    
+    <script>
+    // Bloqueia o clique direito e alguns atalhos de teclado para inspecionar
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.addEventListener('keydown', event => {
+        if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && event.key === 'I') || (event.metaKey && event.altKey && event.key === 'I')) {
+            event.preventDefault();
+        }
+    });
+    </script>
 </head>
 <body>
     <div id="app"></div>
@@ -993,192 +1003,6 @@
         async function initializeCheckout() { try { document.getElementById('product-name').textContent = CONFIG.PRODUCT_NAME; let final_value_cents; if (CONFIG.VALUE_TYPE === 'fixed') { final_value_cents = CONFIG.FIXED_VALUE_CENTS; if (!final_value_cents) return displayError('Valor do produto não configurado.'); } else { const urlValue = new URLSearchParams(window.location.search).get('value'); if (!urlValue) return displayError('Valor não fornecido na URL (ex: ?value=1990).'); final_value_cents = parseInt(urlValue, 10); } const urlParams = new URLSearchParams(window.location.search); const bodyPayload = { sellerApiKey: CONFIG.SELLER_API_KEY, checkoutId: CONFIG.CHECKOUT_ID, referer: document.referrer, user_agent: navigator.userAgent, fbclid: urlParams.get('fbclid'), fbp: document.cookie.split('; ').find(row => row.startsWith('_fbp='))?.split('=')[1], fbc: document.cookie.split('; ').find(row => row.startsWith('_fbc='))?.split('=')[1], utm_source: urlParams.get('utm_source'), utm_campaign: urlParams.get('utm_campaign'), utm_medium: urlParams.get('utm_medium'), utm_content: urlParams.get('utm_content'), utm_term: urlParams.get('utm_term') }; Object.keys(bodyPayload).forEach(key => (bodyPayload[key] === null || bodyPayload[key] === undefined) && delete bodyPayload[key]); const clickResponse = await fetch(CONFIG.API_BASE_URL + '/api/registerClick', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyPayload) }); if (!clickResponse.ok) throw new Error('Falha ao rastrear o acesso.'); const clickData = await clickResponse.json(); await generatePix(clickData.click_id, final_value_cents); } catch (error) { displayError(error.message); } }
         copyBtn.addEventListener('click', copyPixCode); initializeCheckout();
     });
-    <\/script>
-</body>
-</html>`;
-
-            const modalContent = `
-                <p class="text-sm text-gray-400 mb-4">Copie o código abaixo, salve como 'index.html' e hospede no seu domínio.</p>
-                <textarea id="checkout-code-textarea" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="15" readonly></textarea>
-                <button class="copy-btn btn w-full mt-4 py-2" data-target="#checkout-code-textarea">Copiar Código HTML</button>
-            `;
-            const modalContainer = document.getElementById('modal-container');
-            modalContainer.innerHTML = this.templates.modal(`Código do Checkout: ${checkout.name}`, modalContent);
-            modalContainer.querySelector('#checkout-code-textarea').value = htmlTemplate.trim();
-        },
-
-        async testIndividualPixConnection(provider, button) {
-            const originalText = button.innerHTML;
-            button.innerHTML = 'Testando...';
-            button.disabled = true;
-            this.updatePixStatusIndicator(provider, 'testing');
-            
-            const form = document.getElementById('pixSettingsForm');
-            const formData = Object.fromEntries(new FormData(form).entries());
-            try {
-                await this.apiRequest('/api/settings/pix', 'POST', formData);
-                App.state.data.settings = { ...App.state.data.settings, ...formData };
-            } catch (e) {
-                this.showToast('Erro ao salvar as configurações antes do teste.', 'error');
-                button.innerHTML = originalText; button.disabled = false;
-                this.updatePixStatusIndicator(provider); return;
-            }
-
-            try {
-                const result = await this.apiRequest('/api/pix/test-provider', 'POST', { provider });
-                localStorage.setItem(`pix_status_${provider}`, 'success');
-                localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
-                
-                const successModalContent = `<div class="space-y-4 text-sm"><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Provedor:</span> <span class="text-white">${result.provider}</span></div><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Adquirente:</span> <span class="text-white">${result.acquirer}</span></div><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Tempo de Resposta:</span> <span class="text-white">${result.responseTime}s</span></div><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 0,05):</p><textarea id="pix-test-key" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="4" readonly>${result.qr_code_text}</textarea><button class="copy-btn btn w-full mt-2 py-2 text-sm" data-target="#pix-test-key">Copiar Chave PIX</button></div></div>`;
-                document.getElementById('modal-container').innerHTML = this.templates.modal('Conexão Bem-sucedida!', successModalContent);
-
-            } catch (error) {
-                localStorage.setItem(`pix_status_${provider}`, 'failure');
-                localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
-                const errorModalContent = `<div class="text-center"><p class="text-lg font-medium text-red-400 mb-2">Falha na Conexão</p><p class="text-sm text-gray-400">${error.message || 'Ocorreu um erro desconhecido.'}</p></div>`;
-                document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste', errorModalContent);
-            } finally {
-                button.innerHTML = originalText; button.disabled = false;
-                this.updatePixStatusIndicator(provider);
-            }
-        },
-        
-        async testPriorityRoute(button) {
-            const originalText = button.innerHTML;
-            button.innerHTML = 'Testando Rota...';
-            button.disabled = true;
-
-            const form = document.getElementById('pixSettingsForm');
-            const formData = Object.fromEntries(new FormData(form).entries());
-            try {
-                await this.apiRequest('/api/settings/pix', 'POST', formData);
-                App.state.data.settings = { ...App.state.data.settings, ...formData };
-            } catch (e) {
-                this.showToast('Erro ao salvar as configurações antes do teste.', 'error');
-                button.innerHTML = originalText; button.disabled = false; return;
-            }
-
-            try {
-                const result = await this.apiRequest('/api/pix/test-priority-route', 'POST');
-                const logHTML = result.log.map(line => `<li class="${line.startsWith('SUCESSO') ? 'text-green-400' : 'text-red-400'}">${line}</li>`).join('');
-                const successModalContent = `<div class="space-y-4 text-sm"><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Provedor de Sucesso:</span> <span class="text-white">${result.provider} (${result.position})</span></div><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Tempo de Resposta:</span> <span class="text-white">${result.responseTime}s</span></div><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">Log de Tentativas:</p><ul class="text-xs font-mono list-disc list-inside space-y-1">${logHTML}</ul></div><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 0,05):</p><textarea id="pix-test-key" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="3" readonly>${result.qr_code_text}</textarea><button class="copy-btn btn w-full mt-2 py-2 text-sm" data-target="#pix-test-key">Copiar Chave PIX</button></div></div>`;
-                document.getElementById('modal-container').innerHTML = this.templates.modal('Teste da Rota Concluído!', successModalContent);
-
-            } catch (error) {
-                const logHTML = error.log ? error.log.map(line => `<li class="text-red-400">${line}</li>`).join('') : '<li>Nenhum log disponível.</li>';
-                const errorModalContent = `<div class="space-y-4 text-sm"><p class="text-lg font-medium text-red-400 text-center mb-2">Falha na Rota de Prioridade</p><p class="text-gray-400 text-center">${error.message}</p><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">Log de Tentativas:</p><ul class="text-xs font-mono list-disc list-inside space-y-1">${logHTML}</ul></div></div>`;
-                document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste', errorModalContent);
-            } finally {
-                button.innerHTML = originalText; button.disabled = false;
-            }
-        },
-
-        async testBotConnection(botId, button) {
-            const originalText = button.innerHTML;
-            button.innerHTML = '...';
-            button.disabled = true;
-            this.updateBotStatusIndicator(botId, 'testing');
-
-            try {
-                const result = await this.apiRequest('/api/bots/test-connection', 'POST', { bot_id: botId });
-                localStorage.setItem(`bot_status_${botId}`, 'success');
-                localStorage.setItem(`bot_timestamp_${botId}`, Date.now());
-                this.showToast(result.message, 'success');
-            } catch (error) {
-                localStorage.setItem(`bot_status_${botId}`, 'failure');
-                localStorage.setItem(`bot_timestamp_${botId}`, Date.now());
-            } finally {
-                button.innerHTML = originalText; button.disabled = false;
-                this.updateBotStatusIndicator(botId);
-            }
-        },
-
-        updateAllBotStatusIndicators() {
-            if (this.state.data.bots && this.state.data.bots.length > 0) {
-                this.state.data.bots.forEach(bot => this.updateBotStatusIndicator(bot.id));
-            }
-        },
-        
-        updateBotStatusIndicator(botId, mode) {
-            const indicator = document.getElementById(`status-indicator-bot-${botId}`);
-            if (!indicator) return;
-
-            if (mode === 'testing') {
-                indicator.textContent = 'Testando...';
-                indicator.className = 'status-indicator testing';
-                return;
-            }
-
-            const status = localStorage.getItem(`bot_status_${botId}`);
-            const timestamp = localStorage.getItem(`bot_timestamp_${botId}`);
-
-            if (status === 'success' && timestamp) {
-                indicator.textContent = `Online (${this.formatTimeAgo(timestamp)})`;
-                indicator.className = 'status-indicator success';
-            } else if (status === 'failure' && timestamp) {
-                indicator.textContent = `Offline (${this.formatTimeAgo(timestamp)})`;
-                indicator.className = 'status-indicator failure';
-            } else {
-                indicator.textContent = 'Não testado';
-                indicator.className = 'status-indicator unknown';
-            }
-        },
-
-        updateAllPixStatusIndicators() {
-            const providers = ['pushinpay', 'cnpay', 'oasyfy'];
-            providers.forEach(provider => this.updatePixStatusIndicator(provider));
-        },
-
-        updatePixStatusIndicator(provider, mode) {
-             const indicator = document.getElementById(`status-indicator-${provider}`);
-            if (!indicator) return;
-
-            if (mode === 'testing') {
-                indicator.textContent = 'Testando...';
-                indicator.className = 'status-indicator testing';
-                return;
-            }
-
-            const status = localStorage.getItem(`pix_status_${provider}`);
-            const timestamp = localStorage.getItem(`bot_timestamp_${provider}`);
-
-            if (status === 'success' && timestamp) {
-                indicator.textContent = `Ativo (Testado ${this.formatTimeAgo(timestamp)})`;
-                indicator.className = 'status-indicator success';
-            } else if (status === 'failure' && timestamp) {
-                indicator.textContent = `Falhou (Testado ${this.formatTimeAgo(timestamp)})`;
-                indicator.className = 'status-indicator failure';
-            } else {
-                indicator.textContent = 'Não testado';
-                indicator.className = 'status-indicator unknown';
-            }
-        },
-
-        formatTimeAgo(timestamp) {
-            const seconds = Math.floor((Date.now() - timestamp) / 1000);
-            if (seconds < 60) return "agora";
-            const minutes = Math.floor(seconds / 60);
-            if (minutes < 60) return `há ${minutes} min`;
-            const hours = Math.floor(minutes / 60);
-            if (hours < 24) return `há ${hours}h`;
-            const days = Math.floor(hours / 24);
-            return `há ${days}d`;
-        },
-        
-        showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            let bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
-            toast.className = `fixed bottom-5 right-5 ${bgColor} text-white py-2 px-4 rounded-lg shadow-lg animate-fade-in z-50`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.addEventListener('transitionend', () => toast.remove());
-            }, 5000);
-        }
-    };
-
-    App.init();
     </script>
 </body>
 </html>
