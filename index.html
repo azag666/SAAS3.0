@@ -278,6 +278,7 @@
                             <span id="status-indicator-bot-${b.id}"></span>
                         </div>
                         <div class="space-x-2">
+                            <button data-id="${b.id}" class="view-contacts-btn btn-secondary text-xs py-1 px-2">Ver Contatos</button>
                             <button data-id="${b.id}" class="test-bot-btn btn-green text-xs py-1 px-2">Testar</button>
                             <button data-id="${b.id}" class="delete-bot-btn btn btn-red text-xs py-1 px-2">Excluir</button>
                         </div>
@@ -617,6 +618,25 @@
                     this.testBotConnection(botId, e.target);
                 }
 
+                // NOVO: Gatilho para ver contatos
+                if (e.target.classList.contains('view-contacts-btn')) {
+                    const botId = e.target.dataset.id;
+                    this.viewBotContacts(botId);
+                }
+
+                // NOVO: Gatilho para enviar mensagem em massa
+                if (e.target.id === 'send-mass-message-btn') {
+                    const botId = e.target.dataset.botId;
+                    const message = document.getElementById('mass-message-textarea').value;
+                    if (!message) {
+                        this.showToast('A mensagem não pode estar vazia.', 'error');
+                        return;
+                    }
+                    if (confirm(`Tem certeza que deseja enviar esta mensagem para todos os contatos do bot? Esta ação não pode ser desfeita.`)) {
+                        this.sendMassMessage(botId, message, e.target);
+                    }
+                }
+
                 if (e.target.classList.contains('test-pix-btn')) {
                     const provider = e.target.dataset.provider;
                     this.testIndividualPixConnection(provider, e.target);
@@ -767,17 +787,13 @@
                 this.state.token = data.token;
                 localStorage.setItem('hottrack_token', data.token);
 
-                // --- CORREÇÃO AQUI ---
-                // Em vez de recarregar a página, iniciamos o painel diretamente.
                 const appContainer = document.getElementById('app');
                 appContainer.innerHTML = `<div class="flex h-screen items-center justify-center"><p>Carregando...</p></div>`;
                 
-                // Buscamos os dados e renderizamos o layout principal
                 const staticData = await this.apiRequest('/api/dashboard/data');
                 this.state.data = { ...this.state.data, ...staticData };
                 this.renderLayout();
                 this.navigateTo('dashboard');
-                // --- FIM DA CORREÇÃO ---
 
             } catch (e) {
                 // Se o login falhar, o apiRequest já mostra a notificação de erro.
@@ -798,6 +814,96 @@
             this.init();
         },
 
+        // ... as outras funções continuam aqui ...
+        
+        // NOVO: Função para ver os contatos de um bot
+        async viewBotContacts(botId) {
+            const bot = this.state.data.bots.find(b => b.id == botId);
+            const modalContainer = document.getElementById('modal-container');
+            modalContainer.innerHTML = this.templates.modal(`Contatos do Bot: ${bot.bot_name}`, '<p>Carregando contatos...</p>');
+            try {
+                const users = await this.apiRequest(`/api/bots/${botId}/users`);
+                let content;
+                if (users.length === 0) {
+                    content = '<p class="text-gray-500">Nenhum contato salvo para este bot ainda.</p>';
+                } else {
+                    const userRows = users.map(user => `
+                        <tr class="hover:bg-slate-800/50">
+                            <td>${user.first_name || ''} ${user.last_name || ''}</td>
+                            <td>${user.username ? `@${user.username}` : 'N/A'}</td>
+                            <td class="font-mono text-xs">${user.chat_id}</td>
+                        </tr>
+                    `).join('');
+                    
+                    const table = `
+                        <div class="overflow-y-auto max-h-64 border border-slate-700 rounded-lg">
+                            <table class="table-custom w-full text-sm">
+                                <thead><tr><th>Nome</th><th>Username</th><th>Chat ID</th></tr></thead>
+                                <tbody>${userRows}</tbody>
+                            </table>
+                        </div>
+                    `;
+
+                    const massMessageSection = `
+                        <div class="mt-6 pt-4 border-t border-slate-700">
+                            <h3 class="text-lg font-semibold mb-2 text-white">Disparo em Massa</h3>
+                            <p class="text-sm text-gray-400 mb-4">A mensagem abaixo será enviada para todos os <strong>${users.length}</strong> contatos deste bot. Use com cuidado.</p>
+                            <textarea id="mass-message-textarea" class="form-input w-full p-2 rounded-md" rows="4" placeholder="Digite sua mensagem aqui... Você pode usar tags HTML básicas como <b></b> e <i></i>."></textarea>
+                            <button id="send-mass-message-btn" data-bot-id="${botId}" class="btn w-full mt-2 py-2 font-semibold">Enviar para ${users.length} Contato(s)</button>
+                        </div>
+                    `;
+
+                    content = table + massMessageSection;
+                }
+                modalContainer.innerHTML = this.templates.modal(`Contatos do Bot: ${bot.bot_name}`, content);
+            } catch (e) {
+                modalContainer.innerHTML = this.templates.modal('Erro', '<p class="text-red-400">Não foi possível carregar os contatos.</p>');
+            }
+        },
+
+        // NOVO: Função para enviar mensagem em massa
+        async sendMassMessage(botId, message, button) {
+            const originalButtonText = button.innerHTML;
+            button.disabled = true;
+
+            try {
+                const users = await this.apiRequest(`/api/bots/${botId}/users`);
+                if (users.length === 0) {
+                    this.showToast('Nenhum usuário para enviar mensagem.', 'error');
+                    return;
+                }
+
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (const [index, user] of users.entries()) {
+                    button.innerHTML = `Enviando... (${index + 1}/${users.length})`;
+                    try {
+                        await this.apiRequest('/api/telegram/send-message', 'POST', {
+                            botId: botId,
+                            chatId: user.chat_id,
+                            message: message
+                        });
+                        successCount++;
+                    } catch (e) {
+                        console.error(`Falha ao enviar para chat_id ${user.chat_id}:`, e);
+                        errorCount++;
+                    }
+                    // Adiciona um pequeno atraso para não sobrecarregar a API do Telegram
+                    await new Promise(resolve => setTimeout(resolve, 300)); 
+                }
+                
+                this.showToast(`Disparo concluído! Sucessos: ${successCount}, Falhas: ${errorCount}`, 'success');
+
+            } catch (e) {
+                this.showToast('Erro ao buscar a lista de usuários para o disparo.', 'error');
+            } finally {
+                button.innerHTML = originalButtonText;
+                button.disabled = false;
+            }
+        },
+
+        // O restante do seu código App (navigateTo, fetchDashboardMetrics, etc.) continua aqui...
         navigateTo(page) {
             this.state.currentPage = page;
             const contentContainer = document.getElementById('content');
