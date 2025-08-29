@@ -114,17 +114,22 @@
                     this.state.data = { ...this.state.data, ...staticData };
                     this.renderLayout();
                     this.navigateTo('dashboard');
-                } catch (e) { this.logout(); }
+                } catch (e) { 
+                    this.logout();
+                }
             } else {
-                // CORREÇÃO: Os "escutadores" de evento agora são adicionados apenas uma vez aqui.
-                this.addAuthEventListeners();
+                this.addAuthEventListeners(); 
                 this.renderLogin();
             }
         },
 
         renderLogin(page = 'login') {
             document.getElementById('app').innerHTML = this.templates.auth(page);
-            // CORREÇÃO: A chamada para addAuthEventListeners() foi removida daqui.
+        },
+
+        renderLayout() {
+            document.getElementById('app').innerHTML = this.templates.layout();
+            this.addDashboardEventListeners();
         },
         
         templates: {
@@ -502,7 +507,6 @@
         addAuthEventListeners() {
             const container = document.getElementById('app');
             
-            // Armazenar os dados do formulário de registro temporariamente
             let registrationData = {};
 
             container.addEventListener('click', async (e) => {
@@ -519,13 +523,11 @@
                         return;
                     }
                     
-                    // --- CORREÇÃO: Formatar o número de telefone para o padrão E.164 da Twilio
                     let phoneNumber = data.phoneNumber.replace(/\D/g, '');
                     if (!phoneNumber.startsWith('55')) {
                         phoneNumber = '55' + phoneNumber;
                     }
                     data.phoneNumber = '+' + phoneNumber;
-                    // --- FIM DA CORREÇÃO
 
                     registrationData = data;
                     
@@ -764,9 +766,21 @@
                 const data = await this.apiRequest('/api/sellers/login', 'POST', { email, password });
                 this.state.token = data.token;
                 localStorage.setItem('hottrack_token', data.token);
-                window.location.href = window.location.pathname; 
+
+                // --- CORREÇÃO AQUI ---
+                // Em vez de recarregar a página, iniciamos o painel diretamente.
+                const appContainer = document.getElementById('app');
+                appContainer.innerHTML = `<div class="flex h-screen items-center justify-center"><p>Carregando...</p></div>`;
+                
+                // Buscamos os dados e renderizamos o layout principal
+                const staticData = await this.apiRequest('/api/dashboard/data');
+                this.state.data = { ...this.state.data, ...staticData };
+                this.renderLayout();
+                this.navigateTo('dashboard');
+                // --- FIM DA CORREÇÃO ---
+
             } catch (e) {
-                // error is handled by apiRequest
+                // Se o login falhar, o apiRequest já mostra a notificação de erro.
             }
         },
         
