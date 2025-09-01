@@ -26,6 +26,7 @@
             --text-secondary: #94a3b8; /* slate-400 */
             --success: #4ade80; /* green-400 */
             --danger: #f87171; /* red-400 */
+            --warning: #facc15; /* yellow-400 */
         }
         
         body {
@@ -232,7 +233,8 @@
                 startDate: null,
                 endDate: null
             },
-            revenueChart: null
+            revenueChart: null,
+            dispatchesChart: null,
         },
 
         async init() {
@@ -456,24 +458,51 @@
                 const totalSuccess = dispatches.reduce((acc, d) => acc + (d.success_count || 0), 0);
                 const totalFailure = dispatches.reduce((acc, d) => acc + (d.failure_count || 0), 0);
                 const totalSent = totalSuccess + totalFailure;
-                const deliveryRate = totalSent > 0 ? (totalSuccess / totalSent) * 100 : 0;
+                const averageSuccessRate = totalSent > 0 ? (totalSuccess / totalSent) * 100 : 0;
 
-                const dispatchListHTML = dispatches.map(d => {
+                let bestCampaign = { rate: -1, content: 'N/A' };
+                if(dispatches.length > 0) {
+                    bestCampaign = dispatches.reduce((best, current) => {
+                        const total = (current.success_count || 0) + (current.failure_count || 0);
+                        const rate = total > 0 ? ((current.success_count || 0) / total) * 100 : 0;
+                        if (rate > best.rate) {
+                            return { rate: rate, content: current.message_content };
+                        }
+                        return best;
+                    }, { rate: -1, content: 'N/A' });
+                }
+
+                const engagementLevels = {
+                    1: 100, 2: 500, 3: 1000, 4: 5000, 5: 10000
+                };
+                let currentLevel = 0;
+                let nextLevelSends = engagementLevels[1];
+                for (const level in engagementLevels) {
+                    if (totalSent >= engagementLevels[level]) {
+                        currentLevel = parseInt(level);
+                    } else {
+                        nextLevelSends = engagementLevels[level];
+                        break;
+                    }
+                }
+                 if(currentLevel === 5) nextLevelSends = totalSent;
+                const progressToNextLevel = totalSent >= nextLevelSends ? 100 : (totalSent / nextLevelSends) * 100;
+
+
+                const dispatchListHTML = dispatches.sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at)).map(d => {
                     const total = (d.success_count || 0) + (d.failure_count || 0);
                     const successRate = total > 0 ? ((d.success_count || 0) / total) * 100 : 0;
+                    let performanceIcon = '';
+                    if (successRate > 95) performanceIcon = '🥇';
+                    else if (successRate > 85) performanceIcon = '🥈';
+                    else if (successRate > 70) performanceIcon = '🥉';
+
                     return `
                     <tr class="hover:bg-slate-800/50">
                         <td>${new Date(d.sent_at).toLocaleString('pt-BR')}</td>
-                        <td class="flex items-center gap-2">
-                            ${d.image_url ? '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14" /></svg>' : ''}
-                            <p class="truncate max-w-xs">${d.message_content}</p>
-                        </td>
+                        <td class="flex items-center gap-2"><p class="truncate max-w-xs">${d.message_content}</p></td>
                         <td>${total}</td>
-                        <td class="w-40">
-                            <div class="progress-bar w-full">
-                                <div class="progress-bar-inner bg-green-500" style="width: ${successRate}%;"></div>
-                            </div>
-                        </td>
+                        <td class="font-medium ${successRate >= 80 ? 'text-green-400' : 'text-yellow-400'}">${successRate.toFixed(1)}% ${performanceIcon}</td>
                         <td><button data-log-id="${d.id}" class="view-dispatch-details-btn btn-secondary text-xs py-1 px-2">Ver Relatório</button></td>
                     </tr>
                 `}).join('');
@@ -481,19 +510,41 @@
                 return `
                 <div class="animate-fade-in">
                     <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
-                        <div><h1 class="text-3xl font-bold text-white">Central de Disparos</h1><p class="text-slate-400">Envie mensagens em massa para os contatos dos seus bots.</p></div>
-                        <button id="show-dispatch-modal-btn" class="btn">Criar Novo Disparo</button>
+                        <div><h1 class="text-3xl font-bold text-white">Central de Campanhas</h1><p class="text-slate-400">Envie, analise e otimize seus disparos em massa.</p></div>
+                        <button id="show-dispatch-modal-btn" class="btn">🚀 Criar Novo Disparo</button>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div class="card p-6 rounded-lg"><h3 class="text-sm font-medium text-gray-400">Total de Campanhas</h3><p id="stat-total-campaigns" class="text-4xl font-bold text-white mt-2">${totalCampaigns}</p></div>
-                        <div class="card p-6 rounded-lg"><h3 class="text-sm font-medium text-gray-400">Total de Envios</h3><p id="stat-total-sent" class="text-4xl font-bold text-white mt-2">${totalSent}</p></div>
-                        <div class="card p-6 rounded-lg"><h3 class="text-sm font-medium text-gray-400">Envios com Sucesso</h3><p id="stat-total-success" class="text-4xl font-bold text-green-400 mt-2">${totalSuccess}</p></div>
-                        <div class="card p-6 rounded-lg flex items-center justify-center gap-4">
-                            <div>
-                                <h3 class="text-sm font-medium text-gray-400">Taxa de Entrega</h3>
-                                <p id="stat-delivery-rate" class="text-4xl font-bold text-sky-400 mt-2">${deliveryRate.toFixed(1)}%</p>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div class="card p-6 rounded-lg flex flex-col justify-between">
+                                <h3 class="text-sm font-medium text-gray-400">Estatísticas Gerais</h3>
+                                <div class="mt-2">
+                                    <p class="text-4xl font-bold text-white">${totalSent}</p>
+                                    <p class="text-slate-400">Envios totais</p>
+                                </div>
+                                <div class="mt-4">
+                                     <p class="text-2xl font-bold text-sky-400">${averageSuccessRate.toFixed(1)}%</p>
+                                     <p class="text-slate-400">Taxa de sucesso média</p>
+                                </div>
                             </div>
+                            <div class="card p-6 rounded-lg flex flex-col justify-between">
+                                <h3 class="text-sm font-medium text-gray-400">Melhor Campanha</h3>
+                                <p class="text-lg font-semibold text-white mt-2 truncate" title="${bestCampaign.content}">${bestCampaign.content}</p>
+                                <p class="text-4xl font-bold text-green-400 mt-2">${bestCampaign.rate > 0 ? bestCampaign.rate.toFixed(1) + '%' : 'N/A'}</p>
+                                <p class="text-slate-400">de taxa de sucesso</p>
+                            </div>
+                             <div class="card p-6 rounded-lg sm:col-span-2">
+                                <h3 class="text-sm font-medium text-gray-400">Nível de Engajamento</h3>
+                                <div class="flex items-center justify-between mt-2">
+                                    <span class="font-bold text-lg text-yellow-400">Nível ${currentLevel}</span>
+                                    <span class="text-xs text-slate-400">${totalSent} / ${nextLevelSends} envios</span>
+                                </div>
+                                <div class="progress-bar mt-2 w-full"><div class="progress-bar-inner bg-yellow-400" style="width: ${progressToNextLevel}%;"></div></div>
+                            </div>
+                        </div>
+                        <div class="card p-6 rounded-lg">
+                             <h2 class="text-xl font-semibold text-white mb-4">Sucesso vs. Falha</h2>
+                             <canvas id="dispatchesChart" height="250"></canvas>
                         </div>
                     </div>
 
@@ -501,7 +552,7 @@
                         <h2 class="text-xl font-semibold text-white mb-4">Histórico de Campanhas</h2>
                         <div class="overflow-x-auto">
                             <table class="table-custom w-full text-sm">
-                                <thead><tr><th>Data</th><th>Mensagem</th><th>Envios</th><th>Performance</th><th>Ações</th></tr></thead>
+                                <thead><tr><th>Data</th><th>Mensagem</th><th>Envios</th><th>Sucesso</th><th>Ações</th></tr></thead>
                                 <tbody id="dispatches-table-body">
                                     ${dispatchListHTML.length ? dispatchListHTML : '<tr><td colspan="5" class="text-center text-gray-500 py-8">Nenhum disparo realizado ainda.</td></tr>'}
                                 </tbody>
@@ -1044,6 +1095,8 @@
                 }
                 
                 const response = await this.apiRequest(`/api/bots/mass-send`, 'POST', payload);
+                // Fetch the latest dispatches after sending a new one
+                this.state.data.dispatches = await this.apiRequest('/api/dispatches');
                 this.showToast(response.message, 'success');
                 document.getElementById('modal-container').innerHTML = '';
                 this.navigateTo('dispatches');
@@ -1100,6 +1153,8 @@
                         this.updateAllPixStatusIndicators();
                     } else if (page === 'bots') {
                         this.updateAllBotStatusIndicators();
+                    } else if (page === 'dispatches') {
+                        this.renderDispatchesChart();
                     }
                 }, 100);
             }
@@ -1264,19 +1319,21 @@
 
             this.state.dateFilter = { period, startDate, endDate };
             
-            const filterContainer = document.getElementById(`${page}-date-filter`);
-            if (filterContainer) {
-                filterContainer.querySelectorAll('button[data-period]').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.period === period);
-                    btn.classList.toggle('!bg-sky-500', btn.dataset.period === period);
-                    btn.classList.toggle('!border-sky-400', btn.dataset.period === period);
-                    btn.classList.toggle('!text-white', btn.dataset.period === period);
-                });
-            }
-
+            // This is the fix: only call navigateTo on pages that NEED a full re-render on filter change.
+            // For transactions, we just re-render the table.
             if (page === 'dashboard') {
-                this.fetchDashboardMetrics();
+                 this.navigateTo(page);
             } else if (page === 'transactions') {
+                const filterContainer = document.getElementById('transactions-date-filter');
+                 if (filterContainer) {
+                    filterContainer.querySelectorAll('button[data-period]').forEach(btn => {
+                        const isActive = btn.dataset.period === period;
+                        btn.classList.toggle('active', isActive);
+                        btn.classList.toggle('!bg-sky-500', isActive);
+                        btn.classList.toggle('!border-sky-400', isActive);
+                        btn.classList.toggle('!text-white', isActive);
+                    });
+                }
                 this.renderTransactionsTable();
             }
         },
@@ -1322,6 +1379,49 @@
                             backgroundColor: '#0f172a', titleColor: '#f1f5f9', bodyColor: '#cbd5e1',
                             borderColor: '#334155', borderWidth: 1,
                             callbacks: { label: (context) => `Faturamento: R$ ${context.raw.toFixed(2).replace('.', ',')}` }
+                        }
+                    }
+                }
+            });
+        },
+
+        renderDispatchesChart() {
+            const ctx = document.getElementById('dispatchesChart');
+            if (!ctx) return;
+
+            const { dispatches } = App.state.data;
+            const totalSuccess = dispatches.reduce((acc, d) => acc + (d.success_count || 0), 0);
+            const totalFailure = dispatches.reduce((acc, d) => acc + (d.failure_count || 0), 0);
+
+            if (this.state.dispatchesChart) this.state.dispatchesChart.destroy();
+
+            this.state.dispatchesChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Sucesso', 'Falha'],
+                    datasets: [{
+                        data: [totalSuccess, totalFailure],
+                        backgroundColor: ['#4ade80', '#f87171'],
+                        borderColor: ['#1e293b'],
+                        borderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                boxWidth: 12,
+                                padding: 20
+                            }
+                        },
+                         tooltip: {
+                            backgroundColor: '#0f172a', titleColor: '#f1f5f9', bodyColor: '#cbd5e1',
+                            borderColor: '#334155', borderWidth: 1,
                         }
                     }
                 }
