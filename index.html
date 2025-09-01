@@ -6,79 +6,209 @@
     <title>HotTrack SAAS</title>
 
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#020617"/>
+    <meta name="theme-color" content="#0f172a"/>
 
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100%22><text y=%22.9em%22 font-size=%2290%22>⚡️</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡️</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-primary: #0f172a; /* slate-900 */
+            --bg-secondary: #1e293b; /* slate-800 */
+            --bg-card: rgba(30, 41, 59, 0.6); /* slate-800 com transparência */
+            --border-color: #334155; /* slate-700 */
+            --accent-primary: #38bdf8; /* sky-400 */
+            --accent-secondary: #0ea5e9; /* sky-500 */
+            --text-primary: #f1f5f9; /* slate-100 */
+            --text-secondary: #94a3b8; /* slate-400 */
+            --success: #4ade80; /* green-400 */
+            --danger: #f87171; /* red-400 */
+        }
+        
         body {
-            font-family: 'Inter', sans-serif; background-color: #020617; color: #e2e8f0;
-            background-image: radial-gradient(circle at 1px 1px, rgba(56, 189, 248, 0.1) 1px, transparent 0);
-            background-size: 20px 20px;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            background-image:
+                radial-gradient(circle at 1px 1px, rgba(56, 189, 248, 0.1) 1px, transparent 0),
+                radial-gradient(circle at top left, rgba(56, 189, 248, 0.2), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.2), transparent 40%);
+            background-size: 20px 20px, 100% 100%, 100% 100%;
         }
+
         .card {
-            background-color: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.2);
-            backdrop-filter: blur(12px); transition: all 0.3s ease;
-        }
-        .form-input, .form-select, .form-date {
-            background-color: rgba(30, 41, 59, 0.5); border: 1px solid #334155; color: #cbd5e1;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             transition: all 0.3s ease;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
+
+        .form-input, .form-select, .form-date {
+            background-color: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            border-radius: 0.375rem;
+        }
+
         .form-input:focus, .form-select:focus, .form-date:focus {
-            outline: none; border-color: #38bdf8;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
         }
+        
         .form-date::-webkit-calendar-picker-indicator {
-            filter: invert(0.6) sepia(1) saturate(5) hue-rotate(180deg);
+            filter: invert(0.8);
         }
+
         .btn {
-            background-color: #0ea5e9; color: white; transition: all 0.3s ease;
-            box-shadow: 0 0 10px rgba(14, 165, 233, 0.3), inset 0 0 5px rgba(255, 255, 255, 0.1);
-            border: 1px solid #38bdf8;
+            background-color: var(--accent-secondary);
+            color: white;
+            transition: all 0.3s ease;
+            border: 1px solid var(--accent-primary);
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.2), inset 0 0 8px rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
         }
+        .btn:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300%;
+            height: 300%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.5s ease;
+        }
+        .btn:hover:before {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
         .btn:hover {
-            background-color: #38bdf8; box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+            background-color: var(--accent-primary);
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.5);
             transform: translateY(-2px);
         }
         .btn:disabled { background-color: #334155; cursor: not-allowed; transform: none; box-shadow: none; }
-        .btn-red { background-color: #7f1d1d; border-color: #b91c1c; box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
-        .btn-red:hover { background-color: #991b1b; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
-        .btn-green { background-color: #047857; border-color: #059669; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
-        .btn-green:hover { background-color: #059669; box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
-        .btn-secondary { background-color: #334155; border-color: #475569; box-shadow: none; }
+
+        .btn-red { background-color: #991b1b; border-color: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.2); }
+        .btn-red:hover { background-color: #b91c1c; box-shadow: 0 0 25px rgba(239, 68, 68, 0.5); }
+        .btn-green { background-color: #047857; border-color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
+        .btn-green:hover { background-color: #059669; box-shadow: 0 0 25px rgba(16, 185, 129, 0.5); }
+        .btn-secondary { background-color: var(--border-color); border-color: #475569; box-shadow: none; }
         .btn-secondary:hover { background-color: #475569; transform: translateY(-2px); }
-        .btn-filter { background-color: transparent; border: 1px solid #334155; color: #94a3b8; }
-        .btn-filter:hover { background-color: #1e293b; border-color: #38bdf8; color: #e2e8f0; }
-        .btn-filter.active { background-color: rgba(14, 165, 233, 0.1); border-color: #0ea5e9; color: white; font-weight: 600; }
-        .nav-link { color: #94a3b8; border-left: 3px solid transparent; cursor: pointer; transition: all 0.3s ease; }
-        .nav-link:hover { background-color: rgba(56, 189, 248, 0.05); border-left-color: #38bdf8; color: #e2e8f0; }
-        .nav-link.active { background-color: rgba(14, 165, 233, 0.1); border-left-color: #0ea5e9; color: white; font-weight: 600; }
+        
+        .nav-link {
+            color: var(--text-secondary);
+            position: relative;
+            transition: all 0.3s ease;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .nav-link:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 0;
+            width: 4px;
+            background-color: var(--accent-primary);
+            border-radius: 0 4px 4px 0;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--text-primary);
+        }
+        .nav-link.active {
+            background-color: rgba(14, 165, 233, 0.15);
+            color: white;
+            font-weight: 600;
+        }
+        .nav-link.active:before {
+            height: 60%;
+        }
+
         .modal { display: none; }
-        .modal.active { display: flex; align-items: center; justify-content: center; position: fixed; z-index: 50; inset: 0; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(8px); }
-        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .table-custom th, .table-custom td { padding: 0.75rem; border-bottom: 1px solid #334155; text-align: left; }
-        .status-indicator { font-size: 0.75rem; font-weight: 500; padding: 0.125rem 0.5rem; border-radius: 9999px; display: inline-block; margin-left: 0.75rem; vertical-align: middle; }
-        .status-indicator.success { background-color: rgba(74, 222, 128, 0.1); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.2); }
-        .status-indicator.failure { background-color: rgba(248, 113, 113, 0.1); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.2); }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            z-index: 50;
+            inset: 0;
+            background-color: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .animate-fade-in { animation: fadeIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+
+        .table-custom th { color: var(--text-primary); }
+        .table-custom th, .table-custom td { padding: 1rem; border-bottom: 1px solid var(--border-color); text-align: left; }
+        .table-custom tbody tr:hover { background-color: rgba(30, 41, 59, 0.5); }
+
+        .status-indicator { font-size: 0.75rem; font-weight: 500; padding: 0.25rem 0.6rem; border-radius: 9999px; display: inline-block; margin-left: 0.75rem; vertical-align: middle; }
+        .status-indicator.success { background: linear-gradient(to right, rgba(74, 222, 128, 0.1), rgba(16, 185, 129, 0.1)); color: var(--success); border: 1px solid rgba(74, 222, 128, 0.2); }
+        .status-indicator.failure { background: linear-gradient(to right, rgba(248, 113, 113, 0.1), rgba(185, 28, 28, 0.1)); color: var(--danger); border: 1px solid rgba(248, 113, 113, 0.2); }
         .status-indicator.unknown { background-color: rgba(100, 116, 139, 0.1); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
-        .status-indicator.testing { background-color: rgba(56, 189, 248, 0.1); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.2); }
-        .tab-button { background-color: transparent; border: 1px solid #334155; color: #94a3b8; padding: 0.5rem 1rem; border-radius: 0.375rem; transition: all 0.3s ease; }
-        .tab-button:hover { background-color: #1e293b; color: #e2e8f0; }
-        .tab-button.active { background-color: rgba(14, 165, 233, 0.1); border-color: #0ea5e9; color: white; font-weight: 600; }
+        .status-indicator.testing { background: linear-gradient(to right, rgba(56, 189, 248, 0.1), rgba(14, 165, 233, 0.1)); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.2); }
+        
+        .tab-button { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 0.5rem 1rem; border-radius: 0.375rem; transition: all 0.3s ease; }
+        .tab-button:hover { background-color: var(--bg-secondary); color: var(--text-primary); }
+        .tab-button.active { background-color: rgba(14, 165, 233, 0.1); border-color: var(--accent-secondary); color: white; font-weight: 600; box-shadow: 0 0 10px rgba(14, 165, 233, 0.2); }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.5s ease-out; }
-        .progress-ring { transition: stroke-dashoffset 0.5s; transform: rotate(-90deg); transform-origin: 50% 50%; }
+
         .progress-bar { background-color: #334155; border-radius: 999px; overflow: hidden; height: 8px; }
         .progress-bar-inner { height: 100%; transition: width 0.5s ease; }
+
+        .metric-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .metric-card:before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 70%);
+            transition: transform 0.8s ease;
+            transform-origin: center center;
+            transform: scale(0);
+        }
+        .metric-card:hover:before {
+            transform: scale(3);
+        }
+
+        #app-loader { display: flex; align-items: center; justify-content: center; height: 100vh; font-size: 1.25rem; }
     </style>
 </head>
 <body>
-    <div id="app"></div>
+    <div id="app">
+        <div id="app-loader">
+            <svg class="animate-spin h-8 w-8 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="ml-3">Carregando...</span>
+        </div>
+    </div>
     <div id="modal-container"></div>
 
     <script>
@@ -110,8 +240,6 @@
                 this.state.API_BASE_URL = 'http://localhost:3000';
             }
             this.state.token = localStorage.getItem('hottrack_token');
-            const appContainer = document.getElementById('app');
-            appContainer.innerHTML = `<div class="flex h-screen items-center justify-center"><p>Carregando...</p></div>`;
             if (this.state.token) {
                 try {
                     const [staticData, transactions, dispatches] = await Promise.all([
@@ -126,8 +254,8 @@
                     this.logout();
                 }
             } else {
-                this.addAuthEventListeners(); 
                 this.renderLogin();
+                this.addAuthEventListeners(); 
             }
         },
 
@@ -142,64 +270,76 @@
         
         templates: {
             auth(page = 'login') {
-                return `<div class="flex items-center justify-center min-h-screen p-4"><div id="auth-forms-container" class="w-full max-w-md">${page === 'login' ? this.loginForm() : this.registerForm()}</div></div>`;
+                return `<div class="flex items-center justify-center min-h-screen p-4">${page === 'login' ? this.loginForm() : this.registerForm()}</div>`;
             },
             loginForm() {
                 return `
-                <div class="card p-8 rounded-2xl shadow-lg animate-fade-in">
-                    <h1 class="text-3xl font-bold text-center text-white">Acessar Plataforma</h1>
-                    <form id="loginForm" class="space-y-6 mt-8">
-                        <div><label class="text-sm font-medium text-gray-400">E-mail</label><input name="email" type="email" required class="form-input w-full p-3 mt-1 rounded-md"></div>
-                        <div><label class="text-sm font-medium text-gray-400">Senha</label><input name="password" type="password" required class="form-input w-full p-3 mt-1 rounded-md"></div>
-                        <button type="submit" class="btn w-full font-semibold py-3 rounded-md">Entrar</button>
+                <div class="card p-8 rounded-2xl shadow-lg w-full max-w-md animate-fade-in">
+                    <div class="text-center mb-8">
+                        <div class="flex items-center justify-center gap-2">
+                            <svg class="h-10 w-10 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+                            <h1 class="text-4xl font-bold text-white">HotTrack</h1>
+                        </div>
+                        <p class="text-slate-400 mt-2">Acesse sua conta para continuar.</p>
+                    </div>
+                    <form id="loginForm" class="space-y-6">
+                        <div><label class="text-sm font-medium text-gray-400 mb-1 block">E-mail</label><input name="email" type="email" required class="form-input w-full p-3"></div>
+                        <div><label class="text-sm font-medium text-gray-400 mb-1 block">Senha</label><input name="password" type="password" required class="form-input w-full p-3"></div>
+                        <button type="submit" class="btn w-full font-semibold py-3 rounded-md">Entrar na Plataforma</button>
                     </form>
-                    <div class="text-center mt-6"><a href="#" id="showRegister" class="text-sm text-sky-400 hover:text-sky-300">Não tem uma conta? Cadastre-se</a></div>
+                    <div class="text-center mt-6"><a href="#" id="showRegister" class="text-sm text-sky-400 hover:text-sky-300 hover:underline">Não tem uma conta? Cadastre-se agora</a></div>
                 </div>`;
             },
             registerForm() {
                 return `
-                <div class="card p-8 rounded-2xl shadow-lg animate-fade-in">
-                    <h1 class="text-3xl font-bold text-center text-white">Criar Conta</h1>
-                    <form id="registerForm" class="space-y-6 mt-8">
-                        <div><label class="text-sm font-medium text-gray-400">Nome</label><input name="name" type="text" required class="form-input w-full p-3 mt-1 rounded-md"></div>
-                        <div><label class="text-sm font-medium text-gray-400">E-mail</label><input name="email" type="email" required class="form-input w-full p-3 mt-1 rounded-md"></div>
-                        <div><label class="text-sm font-medium text-gray-400">Senha (mínimo 8 caracteres)</label><input name="password" type="password" required minlength="8" class="form-input w-full p-3 mt-1 rounded-md"></div>
-                        <button type="submit" class="btn w-full font-semibold py-3 rounded-md">Criar Conta</button>
+                <div class="card p-8 rounded-2xl shadow-lg w-full max-w-md animate-fade-in">
+                     <div class="text-center mb-8">
+                        <div class="flex items-center justify-center gap-2">
+                            <svg class="h-10 w-10 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+                            <h1 class="text-4xl font-bold text-white">HotTrack</h1>
+                        </div>
+                        <p class="text-slate-400 mt-2">Crie sua conta e comece a rastrear.</p>
+                    </div>
+                    <form id="registerForm" class="space-y-6">
+                        <div><label class="text-sm font-medium text-gray-400 mb-1 block">Nome</label><input name="name" type="text" required class="form-input w-full p-3"></div>
+                        <div><label class="text-sm font-medium text-gray-400 mb-1 block">E-mail</label><input name="email" type="email" required class="form-input w-full p-3"></div>
+                        <div><label class="text-sm font-medium text-gray-400 mb-1 block">Senha (mínimo 8 caracteres)</label><input name="password" type="password" required minlength="8" class="form-input w-full p-3"></div>
+                        <button type="submit" class="btn w-full font-semibold py-3 rounded-md">Criar Minha Conta</button>
                     </form>
-                    <div class="text-center mt-6"><a href="#" id="showLogin" class="text-sm text-sky-400 hover:text-sky-300">Já tem uma conta? Faça Login</a></div>
+                    <div class="text-center mt-6"><a href="#" id="showLogin" class="text-sm text-sky-400 hover:text-sky-300 hover:underline">Já tem uma conta? Faça Login</a></div>
                 </div>`;
             },
             layout() {
                 return `
                 <div class="relative min-h-screen md:flex">
-                    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden hidden"></div>
+                    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-60 z-20 md:hidden hidden"></div>
 
-                    <aside id="sidebar" class="w-64 card p-4 flex flex-col fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-30">
-                        <div class="text-center mb-10 flex items-center justify-between">
+                    <aside id="sidebar" class="w-64 bg-slate-900/80 backdrop-blur-lg p-4 flex-col fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-30 border-r border-slate-800 flex">
+                        <div class="text-center py-4 mb-6 flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <svg class="h-8 w-8 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
                                 <h1 class="text-2xl font-bold text-white">HotTrack</h1>
                             </div>
-                            <button id="close-sidebar-btn" class="md:hidden text-gray-400 text-2xl hover:text-white">&times;</button>
+                            <button id="close-sidebar-btn" class="md:hidden text-gray-400 text-3xl hover:text-white">&times;</button>
                         </div>
-                        <nav id="sidebarNav" class="flex flex-col space-y-2">
-                            <div data-target="dashboard" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10v11h18V10M3 10l9-7 9 7M3 10h18" /></svg>Dashboard</div>
-                            <div data-target="bots" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Gerenciar Bots</div>
-                            <div data-target="dispatches" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>Disparos</div>
-                            <div data-target="checkouts" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h6m3-3.75l-3 3m0 0l-3-3m3 3V15m6 1.125c1.02.392 2.132.526 3.25.526a9.75 9.75 0 000-19.5 9.75 9.75 0 00-3.25.526" /></svg>Criador de Checkout</div>
-                            <div data-target="pressels" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>Criador de Pressel</div>
-                            <div data-target="pixels" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 12l4.179 2.25M6.429 9.75l5.571 3 5.571-3m0 0l4.179-2.25L12 5.25 7.821 7.5" /></svg>Gerenciar Pixels</div>
-                            <div data-target="transactions" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.01 60.01 0 0110.875-3.004m-.89 6.002c-.087-.665-.544-1.284-1.2-1.76l-.427-.36a4.5 4.5 0 01-1.272-3.138v-.686m12.446 3.004c-.66.087-1.284.544-1.76 1.2l-.36.427a4.5 4.5 0 01-3.138 1.272h-.686m0-15.558a.75.75 0 00-.75-.75H12a.75.75 0 00-.75.75v.686a4.5 4.5 0 01-1.272 3.138l-.36.427c-.476.66-.544 1.284-.36 1.76M21.75 12a.75.75 0 00-.75-.75H12a.75.75 0 00-.75.75v.686a4.5 4.5 0 01-3.138 1.272l-.36.427c-.476.66-.544 1.284-.36 1.76m0-4.5a.75.75 0 00-.75-.75H12a.75.75 0 00-.75.75v.686a4.5 4.5 0 01-1.272 3.138l-.36.427c-.476.66-.544 1.284-.36 1.76M21.75 12a.75.75 0 00-.75-.75H12a.75.75 0 00-.75.75v.686a4.5 4.5 0 01-3.138 1.272l-.36.427c-.476.66-.544 1.284-.36 1.76" /></svg>Transações</div>
+                        <nav id="sidebarNav" class="flex-grow flex flex-col space-y-1">
+                            <div data-target="dashboard" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>Dashboard</div>
+                            <div data-target="bots" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V5a1 1 0 00-1.447-.894l-4 2A1 1 0 0011 7v10zM4 17a1 1 0 001.447.894l4-2A1 1 0 0010 15V5a1 1 0 00-1.447-.894l-4 2A1 1 0 004 7v10z" /></svg>Gerenciar Bots</div>
+                            <div data-target="dispatches" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>Disparos</div>
+                            <div data-target="checkouts" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" /><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" /></svg>Criador de Checkout</div>
+                            <div data-target="pressels" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>Criador de Pressel</div>
+                            <div data-target="pixels" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h10a3 3 0 013 3v5a.997.997 0 01-.293-.707zM5 4a1 1 0 00-1 1v.01L8 9.01l4-4.002V5a1 1 0 00-1-1H5z" clip-rule="evenodd" /></svg>Gerenciar Pixels</div>
+                            <div data-target="transactions" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.158-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-.165 0-.33.018-.488.054a1 1 0 01-.502 1.765l.986.328c.73.243 1.196.96 1.196 1.765 0 1.132-.98 1.99-2.206 1.99-1.225 0-2.205-.858-2.205-1.99 0-.962.63-1.698 1.447-1.938l.986-.329a1 1 0 01.502-1.765z" /><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.838.385l-.234-.14a1 1 0 00-1.18.157l-1 1.732a1 1 0 00.157 1.18l.234.14A4.5 4.5 0 005.5 8.5v.092l-1.07.356a1 1 0 00-.503 1.765l.986.329a2.5 2.5 0 001.09.243v.092a4.5 4.5 0 001.838-.385l.234.14a1 1 0 001.18-.157l1-1.732a1 1 0 00-.157-1.18l-.234-.14a4.5 4.5 0 001.03-2.062V5z" clip-rule="evenodd" /></svg>Transações</div>
                             <div class="h-px bg-slate-700 my-2"></div>
-                            <div data-target="settings" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg>API PIX</div>
-                            <div data-target="integrations" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>Integrações</div>
-                            <div data-target="documentation" class="nav-link p-3 rounded-lg flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>Documentação</div>
+                            <div data-target="settings" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" /></svg>API PIX</div>
+                            <div data-target="integrations" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0l-1.5-1.5a2 2 0 112.828-2.828l1.5 1.5z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M6.414 11.586a2 2 0 10-2.828 2.828l3 3a2 2 0 002.828 0l1.5-1.5a2 2 0 10-2.828-2.828l-1.5 1.5z" clip-rule="evenodd" /></svg>Integrações</div>
+                            <div data-target="documentation" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>Documentação</div>
                         </nav>
-                        <div class="mt-auto"><button id="logoutButton" class="w-full text-gray-400 hover:bg-red-900/50 hover:text-white font-semibold py-2 px-4 rounded-md flex items-center justify-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>Sair</button></div>
+                        <div class="mt-auto"><button id="logoutButton" class="w-full text-slate-400 hover:bg-red-900/50 hover:text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" /></svg>Sair da Conta</button></div>
                     </aside>
                     
                     <div class="flex-1 flex flex-col w-full">
-                        <header class="p-4 md:hidden card flex justify-between items-center">
+                        <header class="p-4 md:hidden card flex justify-between items-center sticky top-0 z-10">
                              <button id="open-sidebar-btn" class="text-white">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -213,45 +353,56 @@
             },
             dateFilterComponent(page) {
                 const { period } = App.state.dateFilter;
+                const btnClasses = "btn-secondary py-1 px-3 rounded-md text-xs";
+                const activeClasses = "active !bg-sky-500 !border-sky-400 !text-white";
                 return `
-                <div id="${page}-date-filter" class="card p-4 rounded-lg mb-6 flex flex-wrap items-center gap-2 text-sm">
-                    <span class="font-semibold mr-2">Filtrar por:</span>
-                    <button data-period="today" class="btn-filter py-1 px-3 rounded-md ${period === 'today' ? 'active' : ''}">Hoje</button>
-                    <button data-period="yesterday" class="btn-filter py-1 px-3 rounded-md ${period === 'yesterday' ? 'active' : ''}">Ontem</button>
-                    <button data-period="last7days" class="btn-filter py-1 px-3 rounded-md ${period === 'last7days' ? 'active' : ''}">Últimos 7 dias</button>
-                    <button data-period="thisMonth" class="btn-filter py-1 px-3 rounded-md ${period === 'thisMonth' ? 'active' : ''}">Este Mês</button>
+                <div id="${page}-date-filter" class="card p-3 rounded-lg mb-6 flex flex-wrap items-center gap-2 text-sm">
+                    <span class="font-semibold mr-2 text-slate-300">Período:</span>
+                    <button data-period="today" class="${btnClasses} ${period === 'today' ? activeClasses : ''}">Hoje</button>
+                    <button data-period="yesterday" class="${btnClasses} ${period === 'yesterday' ? activeClasses : ''}">Ontem</button>
+                    <button data-period="last7days" class="${btnClasses} ${period === 'last7days' ? activeClasses : ''}">7 Dias</button>
+                    <button data-period="thisMonth" class="${btnClasses} ${period === 'thisMonth' ? activeClasses : ''}">Este Mês</button>
                     <div class="flex items-center gap-2 pl-4 border-l border-slate-700 ml-2">
-                         <input type="date" id="${page}-start-date" class="form-date p-1 rounded-md text-sm">
+                         <input type="date" id="${page}-start-date" class="form-date p-1 rounded-md text-xs">
                          <span class="text-gray-500">até</span>
-                         <input type="date" id="${page}-end-date" class="form-date p-1 rounded-md text-sm">
-                         <button id="apply-custom-date-filter-${page}" class="btn-secondary py-1 px-3 rounded-md">Filtrar</button>
+                         <input type="date" id="${page}-end-date" class="form-date p-1 rounded-md text-xs">
+                         <button id="apply-custom-date-filter-${page}" class="btn-secondary py-1 px-3 rounded-md text-xs">Filtrar</button>
                     </div>
-                    <button id="clear-date-filter-${page}" class="btn-secondary py-1 px-3 rounded-md ml-auto">Limpar</button>
+                    <button id="clear-date-filter-${page}" class="btn-secondary py-1 px-3 rounded-md ml-auto text-xs">Limpar Filtro</button>
                 </div>`;
             },
             dashboard() {
                 return `
                 <div class="animate-fade-in">
-                    <div class="flex justify-between items-center mb-6">
+                    <div class="mb-6">
                         <h1 class="text-3xl font-bold text-white">Painel de Métricas</h1>
+                        <p class="text-slate-400">Visão geral do desempenho de suas operações.</p>
                     </div>
                     ${this.dateFilterComponent('dashboard')}
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-                        <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">Cliques na Página</h3><p id="metric-clicks" class="text-4xl font-bold text-sky-400 mt-2">...</p></div>
-                        <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">PIX Gerados</h3><p id="metric-generated" class="text-4xl font-bold text-yellow-400 mt-2">...</p></div>
-                        <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">Faturamento Total</h3><p id="metric-total-revenue" class="text-4xl font-bold text-sky-400 mt-2">...</p></div>
-                        <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">PIX Pagos</h3><p id="metric-paid" class="text-4xl font-bold text-green-400 mt-2">...</p></div>
-                        <div class="card p-6 rounded-lg text-center"><h3 class="text-sm text-gray-400">Faturamento Pago</h3><p id="metric-paid-revenue" class="text-4xl font-bold text-green-400 mt-2">...</p></div>
+                        <div class="card metric-card"><h3 class="text-sm text-gray-400">Cliques na Página</h3><p id="metric-clicks" class="text-4xl font-bold text-sky-400 mt-2">...</p></div>
+                        <div class="card metric-card"><h3 class="text-sm text-gray-400">PIX Gerados</h3><p id="metric-generated" class="text-4xl font-bold text-yellow-400 mt-2">...</p></div>
+                        <div class="card metric-card"><h3 class="text-sm text-gray-400">Faturamento Total</h3><p id="metric-total-revenue" class="text-4xl font-bold text-sky-400 mt-2">...</p></div>
+                        <div class="card metric-card"><h3 class="text-sm text-gray-400">PIX Pagos</h3><p id="metric-paid" class="text-4xl font-bold text-green-400 mt-2">...</p></div>
+                        <div class="card metric-card"><h3 class="text-sm text-gray-400">Faturamento Pago</h3><p id="metric-paid-revenue" class="text-4xl font-bold text-green-400 mt-2">...</p></div>
                     </div>
                     <div class="card p-6 rounded-lg mb-8">
                         <h2 class="text-xl font-semibold text-white mb-4">Desempenho de Faturamento</h2>
                         <canvas id="revenueChart" height="100"></canvas>
                     </div>
-                    <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-                        <div class="card p-6 rounded-lg"><h2 class="text-xl font-semibold text-white mb-4">Desempenho por Bot</h2><div id="bots-performance-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Bot</th><th>Cliques</th><th>Vendas</th><th>Faturamento</th></tr></thead><tbody id="bots-performance-table"><tr><td colspan="4">Carregando...</td></tr></tbody></table></div></div>
+                    <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                        <div class="card p-6 rounded-lg lg:col-span-2"><h2 class="text-xl font-semibold text-white mb-4">Desempenho por Bot</h2><div id="bots-performance-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Bot</th><th>Cliques</th><th>Vendas</th><th>Faturamento</th></tr></thead><tbody id="bots-performance-table"><tr><td colspan="4">Carregando...</td></tr></tbody></table></div></div>
                         <div class="card p-6 rounded-lg"><h2 class="text-xl font-semibold text-white mb-4">Tráfego por Estado</h2><div id="traffic-by-state-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Estado</th><th>Cliques</th></tr></thead><tbody id="traffic-by-state-table"><tr><td colspan="2">Carregando...</td></tr></tbody></table></div></div>
                         
-                        <div class="card p-6 rounded-lg">
+                    </div>
+                     <div class="grid grid-cols-1 gap-8 lg:grid-cols-3 mt-8">
+                        <div class="card p-6 rounded-lg lg:col-span-2">
+                             <h2 class="text-xl font-semibold text-white mb-4">Minhas Conquistas</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="achievements-list">
+                                <p class="text-gray-500 text-sm">Carregando conquistas...</p>
+                            </div>
+                        </div>
+                         <div class="card p-6 rounded-lg">
                             <h2 class="text-xl font-semibold text-white mb-4">Ranking de Vendas</h2>
                             <div id="ranking-list" class="space-y-2">
                                 <p class="text-gray-500 text-sm">Carregando ranking...</p>
@@ -259,32 +410,25 @@
                             <p id="user-rank-status" class="mt-4 text-center text-sm font-medium text-sky-400"></p>
                         </div>
                     </div>
-                    
-                    <div class="mt-8 card p-6 rounded-lg">
-                        <h2 class="text-xl font-semibold text-white mb-4">Minhas Conquistas</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="achievements-list">
-                            <p class="text-gray-500 text-sm">Carregando conquistas...</p>
-                        </div>
-                    </div>
                 </div>`;
             },
-            pixels() {
-                const pixelListHTML = App.state.data.pixels.map(p => `<div class="p-2 bg-slate-900/50 rounded flex justify-between items-center"><span class="text-sm">${p.account_name}</span><button data-id="${p.id}" class="delete-pixel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div>`).join('');
+             pixels() {
+                const pixelListHTML = App.state.data.pixels.map(p => `<div class="p-3 bg-slate-900/50 rounded-lg flex justify-between items-center"><span class="font-mono text-sm">${p.account_name}</span><button data-id="${p.id}" class="delete-pixel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div>`).join('');
                 return `
                 <div class="animate-fade-in">
-                    <h1 class="text-3xl font-bold text-white mb-6">Gerenciar Pixels</h1>
+                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Gerenciar Pixels</h1><p class="text-slate-400">Adicione e gerencie seus pixels do Facebook.</p></div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="card p-6 rounded-lg">
-                            <h2 class="text-xl font-semibold mb-4 text-white">Adicionar Pixel</h2>
-                            <form id="pixelForm" class="space-y-3"><input name="account_name" placeholder="Nome do Pixel (Ex: Produto Y)" class="form-input w-full p-2 rounded-md" required><input name="pixel_id" placeholder="ID do Pixel da Meta" class="form-input w-full p-2 rounded-md" required><textarea name="meta_api_token" placeholder="Token da API de Conversões" class="form-input w-full p-2 rounded-md" rows="2" required></textarea><button type="submit" class="btn w-full p-2 rounded-md">Adicionar Pixel</button></form>
+                            <h2 class="text-xl font-semibold mb-4 text-white">Adicionar Novo Pixel</h2>
+                            <form id="pixelForm" class="space-y-4"><input name="account_name" placeholder="Nome do Pixel (Ex: Produto Y)" class="form-input w-full p-2" required><input name="pixel_id" placeholder="ID do Pixel da Meta" class="form-input w-full p-2" required><textarea name="meta_api_token" placeholder="Token da API de Conversões" class="form-input w-full p-2" rows="3" required></textarea><button type="submit" class="btn w-full p-2 rounded-md">Adicionar Pixel</button></form>
                         </div>
-                        <div class="card p-6 rounded-lg"><h2 class="text-xl font-semibold text-white mb-4">Pixels Salvos</h2><div id="pixel-list" class="space-y-2">${pixelListHTML.length ? pixelListHTML : '<p class="text-gray-500 text-sm">Nenhum pixel salvo.</p>'}</div></div>
+                        <div class="card p-6 rounded-lg"><h2 class="text-xl font-semibold text-white mb-4">Pixels Salvos</h2><div id="pixel-list" class="space-y-3 max-h-96 overflow-y-auto">${pixelListHTML.length ? pixelListHTML : '<p class="text-gray-500 text-sm">Nenhum pixel salvo.</p>'}</div></div>
                     </div>
                 </div>`;
             },
             bots() {
                  const botListHTML = App.state.data.bots.map(b => `
-                    <div class="p-3 bg-slate-900/50 rounded flex justify-between items-center">
+                    <div class="p-3 bg-slate-900/50 rounded-lg flex justify-between items-center">
                         <div>
                             <span class="text-sm font-medium">${b.bot_name}</span>
                             <span id="status-indicator-bot-${b.id}"></span>
@@ -296,15 +440,13 @@
                     </div>`).join('');
                 return `
                 <div class="animate-fade-in">
-                    <div class="flex justify-between items-center mb-6">
-                        <h1 class="text-3xl font-bold text-white">Gerenciar Bots</h1>
-                    </div>
+                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Gerenciar Bots</h1><p class="text-slate-400">Conecte seus bots do Telegram para automatizar processos.</p></div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="card p-6 rounded-lg">
-                            <h2 class="text-xl font-semibold mb-4 text-white">Adicionar Bot</h2>
-                            <form id="botForm" class="space-y-3"><input name="bot_name" placeholder="Username do Bot (sem @)" class="form-input w-full p-2 rounded-md" required><input name="bot_token" placeholder="Token do Bot (do BotFather)" class="form-input w-full p-2 rounded-md" required><button type="submit" class="btn w-full p-2 rounded-md">Adicionar Bot</button></form>
+                            <h2 class="text-xl font-semibold mb-4 text-white">Adicionar Novo Bot</h2>
+                            <form id="botForm" class="space-y-4"><input name="bot_name" placeholder="Username do Bot (sem @)" class="form-input w-full p-2" required><input name="bot_token" placeholder="Token do Bot (do BotFather)" class="form-input w-full p-2" required><button type="submit" class="btn w-full p-2 rounded-md">Adicionar Bot</button></form>
                         </div>
-                        <div class="card p-6 rounded-lg"><h2 class="text-xl font-semibold text-white mb-4">Bots Salvos</h2><div id="bot-list" class="space-y-2">${botListHTML.length ? botListHTML : '<p class="text-gray-500 text-sm">Nenhum bot salvo.</p>'}</div></div>
+                        <div class="card p-6 rounded-lg"><h2 class="text-xl font-semibold text-white mb-4">Bots Salvos</h2><div id="bot-list" class="space-y-3 max-h-96 overflow-y-auto">${botListHTML.length ? botListHTML : '<p class="text-gray-500 text-sm">Nenhum bot salvo.</p>'}</div></div>
                     </div>
                 </div>`;
             },
@@ -338,34 +480,19 @@
 
                 return `
                 <div class="animate-fade-in">
-                    <div class="flex justify-between items-center mb-6">
-                        <h1 class="text-3xl font-bold text-white">Central de Disparos</h1>
+                    <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+                        <div><h1 class="text-3xl font-bold text-white">Central de Disparos</h1><p class="text-slate-400">Envie mensagens em massa para os contatos dos seus bots.</p></div>
                         <button id="show-dispatch-modal-btn" class="btn">Criar Novo Disparo</button>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div class="card p-6 rounded-lg">
-                            <h3 class="text-sm font-medium text-gray-400">Total de Campanhas</h3>
-                            <p id="stat-total-campaigns" class="text-4xl font-bold text-white mt-2">${totalCampaigns}</p>
-                        </div>
-                        <div class="card p-6 rounded-lg">
-                            <h3 class="text-sm font-medium text-gray-400">Total de Envios</h3>
-                            <p id="stat-total-sent" class="text-4xl font-bold text-white mt-2">${totalSent}</p>
-                        </div>
-                        <div class="card p-6 rounded-lg">
-                            <h3 class="text-sm font-medium text-gray-400">Envios com Sucesso</h3>
-                            <p id="stat-total-success" class="text-4xl font-bold text-green-400 mt-2">${totalSuccess}</p>
-                        </div>
+                        <div class="card p-6 rounded-lg"><h3 class="text-sm font-medium text-gray-400">Total de Campanhas</h3><p id="stat-total-campaigns" class="text-4xl font-bold text-white mt-2">${totalCampaigns}</p></div>
+                        <div class="card p-6 rounded-lg"><h3 class="text-sm font-medium text-gray-400">Total de Envios</h3><p id="stat-total-sent" class="text-4xl font-bold text-white mt-2">${totalSent}</p></div>
+                        <div class="card p-6 rounded-lg"><h3 class="text-sm font-medium text-gray-400">Envios com Sucesso</h3><p id="stat-total-success" class="text-4xl font-bold text-green-400 mt-2">${totalSuccess}</p></div>
                         <div class="card p-6 rounded-lg flex items-center justify-center gap-4">
                             <div>
                                 <h3 class="text-sm font-medium text-gray-400">Taxa de Entrega</h3>
                                 <p id="stat-delivery-rate" class="text-4xl font-bold text-sky-400 mt-2">${deliveryRate.toFixed(1)}%</p>
-                            </div>
-                            <div class="relative w-24 h-24">
-                                <svg class="w-full h-full" viewBox="0 0 100 100">
-                                    <circle class="text-slate-700" stroke-width="10" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
-                                    <circle id="progress-ring-circle" class="progress-ring text-sky-400" stroke-width="10" stroke-linecap="round" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
-                                </svg>
                             </div>
                         </div>
                     </div>
@@ -374,11 +501,9 @@
                         <h2 class="text-xl font-semibold text-white mb-4">Histórico de Campanhas</h2>
                         <div class="overflow-x-auto">
                             <table class="table-custom w-full text-sm">
-                                <thead>
-                                    <tr><th>Data</th><th>Mensagem</th><th>Envios</th><th>Performance</th><th>Ações</th></tr>
-                                </thead>
+                                <thead><tr><th>Data</th><th>Mensagem</th><th>Envios</th><th>Performance</th><th>Ações</th></tr></thead>
                                 <tbody id="dispatches-table-body">
-                                    ${dispatchListHTML.length ? dispatchListHTML : '<tr><td colspan="5" class="text-center text-gray-500">Nenhum disparo realizado ainda.</td></tr>'}
+                                    ${dispatchListHTML.length ? dispatchListHTML : '<tr><td colspan="5" class="text-center text-gray-500 py-8">Nenhum disparo realizado ainda.</td></tr>'}
                                 </tbody>
                             </table>
                         </div>
@@ -388,15 +513,15 @@
             pressels() {
                 const { pixels, bots, pressels } = App.state.data;
                 const botOptions = bots.map(b => `<option value="${b.id}">${b.bot_name}</option>`).join('');
-                const pixelCheckboxes = pixels.map(p => `<label class="flex items-center space-x-2 text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" name="pixel_ids" value="${p.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500"><span>${p.account_name}</span></label>`).join('');
+                const pixelCheckboxes = pixels.map(p => `<label class="flex items-center space-x-2 text-gray-300 hover:text-white cursor-pointer p-2 rounded-md hover:bg-slate-700/50"><input type="checkbox" name="pixel_ids" value="${p.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500"><span>${p.account_name}</span></label>`).join('');
                 const presselList = pressels.map(pr => `<div class="p-3 card flex justify-between items-center text-sm"><div><p class="font-semibold">${pr.name}</p><p class="text-xs text-gray-400">Bot: ${pr.bot_name}</p></div><div class="space-x-2"><button data-id="${pr.id}" class="generate-pressel-code-btn btn text-xs py-1 px-2">Ver Código</button><button data-id="${pr.id}" class="delete-pressel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
                 return `
                 <div class="animate-fade-in">
-                    <h1 class="text-3xl font-bold text-white mb-6">Criador de Pressel</h1>
+                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Criador de Pressel</h1><p class="text-slate-400">Configure suas páginas de pressel para captura de leads.</p></div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div class="card p-6 rounded-lg">
                             <h2 class="text-xl font-bold mb-4 text-white">Criar Nova Pressel</h2>
-                            <form id="presselForm" class="space-y-4"><input name="name" placeholder="Nome da Pressel (Ex: Campanha Black Friday)" class="form-input w-full p-2 rounded-md" required><input name="white_page_url" type="url" placeholder="URL da Página Branca (Fallback)" class="form-input w-full p-2 rounded-md" required><select name="bot_id" class="form-input w-full p-2 rounded-md" required><option value="">Selecione um Bot</option>${botOptions}</select><div class="card p-3"><p class="font-semibold mb-2">Selecione os Pixels:</p><div class="space-y-2">${pixelCheckboxes.length ? pixelCheckboxes : '<p class="text-gray-500 text-sm">Cadastre um pixel primeiro.</p>'}</div></div><button type="submit" class="btn w-full p-3 rounded-md text-base font-bold">Salvar e Gerar Código</button></form>
+                            <form id="presselForm" class="space-y-4"><input name="name" placeholder="Nome da Pressel (Ex: Campanha Black Friday)" class="form-input w-full p-2" required><input name="white_page_url" type="url" placeholder="URL da Página Branca (Fallback)" class="form-input w-full p-2" required><select name="bot_id" class="form-select w-full p-2" required><option value="">Selecione um Bot</option>${botOptions}</select><div class="card p-3"><p class="font-semibold mb-2">Selecione os Pixels:</p><div class="space-y-1">${pixelCheckboxes.length ? pixelCheckboxes : '<p class="text-gray-500 text-sm">Cadastre um pixel primeiro.</p>'}</div></div><button type="submit" class="btn w-full p-3 rounded-md text-base font-bold">Salvar e Gerar Código</button></form>
                         </div>
                         <div class="card p-6 rounded-lg"><h2 class="text-xl font-bold mb-4 text-white">Pressels Criadas</h2><div id="pressel-list" class="space-y-3">${presselList.length ? presselList : '<p class="text-gray-500 text-sm">Nenhuma pressel criada.</p>'}</div></div>
                     </div>
@@ -404,76 +529,51 @@
             },
             checkouts() {
                 const { pixels, checkouts } = App.state.data;
-                const pixelCheckboxes = pixels.map(p => `<label class="flex items-center space-x-2 text-gray-400 hover:text-white cursor-pointer"><input type="checkbox" name="pixel_ids" value="${p.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500"><span>${p.account_name}</span></label>`).join('');
+                const pixelCheckboxes = pixels.map(p => `<label class="flex items-center space-x-2 text-gray-300 hover:text-white cursor-pointer p-2 rounded-md hover:bg-slate-700/50"><input type="checkbox" name="pixel_ids" value="${p.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500"><span>${p.account_name}</span></label>`).join('');
                 const checkoutList = checkouts.map(c => `
                     <div class="p-3 card flex justify-between items-center text-sm">
-                        <div>
-                            <p class="font-semibold">${c.name}</p>
-                            <p class="text-xs text-gray-400">Produto: ${c.product_name}</p>
-                        </div>
-                        <div class="space-x-2">
-                            <button data-id="${c.id}" class="generate-checkout-code-btn btn text-xs py-1 px-2">Ver Código</button>
-                            <button data-id="${c.id}" class="delete-checkout-btn btn btn-red text-xs py-1 px-2">Excluir</button>
-                        </div>
+                        <div><p class="font-semibold">${c.name}</p><p class="text-xs text-gray-400">Produto: ${c.product_name}</p></div>
+                        <div class="space-x-2"><button data-id="${c.id}" class="generate-checkout-code-btn btn text-xs py-1 px-2">Ver Código</button><button data-id="${c.id}" class="delete-checkout-btn btn btn-red text-xs py-1 px-2">Excluir</button></div>
                     </div>`).join('');
 
                 return `
                 <div class="animate-fade-in">
-                    <h1 class="text-3xl font-bold text-white mb-6">Criador de Checkout</h1>
+                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Criador de Checkout</h1><p class="text-slate-400">Crie e configure páginas de pagamento personalizadas.</p></div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div class="card p-6 rounded-lg">
                             <h2 class="text-xl font-bold mb-4 text-white">Criar Novo Checkout</h2>
                             <form id="checkoutForm" class="space-y-4">
-                                <input name="name" placeholder="Nome Interno do Checkout (Ex: Ebook XYZ)" class="form-input w-full p-2 rounded-md" required>
-                                <input name="product_name" placeholder="Nome do Produto (visível ao cliente)" class="form-input w-full p-2 rounded-md" required>
-                                <input name="redirect_url" type="url" placeholder="URL de Redirecionamento Pós-Compra (Obrigado/Entrega)" class="form-input w-full p-2 rounded-md" required>
-                                
-                                <select name="value_type" id="value-type-selector" class="form-select w-full p-2 rounded-md" required>
-                                    <option value="fixed">Valor Fixo</option>
-                                    <option value="variable">Valor Variável (definido na URL)</option>
-                                </select>
-                                
-                                <div id="fixed-value-container">
-                                    <input name="fixed_value_cents" type="number" placeholder="Valor em CENTAVOS (Ex: 1990 para R$19,90)" class="form-input w-full p-2 rounded-md">
-                                </div>
-
-                                <div class="card p-3">
-                                    <p class="font-semibold mb-2">Selecione os Pixels para este Checkout:</p>
-                                    <div class="space-y-2">${pixelCheckboxes.length ? pixelCheckboxes : '<p class="text-gray-500 text-sm">Cadastre um pixel primeiro.</p>'}</div>
-                                </div>
-                                
+                                <input name="name" placeholder="Nome Interno do Checkout (Ex: Ebook XYZ)" class="form-input w-full p-2" required>
+                                <input name="product_name" placeholder="Nome do Produto (visível ao cliente)" class="form-input w-full p-2" required>
+                                <input name="redirect_url" type="url" placeholder="URL de Redirecionamento Pós-Compra" class="form-input w-full p-2" required>
+                                <select name="value_type" id="value-type-selector" class="form-select w-full p-2" required><option value="fixed">Valor Fixo</option><option value="variable">Valor Variável (definido na URL)</option></select>
+                                <div id="fixed-value-container"><input name="fixed_value_cents" type="number" placeholder="Valor em CENTAVOS (Ex: 1990 para R$19,90)" class="form-input w-full p-2"></div>
+                                <div class="card p-3"><p class="font-semibold mb-2">Selecione os Pixels:</p><div class="space-y-1">${pixelCheckboxes.length ? pixelCheckboxes : '<p class="text-gray-500 text-sm">Cadastre um pixel primeiro.</p>'}</div></div>
                                 <button type="submit" class="btn w-full p-3 rounded-md text-base font-bold">Salvar e Gerar Código</button>
                             </form>
                         </div>
-                        <div class="card p-6 rounded-lg">
-                            <h2 class="text-xl font-bold mb-4 text-white">Checkouts Criados</h2>
-                            <div id="checkout-list" class="space-y-3">${checkoutList.length ? checkoutList : '<p class="text-gray-500 text-sm">Nenhum checkout criado.</p>'}</div>
-                        </div>
+                        <div class="card p-6 rounded-lg"><h2 class="text-xl font-bold mb-4 text-white">Checkouts Criados</h2><div id="checkout-list" class="space-y-3">${checkoutList.length ? checkoutList : '<p class="text-gray-500 text-sm">Nenhum checkout criado.</p>'}</div></div>
                     </div>
                 </div>`;
             },
             transactions() {
                 return `
                 <div class="animate-fade-in">
-                    <div class="flex justify-between items-center mb-6"><h1 class="text-3xl font-bold text-white">Histórico de Transações</h1></div>
+                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Histórico de Transações</h1><p class="text-slate-400">Visualize todas as transações de PIX geradas e pagas.</p></div>
                     ${this.dateFilterComponent('transactions')}
-                    <div class="card p-6 rounded-lg"><div id="transactions-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Status</th><th>Valor</th><th>Origem</th><th>Provedor PIX</th><th>Data</th></tr></thead><tbody id="transactions-table-body"><tr><td colspan="5" class="text-center text-gray-500">Carregando transações...</td></tr></tbody></table></div></div>
+                    <div class="card p-6 rounded-lg"><div id="transactions-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Status</th><th>Valor</th><th>Origem</th><th>Provedor PIX</th><th>Data</th></tr></thead><tbody id="transactions-table-body"><tr><td colspan="5" class="text-center text-gray-500 py-8">Carregando transações...</td></tr></tbody></table></div></div>
                 </div>`;
             },
             settings() {
                 const { settings } = App.state.data;
-                const providers = [
-                    { value: 'pushinpay', text: 'PushinPay' },
-                    { value: 'cnpay', text: 'CN Pay' },
-                    { value: 'oasyfy', text: 'Oasy.fy' }
-                ];
+                const providers = [{ value: 'pushinpay', text: 'PushinPay' }, { value: 'cnpay', text: 'CN Pay' }, { value: 'oasyfy', text: 'Oasy.fy' }];
                 const createSelect = (name, selectedValue) => {
                     const options = providers.map(p => `<option value="${p.value}" ${p.value === selectedValue ? 'selected' : ''}>${p.text}</option>`).join('');
-                    return `<select name="${name}" class="form-select w-full p-2 rounded-md">${options}<option value="" ${!selectedValue ? 'selected' : ''}>Nenhum</option></select>`;
+                    return `<select name="${name}" class="form-select w-full p-2">${options}<option value="" ${!selectedValue ? 'selected' : ''}>Nenhum</option></select>`;
                 };
                 return `
                 <div class="animate-fade-in">
-                    <h1 class="text-3xl font-bold text-white mb-6">Configurações de PIX</h1>
+                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Configurações de PIX</h1><p class="text-slate-400">Configure seus provedores de pagamento e a ordem de prioridade.</p></div>
                     <form id="pixSettingsForm" class="max-w-4xl">
                         <div class="flex border-b border-slate-700 mb-6" id="pix-settings-tabs">
                             <button type="button" data-tab="priority" class="tab-button active">Ordem de Prioridade</button>
@@ -485,68 +585,40 @@
                                 <h2 class="text-xl font-semibold mb-2 text-white">Ordem de Prioridade dos Provedores</h2>
                                 <p class="text-sm text-gray-400 mb-4">Defina a ordem em que o sistema tentará gerar o PIX. Se o Provedor Primário falhar, o sistema automaticamente tentará o próximo na lista.</p>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <label class="block mb-2 text-sm font-medium text-gray-400">1º - Provedor Primário</label>
-                                        ${createSelect('pix_provider_primary', settings.pix_provider_primary)}
-                                    </div>
-                                    <div>
-                                        <label class="block mb-2 text-sm font-medium text-gray-400">2º - Provedor Secundário</label>
-                                        ${createSelect('pix_provider_secondary', settings.pix_provider_secondary)}
-                                    </div>
-                                    <div>
-                                        <label class="block mb-2 text-sm font-medium text-gray-400">3º - Provedor Terciário</label>
-                                        ${createSelect('pix_provider_tertiary', settings.pix_provider_tertiary)}
-                                    </div>
+                                    <div><label class="block mb-2 text-sm font-medium text-gray-400">1º - Provedor Primário</label>${createSelect('pix_provider_primary', settings.pix_provider_primary)}</div>
+                                    <div><label class="block mb-2 text-sm font-medium text-gray-400">2º - Provedor Secundário</label>${createSelect('pix_provider_secondary', settings.pix_provider_secondary)}</div>
+                                    <div><label class="block mb-2 text-sm font-medium text-gray-400">3º - Provedor Terciário</label>${createSelect('pix_provider_tertiary', settings.pix_provider_tertiary)}</div>
                                 </div>
-                                <div class="mt-6 pt-6 border-t border-slate-700">
-                                     <button type="button" id="testPriorityRouteBtn" class="btn btn-green w-full md:w-auto">Testar Rota de Prioridade</button>
-                                </div>
+                                <div class="mt-6 pt-6 border-t border-slate-700"><button type="button" id="testPriorityRouteBtn" class="btn btn-green w-full md:w-auto">Testar Rota de Prioridade</button></div>
                             </div>
                         </div>
 
                         <div id="tab-credentials" class="tab-content space-y-6">
                             <div class="card p-6 rounded-lg">
                                 <div class="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 class="text-lg font-medium text-sky-400 inline-block">PushinPay</h3>
-                                        <span id="status-indicator-pushinpay"></span>
-                                    </div>
+                                    <div><h3 class="text-lg font-medium text-sky-400 inline-block">PushinPay</h3><span id="status-indicator-pushinpay"></span></div>
                                     <button type="button" data-provider="pushinpay" class="test-pix-btn btn btn-secondary text-xs py-1 px-3">Testar Conexão</button>
                                 </div>
-                                <label class="block mb-2 text-sm text-gray-400">Bearer Token</label>
-                                <input name="pushinpay_token" type="password" value="${settings.pushinpay_token || ''}" class="form-input w-full p-2 rounded-md">
+                                <label class="block mb-2 text-sm text-gray-400">Bearer Token</label><input name="pushinpay_token" type="password" value="${settings.pushinpay_token || ''}" class="form-input w-full p-2">
                             </div>
-
                             <div class="card p-6 rounded-lg">
                                 <div class="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 class="text-lg font-medium text-sky-400 inline-block">CN Pay</h3>
-                                        <span id="status-indicator-cnpay"></span>
-                                    </div>
+                                    <div><h3 class="text-lg font-medium text-sky-400 inline-block">CN Pay</h3><span id="status-indicator-cnpay"></span></div>
                                     <button type="button" data-provider="cnpay" class="test-pix-btn btn btn-secondary text-xs py-1 px-3">Testar Conexão</button>
                                 </div>
-                                <label class="block mb-2 text-sm text-gray-400">Chave Pública (public-key)</label>
-                                <input name="cnpay_public_key" type="password" value="${settings.cnpay_public_key || ''}" class="form-input w-full p-2 rounded-md">
-                                <label class="block mt-4 mb-2 text-sm text-gray-400">Chave Privada (secret-key)</label>
-                                <input name="cnpay_secret_key" type="password" value="${settings.cnpay_secret_key || ''}" class="form-input w-full p-2 rounded-md">
+                                <label class="block mb-2 text-sm text-gray-400">Chave Pública</label><input name="cnpay_public_key" type="password" value="${settings.cnpay_public_key || ''}" class="form-input w-full p-2">
+                                <label class="block mt-4 mb-2 text-sm text-gray-400">Chave Privada</label><input name="cnpay_secret_key" type="password" value="${settings.cnpay_secret_key || ''}" class="form-input w-full p-2">
                             </div>
-                            
                             <div class="card p-6 rounded-lg">
                                  <div class="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 class="text-lg font-medium text-sky-400 inline-block">Oasy.fy</h3>
-                                        <span id="status-indicator-oasyfy"></span>
-                                    </div>
+                                    <div><h3 class="text-lg font-medium text-sky-400 inline-block">Oasy.fy</h3><span id="status-indicator-oasyfy"></span></div>
                                     <button type="button" data-provider="oasyfy" class="test-pix-btn btn btn-secondary text-xs py-1 px-3">Testar Conexão</button>
                                 </div>
-                                <label class="block mb-2 text-sm text-gray-400">Chave Pública (public-key)</label>
-                                <input name="oasyfy_public_key" type="password" value="${settings.oasyfy_public_key || ''}" class="form-input w-full p-2 rounded-md">
-                                <label class="block mt-4 mb-2 text-sm text-gray-400">Chave Privada (secret-key)</label>
-                                <input name="oasyfy_secret_key" type="password" value="${settings.oasyfy_secret_key || ''}" class="form-input w-full p-2 rounded-md">
+                                <label class="block mb-2 text-sm text-gray-400">Chave Pública</label><input name="oasyfy_public_key" type="password" value="${settings.oasyfy_public_key || ''}" class="form-input w-full p-2">
+                                <label class="block mt-4 mb-2 text-sm text-gray-400">Chave Privada</label><input name="oasyfy_secret_key" type="password" value="${settings.oasyfy_secret_key || ''}" class="form-input w-full p-2">
                             </div>
                         </div>
-                        
-                        <div class="mt-8"><button type="submit" class="btn w-full p-3 font-bold rounded-md">Salvar Configurações</button></div>
+                        <div class="mt-8"><button type="submit" class="btn w-full p-3 font-bold rounded-md">Salvar Configurações de PIX</button></div>
                     </form>
                 </div>`;
             },
@@ -554,14 +626,14 @@
                 const { settings } = App.state.data;
                 return `
                 <div class="animate-fade-in">
-                    <h1 class="text-3xl font-bold text-white mb-6">Integrações</h1>
+                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Integrações</h1><p class="text-slate-400">Conecte o HotTrack a outras ferramentas.</p></div>
                     <div class="max-w-2xl">
                         <form id="utmifySettingsForm" class="space-y-8">
                              <div class="card p-6 rounded-lg">
                                 <h2 class="text-xl font-semibold text-white">Utmify</h2>
                                 <p class="text-sm text-gray-400 mt-1 mb-4">Integre com a Utmify para espelhar suas vendas e analisar a performance por UTMs.</p>
                                 <label class="block mb-2 text-sm text-gray-400">Token da API Utmify (x-api-token)</label>
-                                <input name="utmify_api_token" type="password" value="${settings.utmify_api_token || ''}" class="form-input w-full p-2 rounded-md">
+                                <input name="utmify_api_token" type="password" value="${settings.utmify_api_token || ''}" class="form-input w-full p-2">
                             </div>
                             <div><button type="submit" class="btn w-full p-3 font-bold rounded-md">Salvar Integrações</button></div>
                         </form>
@@ -571,27 +643,27 @@
             documentation() {
                 return `
                 <div class="animate-fade-in">
-                    <h1 class="text-3xl font-bold text-white mb-6">Documentação e Chave de API</h1>
+                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Documentação e Chave de API</h1><p class="text-slate-400">Recursos para desenvolvedores e integração com suas ferramentas.</p></div>
                     <div class="grid grid-cols-1 gap-8 max-w-2xl">
                         <div class="card p-6 rounded-lg">
                             <h2 class="text-xl font-semibold mb-4 text-white">Sua Chave de API HotTrack</h2>
                             <p class="text-sm text-gray-400 mb-4">Use esta chave para autenticar suas requisições na API HotTrack (ex: gerar PIX, consultar status).</p>
                             <div class="flex items-center gap-2">
-                                <input id="hottrack-api-key" type="password" readonly value="${App.state.data.settings.api_key || ''}" class="form-input flex-grow p-2 rounded-md">
-                                <button type="button" class="toggle-visibility-btn p-2 text-gray-400 hover:text-white" data-target="#hottrack-api-key"><svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
+                                <input id="hottrack-api-key" type="password" readonly value="${App.state.data.settings.api_key || ''}" class="form-input flex-grow p-2">
+                                <button type="button" class="toggle-visibility-btn p-2 text-gray-400 hover:text-white" data-target="#hottrack-api-key"><svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg></button>
                                 <button type="button" class="copy-btn btn text-sm py-2 px-3" data-target="#hottrack-api-key">Copiar</button>
                             </div>
                         </div>
                         <div class="card p-8 rounded-lg">
                             <h2 class="text-xl font-semibold mb-4 text-white">Documentação Completa</h2>
                             <p class="text-gray-400 mb-4">Acesse nosso guia detalhado com o passo a passo completo para integrar o HotTrack com o ManyChat e outras ferramentas.</p>
-                            <a href="https://documentacaohot.netlify.app/" target="_blank" rel="noopener noreferrer" class="btn inline-flex items-center gap-2">Acessar Documentação<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg></a>
+                            <a href="https://documentacaohot.netlify.app/" target="_blank" rel="noopener noreferrer" class="btn inline-flex items-center gap-2">Acessar Documentação<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" /><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" /></svg></a>
                         </div>
                     </div>
                 </div>`;
             },
             modal(title, content) {
-                return `<div id="modal" class="modal active"><div class="card p-6 rounded-lg w-full max-w-4xl animate-fade-in"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-white">${title}</h2><button id="closeModalBtn" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>${content}</div></div>`;
+                return `<div id="modal" class="modal active"><div class="card p-6 rounded-lg w-full max-w-4xl animate-fade-in"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-white">${title}</h2><button id="closeModalBtn" class="text-gray-400 hover:text-white text-3xl">&times;</button></div>${content}</div></div>`;
             }
         },
 
@@ -665,8 +737,8 @@
                     const isPassword = targetInput.type === 'password';
                     targetInput.type = isPassword ? 'text' : 'password';
                     toggleBtn.innerHTML = isPassword 
-                        ? `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243L6.228 6.228" /></svg>` 
-                        : `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
+                        ? `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781z" clip-rule="evenodd" /><path d="M12.454 16.697L9.75 13.992a2.5 2.5 0 01-3.482-3.482l-2.455-2.455a10.048 10.048 0 00-3.263 5.218C1.732 14.057 5.522 17 10 17a9.95 9.95 0 005.023-1.303l-2.57-2.57z" /></svg>` 
+                        : `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>`;
                 }
                 if (e.target.classList.contains('generate-pressel-code-btn')) {
                     const presselId = e.target.dataset.id;
@@ -728,13 +800,14 @@
                 const filterContainer = e.target.closest('#transactions-date-filter, #dashboard-date-filter');
                 if (filterContainer) {
                     const page = filterContainer.id.split('-')[0];
-                    if (e.target.dataset.period) { this.handleFilterChange(page, e.target.dataset.period); }
-                    else if (e.target.id === `apply-custom-date-filter-${page}`) {
+                    const button = e.target.closest('button');
+                    if (button?.dataset.period) { this.handleFilterChange(page, button.dataset.period); }
+                    else if (button?.id === `apply-custom-date-filter-${page}`) {
                         const startDate = document.getElementById(`${page}-start-date`).value;
                         const endDate = document.getElementById(`${page}-end-date`).value;
                         if (startDate && endDate) { this.handleFilterChange(page, 'custom', startDate, endDate); }
                         else { this.showToast('Por favor, selecione data de início e fim.', 'error'); }
-                    } else if (e.target.id === `clear-date-filter-${page}`) { this.handleFilterChange(page, 'all'); }
+                    } else if (button?.id === `clear-date-filter-${page}`) { this.handleFilterChange(page, 'all'); }
                 }
             });
 
@@ -818,20 +891,20 @@
                     if (e.target.value === 'pix_flow') {
                         container.innerHTML = `
                             <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Conteúdo da Mensagem</h4>
-                             <input id="mass-message-image-url" type="url" class="form-input w-full p-2 rounded-md" placeholder="URL da Imagem (Opcional)">
-                            <textarea id="mass-message-initial-text" class="form-input w-full p-2 rounded-md mt-2" rows="3" placeholder="Mensagem principal... Ex: Olá, gere seu PIX abaixo."></textarea>
-                            <input id="mass-message-cta-button-text" class="form-input w-full p-2 rounded-md mt-2" placeholder="Texto do Botão (Ex: Gerar PIX Agora)">
+                             <input id="mass-message-image-url" type="url" class="form-input w-full p-2" placeholder="URL da Imagem (Opcional)">
+                            <textarea id="mass-message-initial-text" class="form-input w-full p-2 mt-2" rows="3" placeholder="Mensagem principal... Ex: Olá, gere seu PIX abaixo."></textarea>
+                            <input id="mass-message-cta-button-text" class="form-input w-full p-2 mt-2" placeholder="Texto do Botão (Ex: Gerar PIX Agora)">
                             <h4 class="text-md font-semibold mt-4 mb-1 text-sky-400">Valor do PIX</h4>
-                            <input id="mass-message-pix-value" type="number" step="0.01" class="form-input w-full p-2 rounded-md" placeholder="Valor em REAIS (Ex: 19.90)">
+                            <input id="mass-message-pix-value" type="number" step="0.01" class="form-input w-full p-2" placeholder="Valor em REAIS (Ex: 19.90)">
                         `;
                     } else { // external_link
                         container.innerHTML = `
                             <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Conteúdo da Mensagem</h4>
-                             <input id="mass-message-image-url" type="url" class="form-input w-full p-2 rounded-md" placeholder="URL da Imagem (Opcional)">
-                            <textarea id="mass-message-initial-text" class="form-input w-full p-2 rounded-md mt-2" rows="3" placeholder="Mensagem principal..."></textarea>
+                             <input id="mass-message-image-url" type="url" class="form-input w-full p-2" placeholder="URL da Imagem (Opcional)">
+                            <textarea id="mass-message-initial-text" class="form-input w-full p-2 mt-2" rows="3" placeholder="Mensagem principal..."></textarea>
                             <div class="grid grid-cols-2 gap-2 mt-2">
-                                <input id="mass-message-cta-button-text" class="form-input w-full p-2 rounded-md" placeholder="Texto do Botão (Ex: Acessar Site)">
-                                <input id="mass-message-external-url" type="url" class="form-input w-full p-2 rounded-md" placeholder="https://seu-link.com">
+                                <input id="mass-message-cta-button-text" class="form-input w-full p-2" placeholder="Texto do Botão (Ex: Acessar Site)">
+                                <input id="mass-message-external-url" type="url" class="form-input w-full p-2" placeholder="https://seu-link.com">
                             </div>
                         `;
                     }
@@ -886,7 +959,7 @@
 
         showDispatchModal() {
             const botCheckboxes = this.state.data.bots.map(b => `
-                <label class="flex items-center space-x-2 text-gray-400 hover:text-white cursor-pointer">
+                <label class="flex items-center space-x-2 text-gray-300 hover:text-white cursor-pointer p-2 rounded-md hover:bg-slate-700/50">
                     <input type="checkbox" name="bot_ids[]" value="${b.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500">
                     <span>${b.bot_name}</span>
                 </label>`).join('');
@@ -896,12 +969,12 @@
                     <div>
                         <h3 class="text-lg font-semibold mb-2 text-white">1. Selecione os Bots</h3>
                         <div class="card p-3 max-h-48 overflow-y-auto">
-                            <div id="bot-selection-list" class="space-y-2">${botCheckboxes.length ? botCheckboxes : '<p class="text-gray-500 text-sm">Nenhum bot cadastrado.</p>'}</div>
+                            <div id="bot-selection-list" class="space-y-1">${botCheckboxes.length ? botCheckboxes : '<p class="text-gray-500 text-sm">Nenhum bot cadastrado.</p>'}</div>
                         </div>
                          <p class="text-sm text-gray-400 mt-2">Total de contatos únicos: <span id="total-users-count" class="font-bold text-white">0</span></p>
 
                         <h3 class="text-lg font-semibold mt-6 mb-2 text-white">2. Configure a Ação</h3>
-                        <select id="flow-type-selector" class="form-select w-full p-2 rounded-md">
+                        <select id="flow-type-selector" class="form-select w-full p-2">
                             <option value="pix_flow">Fluxo de PIX Interativo (Padrão)</option>
                             <option value="external_link">Abrir um Link Externo</option>
                         </select>
@@ -1013,38 +1086,27 @@
             this.state.currentPage = page;
             const contentContainer = document.getElementById('content');
             if (contentContainer && this.templates[page]) {
-                contentContainer.innerHTML = this.templates[page]();
+                contentContainer.innerHTML = `<div class="flex items-center justify-center h-full"><svg class="animate-spin h-6 w-6 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>`;
                 
-                document.querySelectorAll('.nav-link').forEach(item => { item.classList.toggle('active', item.dataset.target === page); });
-                
-                if (page === 'dashboard') {
-                    this.handleFilterChange(page, 'last7days');
-                } else if (page === 'transactions') {
-                    this.renderTransactionsTable();
-                } else if (page === 'settings') {
-                    this.updateAllPixStatusIndicators();
-                } else if (page === 'bots') {
-                    this.updateAllBotStatusIndicators();
-                } else if (page === 'dispatches') {
-                    // CORREÇÃO: Não recarrega os dados, apenas renderiza o que já foi carregado
-                    contentContainer.innerHTML = this.templates.dispatches(); 
-                    this.updateProgressRing();
-                }
+                // Allow the loader to render before heavy processing
+                setTimeout(() => {
+                    contentContainer.innerHTML = this.templates[page]();
+                    
+                    document.querySelectorAll('.nav-link').forEach(item => { item.classList.toggle('active', item.dataset.target === page); });
+                    
+                    if (page === 'dashboard') {
+                        this.fetchDashboardMetrics();
+                    } else if (page === 'transactions') {
+                        this.handleFilterChange('transactions', 'all');
+                    } else if (page === 'settings') {
+                        this.updateAllPixStatusIndicators();
+                    } else if (page === 'bots') {
+                        this.updateAllBotStatusIndicators();
+                    } else if (page === 'dispatches') {
+                        // This page is now rendered from existing state, so it's fast.
+                    }
+                }, 100);
             }
-        },
-        
-        updateProgressRing() {
-            const circle = document.getElementById('progress-ring-circle');
-            if (!circle) return;
-
-            const radius = circle.r.baseVal.value;
-            const circumference = radius * 2 * Math.PI;
-            const rateText = document.getElementById('stat-delivery-rate').textContent;
-            const rate = parseFloat(rateText.replace('%', ''));
-
-            circle.style.strokeDasharray = `${circumference} ${circumference}`;
-            const offset = circumference - (rate / 100) * circumference;
-            circle.style.strokeDashoffset = offset;
         },
         
         async fetchDashboardMetrics() {
@@ -1065,7 +1127,7 @@
                 document.getElementById('metric-paid-revenue').textContent = `R$ ${(metrics.paid_revenue || 0).toFixed(2).replace('.', ',')}`;
                 
                 const botsTableBody = document.getElementById('bots-performance-table');
-                if (metrics.bots_performance && metrics.bots_performance.length > 0) {
+                if (botsTableBody && metrics.bots_performance && metrics.bots_performance.length > 0) {
                     botsTableBody.innerHTML = metrics.bots_performance.map(b => `
                         <tr class="hover:bg-slate-800/50">
                             <td>${b.bot_name}</td>
@@ -1073,15 +1135,15 @@
                             <td>${b.total_pix_paid || '0'}</td>
                             <td>R$ ${(b.paid_revenue || 0).toFixed(2).replace('.', ',')}</td>
                         </tr>`).join('');
-                } else {
-                    botsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">Nenhum dado de bot.</td></tr>';
+                } else if(botsTableBody) {
+                    botsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500 py-8">Nenhum dado de bot.</td></tr>';
                 }
 
                 const trafficTableBody = document.getElementById('traffic-by-state-table');
-                if (metrics.clicks_by_state && metrics.clicks_by_state.length > 0) {
+                if (trafficTableBody && metrics.clicks_by_state && metrics.clicks_by_state.length > 0) {
                     trafficTableBody.innerHTML = metrics.clicks_by_state.map(s => `<tr class="hover:bg-slate-800/50"><td>${s.state}</td><td>${s.total_clicks}</td></tr>`).join('');
-                } else {
-                    trafficTableBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-500">Nenhum tráfego registrado por estado.</td></tr>';
+                } else if(trafficTableBody){
+                    trafficTableBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-500 py-8">Nenhum tráfego registrado.</td></tr>';
                 }
                 
                 this.renderRevenueChart();
@@ -1096,7 +1158,7 @@
                 const achievementsList = document.getElementById('achievements-list');
                 const paidRevenue = this.state.data.dashboard.paid_revenue || 0;
 
-                if (data.userAchievements.length > 0) {
+                if (achievementsList && data.userAchievements.length > 0) {
                     achievementsList.innerHTML = data.userAchievements.map(ach => {
                         const icon = ach.is_completed ? '✅' : '🔒';
                         const textColor = ach.is_completed ? 'text-green-400' : 'text-gray-400';
@@ -1104,7 +1166,7 @@
                         const formattedMissing = missingAmount > 0 ? `Falta R$ ${missingAmount.toFixed(2).replace('.', ',')}` : 'Concluída!';
                         
                         return `
-                            <div class="card p-4 rounded-lg flex items-center gap-3">
+                            <div class="card p-4 rounded-lg flex items-center gap-3 bg-slate-900/50">
                                 <span class="text-2xl">${icon}</span>
                                 <div>
                                     <p class="font-semibold text-white">${ach.title}</p>
@@ -1112,30 +1174,27 @@
                                 </div>
                             </div>`;
                     }).join('');
-                } else {
+                } else if(achievementsList) {
                     achievementsList.innerHTML = '<p class="text-gray-500 text-sm">Nenhuma conquista disponível ainda.</p>';
                 }
 
                 const rankingList = document.getElementById('ranking-list');
-                if (data.topSellersRanking.length > 0) {
+                if (rankingList && data.topSellersRanking.length > 0) {
                     rankingList.innerHTML = data.topSellersRanking.map((seller, index) => {
                         const rank = index + 1;
+                        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
                         const revenue = `R$ ${parseFloat(seller.total_revenue).toFixed(2).replace('.', ',')}`;
-                        return `<div class="p-2 bg-slate-900/50 rounded flex justify-between items-center"><span class="font-bold text-sky-400">${rank}.</span><span class="text-sm">${seller.name}</span><span class="text-xs text-gray-400">${revenue}</span></div>`;
+                        return `<div class="p-2 bg-slate-900/50 rounded-lg flex justify-between items-center"><span class="font-bold text-lg w-8 text-center">${medal}</span><span class="text-sm flex-1">${seller.name}</span><span class="text-xs text-gray-400">${revenue}</span></div>`;
                     }).join('');
-                } else {
+                } else if (rankingList){
                     rankingList.innerHTML = '<p class="text-gray-500 text-sm">Nenhum dado de ranking ainda.</p>';
                 }
 
                 const userRankStatus = document.getElementById('user-rank-status');
-                userRankStatus.textContent = `Sua posição no ranking: ${data.currentUserRank}°`;
+                if(userRankStatus) userRankStatus.textContent = `Sua posição no ranking: ${data.currentUserRank}°`;
 
             } catch (e) {
                 console.error("Erro ao carregar conquistas e ranking:", e);
-                const achievementsList = document.getElementById('achievements-list');
-                if (achievementsList) achievementsList.innerHTML = '<p class="text-gray-500 text-sm">Erro ao carregar conquistas.</p>';
-                const rankingList = document.getElementById('ranking-list');
-                if (rankingList) rankingList.innerHTML = '<p class="text-gray-500 text-sm">Erro ao carregar ranking.</p>';
             }
         },
         
@@ -1158,23 +1217,24 @@
 
             if (filteredTransactions.length > 0) {
                 tableBody.innerHTML = filteredTransactions.map(t => {
-                    const statusColor = t.status === 'paid' ? 'text-green-400' : 'text-yellow-400';
+                    const statusClass = t.status === 'paid' ? 'text-green-400 bg-green-500/10' : 'text-yellow-400 bg-yellow-500/10';
                     const statusText = t.status === 'paid' ? 'Pago' : 'Pendente';
                     const formattedValue = `R$ ${parseFloat(t.pix_value).toFixed(2).replace('.', ',')}`;
                     const formattedDate = new Date(t.created_at).toLocaleString('pt-BR');
-                    // CORREÇÃO: Lógica para identificar origem como "Disparo"
                     const sourceName = (t.source_name === 'Checkout' || !t.source_name) ? 'Disparo' : t.source_name;
-                    return `<tr class="hover:bg-slate-800/50"><td class="${statusColor}">${statusText}</td><td>${formattedValue}</td><td>${sourceName}</td><td>${t.provider.toUpperCase()}</td><td>${formattedDate}</td></tr>`;
+                    return `<tr class="hover:bg-slate-800/50">
+                                <td><span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass}">${statusText}</span></td>
+                                <td>${formattedValue}</td><td>${sourceName}</td><td>${t.provider.toUpperCase()}</td><td>${formattedDate}</td>
+                            </tr>`;
                 }).join('');
             } else {
-                tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Nenhuma transação encontrada para o período selecionado.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">Nenhuma transação encontrada para o período selecionado.</td></tr>';
             }
         },
         handleFilterChange(page, period, customStartDate, customEndDate) {
             const now = new Date();
             let startDate, endDate;
             
-            // CORREÇÃO: Garante que as datas sejam tratadas em UTC para evitar problemas de fuso horário
             const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 
             switch(period) {
@@ -1209,11 +1269,7 @@
 
             this.state.dateFilter = { period, startDate, endDate };
             
-            if (page === 'dashboard') {
-                this.fetchDashboardMetrics();
-            } else if (page === 'transactions') {
-                this.renderTransactionsTable();
-            }
+            this.navigateTo(page);
         },
         
         renderRevenueChart() {
@@ -1231,7 +1287,16 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Faturamento Pago', data: revenues, backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                        label: 'Faturamento Pago', data: revenues, 
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            gradient.addColorStop(0, 'rgba(56, 189, 248, 0)');
+                            gradient.addColorStop(1, 'rgba(56, 189, 248, 0.3)');
+                            return gradient;
+                        },
                         borderColor: '#38bdf8', borderWidth: 2, tension: 0.4, fill: true,
                         pointBackgroundColor: '#38bdf8', pointRadius: 4, pointHoverRadius: 6,
                     }]
@@ -1239,13 +1304,13 @@
                 options: {
                     responsive: true, maintainAspectRatio: true,
                     scales: {
-                        y: { beginAtZero: true, ticks: { color: '#94a3b8', callback: (value) => 'R$ ' + value.toFixed(2).replace('.', ',') }, grid: { color: 'rgba(51, 65, 85, 0.5)' } },
-                        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(51, 65, 85, 0.5)' } }
+                        y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(51, 65, 85, 0.5)' } },
+                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
                     },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: '#020617', titleColor: '#e2e8f0', bodyColor: '#cbd5e1',
+                            backgroundColor: '#0f172a', titleColor: '#f1f5f9', bodyColor: '#cbd5e1',
                             borderColor: '#334155', borderWidth: 1,
                             callbacks: { label: (context) => `Faturamento: R$ ${context.raw.toFixed(2).replace('.', ',')}` }
                         }
@@ -1262,7 +1327,7 @@
 
             const htmlContent = `<!DOCTYPE html><html><head><title>Redirecionando...</title><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('track', 'PageView');fbq('track', 'ViewContent');<\/script></head><body><p>Aguarde um instante...</p><script>const config = { API_BASE_URL: '${apiBaseUrl}', sellerApiKey: '${sellerApiKey}', presselId: ${pressel.id}, whitePageUrl: '${pressel.white_page_url}', botLink: '${botLink}' };async function registerClickAndRedirect() { try { const urlParams = new URLSearchParams(window.location.search); const bodyPayload = { sellerApiKey: config.sellerApiKey, presselId: config.presselId, referer: document.referrer, user_agent: navigator.userAgent, fbclid: urlParams.get('fbclid'), fbp: document.cookie.split('; ').find(row => row.startsWith('_fbp='))?.split('=')[1], fbc: document.cookie.split('; ').find(row => row.startsWith('_fbc='))?.split('=')[1], utm_source: urlParams.get('utm_source'), utm_campaign: urlParams.get('utm_campaign'), utm_medium: urlParams.get('utm_medium'), utm_content: urlParams.get('utm_content'), utm_term: urlParams.get('utm_term')}; Object.keys(bodyPayload).forEach(key => (bodyPayload[key] === null || bodyPayload[key] === undefined) && delete bodyPayload[key]); const response = await fetch(config.API_BASE_URL + '/api/registerClick', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyPayload) }); if (!response.ok) throw new Error('Failed to register click'); const data = await response.json(); window.location.href = config.botLink + data.click_id; } catch (error) { console.error('Redirect Error:', error); window.location.href = config.whitePageUrl; } } registerClickAndRedirect();<\/script></body></html>`;
 
-            const modalContent = `<p class="text-sm text-gray-400 mb-4">Copie e cole este código no HTML da sua página. Lembre-se de adicionar os IDs dos seus pixels no local indicado.</p><textarea id="pressel-code-textarea" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="12" readonly>${htmlContent}</textarea><button class="copy-btn btn w-full mt-4 py-2" data-target="#pressel-code-textarea">Copiar Código</button>`;
+            const modalContent = `<p class="text-sm text-gray-400 mb-4">Copie e cole este código no HTML da sua página. Lembre-se de adicionar os IDs dos seus pixels no local indicado.</p><textarea id="pressel-code-textarea" class="form-input w-full p-2 font-mono text-xs" rows="12" readonly>${htmlContent}</textarea><button class="copy-btn btn w-full mt-4 py-2" data-target="#pressel-code-textarea">Copiar Código</button>`;
             
             document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
         },
@@ -1270,50 +1335,26 @@
         generateCheckoutHTML(checkoutId) {
             const checkout = this.state.data.checkouts.find(c => c.id == checkoutId);
             const { settings, pixels } = this.state.data;
-            if (!checkout) {
-                this.showToast('Checkout não encontrado.', 'error');
-                return;
-            }
+            if (!checkout) { this.showToast('Checkout não encontrado.', 'error'); return; }
 
             const selectedPixels = pixels.filter(p => checkout.pixel_ids.includes(p.id));
             const fbqInitBlock = selectedPixels.map(p => `fbq('init', '${p.pixel_id}');`).join('\\n        ');
 
             const htmlTemplate = `
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pagamento Seguro</title>
-    <style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');:root{--primary-color:#2c5282;--secondary-color:#e2e8f0;--success-color:#38a169;--text-color:#2d3748;--light-text-color:#718096;--background-color:#f7fafc}body{font-family:'Inter',sans-serif;background-color:var(--background-color);margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;color:var(--text-color)}.container{background-color:#fff;padding:2rem;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);width:100%;max-width:420px;text-align:center;box-sizing:border-box;margin:1rem}.header h1{font-size:1.5rem;margin-bottom:.5rem}.header p{color:var(--light-text-color);margin-top:0}.timer{background-color:var(--secondary-color);color:var(--primary-color);font-weight:600;padding:.5rem 1rem;border-radius:8px;display:inline-block;margin-bottom:1.5rem}#qr-code-container{position:relative;margin:1rem 0;min-height:280px;display:flex;justify-content:center;align-items:center}#qr-code-img{border:6px solid var(--secondary-color);border-radius:8px;max-width:100%;height:auto;display:none}.loader{border:5px solid #f3f3f3;border-top:5px solid var(--primary-color);border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}.copy-button{background-color:var(--primary-color);color:#fff;border:none;padding:.8rem 1.5rem;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:background-color .3s,transform .2s;width:100%;margin-top:1rem}.copy-button:hover{background-color:#3182ce}.copy-button:active{transform:scale(.98)}#copy-feedback{color:var(--success-color);font-weight:600;margin-top:.5rem;height:20px;visibility:hidden;opacity:0;transition:visibility 0s,opacity .5s linear}#copy-feedback.visible{visibility:visible;opacity:1}.instructions{margin-top:1.5rem;color:var(--light-text-color);font-size:.9rem}.footer{margin-top:2rem;font-size:.8rem;color:#a0aec0}.footer svg{vertical-align:middle;width:16px;height:16px;margin-right:5px}</style>
-    <script>
-        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-        ${fbqInitBlock}
-        fbq('track', 'PageView');
-    <\/script>
-</head>
-<body>
-    <div class="container"><div class="header"><h1 id="product-name">Finalize seu Pagamento</h1><p>Escaneie o QR Code ou copie o código abaixo.</p></div><div class="timer">Expira em: <span id="countdown">10:00</span></div><div id="qr-code-container"><div id="loader" class="loader"></div><img id="qr-code-img" src="" alt="PIX QR Code"></div><button class="copy-button" id="copy-btn" disabled><span id="btn-text">Carregando PIX...</span></button><div id="copy-feedback">Código PIX copiado!</div><div class="instructions">1. Abra o app do seu banco.<br>2. Escolha a opção Pagar com PIX.<br>3. Escaneie o QR Code ou use o "Copia e Cola".</div><div class="footer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg> Pagamento seguro</div></div>
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const CONFIG = { API_BASE_URL: '${this.state.API_BASE_URL}', SELLER_API_KEY: '${settings.api_key}', CHECKOUT_ID: ${checkout.id}, PRODUCT_NAME: '${checkout.product_name}', REDIRECT_URL: '${checkout.redirect_url}', VALUE_TYPE: '${checkout.value_type}', FIXED_VALUE_CENTS: ${checkout.fixed_value_cents || null}, POLLING_INTERVAL: 5000, TIMER_DURATION_MINUTES: 10 };
-        const qrCodeImg = document.getElementById('qr-code-img'), loader = document.getElementById('loader'), copyBtn = document.getElementById('copy-btn'), btnText = document.getElementById('btn-text'), copyFeedback = document.getElementById('copy-feedback'), countdownEl = document.getElementById('countdown');
-        let pixCode = '', transactionId = '', statusCheckInterval;
-        function displayError(message) { console.error(message); loader.style.display = 'none'; qrCodeImg.style.display = 'none'; document.querySelector('.header h1').textContent = 'Ocorreu um Erro'; document.querySelector('.header p').textContent = message; copyBtn.disabled = true; btnText.textContent = 'Erro ao Gerar PIX'; }
-        function startTimer() { let time = CONFIG.TIMER_DURATION_MINUTES * 60; const timerInterval = setInterval(() => { if (time <= 0) { clearInterval(timerInterval); countdownEl.textContent = 'Expirado'; displayError('O tempo para pagamento expirou.'); return; } time--; const minutes = Math.floor(time / 60).toString().padStart(2, '0'); const seconds = (time % 60).toString().padStart(2, '0'); countdownEl.textContent = \`\${minutes}:\${seconds}\`; }, 1000); }
-        async function copyPixCode() { try { await navigator.clipboard.writeText(pixCode); copyFeedback.classList.add('visible'); setTimeout(() => copyFeedback.classList.remove('visible'), 2000); } catch (err) { console.error('Falha ao copiar:', err); } }
-        async function checkPaymentStatus() { if (!transactionId) return; try { const response = await fetch(\`\${CONFIG.API_BASE_URL}/api/pix/status/\${transactionId}\`, { headers: { 'x-api-key': CONFIG.SELLER_API_KEY } }); if (!response.ok) return; const data = await response.json(); if (data.status === 'paid' || data.status === 'COMPLETED') { clearInterval(statusCheckInterval); window.location.href = CONFIG.REDIRECT_URL; } } catch (error) { console.error('Erro ao verificar status:', error); } }
-        async function generatePix(click_id, value_cents) { try { const response = await fetch(\`\${CONFIG.API_BASE_URL}/api/pix/generate\`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': CONFIG.SELLER_API_KEY }, body: JSON.stringify({ value_cents, click_id }) }); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Erro do servidor'); } const data = await response.json(); pixCode = data.qr_code_text; transactionId = data.transaction_id; qrCodeImg.src = data.qr_code_base64; loader.style.display = 'none'; qrCodeImg.style.display = 'block'; copyBtn.disabled = false; btnText.textContent = 'Copiar Código PIX'; startTimer(); statusCheckInterval = setInterval(checkPaymentStatus, CONFIG.POLLING_INTERVAL); checkPaymentStatus(); } catch (error) { displayError(error.message || 'Não foi possível gerar o PIX.'); } }
-        async function initializeCheckout() { try { document.getElementById('product-name').textContent = CONFIG.PRODUCT_NAME; let final_value_cents; if (CONFIG.VALUE_TYPE === 'fixed') { final_value_cents = CONFIG.FIXED_VALUE_CENTS; if (!final_value_cents) return displayError('Valor do produto não configurado.'); } else { const urlValue = new URLSearchParams(window.location.search).get('value'); if (!urlValue) return displayError('Valor não fornecido na URL (ex: ?value=1990).'); final_value_cents = parseInt(urlValue, 10); } const urlParams = new URLSearchParams(window.location.search); const bodyPayload = { sellerApiKey: CONFIG.SELLER_API_KEY, checkoutId: CONFIG.CHECKOUT_ID, referer: document.referrer, user_agent: navigator.userAgent, fbclid: urlParams.get('fbclid'), fbp: document.cookie.split('; ').find(row => row.startsWith('_fbp='))?.split('=')[1], fbc: document.cookie.split('; ').find(row => row.startsWith('_fbc='))?.split('=')[1], utm_source: urlParams.get('utm_source'), utm_campaign: urlParams.get('utm_campaign'), utm_medium: urlParams.get('utm_medium'), utm_content: urlParams.get('utm_content'), utm_term: urlParams.get('utm_term') }; Object.keys(bodyPayload).forEach(key => (bodyPayload[key] === null || bodyPayload[key] === undefined) && delete bodyPayload[key]); const clickResponse = await fetch(CONFIG.API_BASE_URL + '/api/registerClick', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyPayload) }); if (!clickResponse.ok) throw new Error('Falha ao rastrear o acesso.'); const clickData = await clickResponse.json(); await generatePix(clickData.click_id, final_value_cents); } catch (error) { displayError(error.message); } }
-        copyBtn.addEventListener('click', copyPixCode); initializeCheckout();
-    });
-    <\/script>
-</body>
-</html>`;
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Pagamento Seguro</title><style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');:root{--primary-color:#2c5282;--secondary-color:#e2e8f0;--success-color:#38a169;--text-color:#2d3748;--light-text-color:#718096;--background-color:#f7fafc}body{font-family:'Inter',sans-serif;background-color:var(--background-color);margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;color:var(--text-color)}.container{background-color:#fff;padding:2rem;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);width:100%;max-width:420px;text-align:center;box-sizing:border-box;margin:1rem}.header h1{font-size:1.5rem;margin-bottom:.5rem}.header p{color:var(--light-text-color);margin-top:0}.timer{background-color:var(--secondary-color);color:var(--primary-color);font-weight:600;padding:.5rem 1rem;border-radius:8px;display:inline-block;margin-bottom:1.5rem}#qr-code-container{position:relative;margin:1rem 0;min-height:280px;display:flex;justify-content:center;align-items:center}#qr-code-img{border:6px solid var(--secondary-color);border-radius:8px;max-width:100%;height:auto;display:none}.loader{border:5px solid #f3f3f3;border-top:5px solid var(--primary-color);border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}.copy-button{background-color:var(--primary-color);color:#fff;border:none;padding:.8rem 1.5rem;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:background-color .3s,transform .2s;width:100%;margin-top:1rem}.copy-button:hover{background-color:#3182ce}.copy-button:active{transform:scale(.98)}#copy-feedback{color:var(--success-color);font-weight:600;margin-top:.5rem;height:20px;visibility:hidden;opacity:0;transition:visibility 0s,opacity .5s linear}#copy-feedback.visible{visibility:visible;opacity:1}.instructions{margin-top:1.5rem;color:var(--light-text-color);font-size:.9rem}.footer{margin-top:2rem;font-size:.8rem;color:#a0aec0}.footer svg{vertical-align:middle;width:16px;height:16px;margin-right:5px}</style>
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');${fbqInitBlock} fbq('track','PageView');<\/script>
+</head><body><div class="container"><div class="header"><h1 id="product-name">Finalize seu Pagamento</h1><p>Escaneie o QR Code ou copie o código abaixo.</p></div><div class="timer">Expira em: <span id="countdown">10:00</span></div><div id="qr-code-container"><div id="loader" class="loader"></div><img id="qr-code-img" src="" alt="PIX QR Code"></div><button class="copy-button" id="copy-btn" disabled><span id="btn-text">Carregando PIX...</span></button><div id="copy-feedback">Código PIX copiado!</div><div class="instructions">1. Abra o app do seu banco.<br>2. Escolha a opção Pagar com PIX.<br>3. Escaneie o QR Code ou use o "Copia e Cola".</div><div class="footer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg> Pagamento seguro</div></div>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{const CONFIG={API_BASE_URL:'${this.state.API_BASE_URL}',SELLER_API_KEY:'${settings.api_key}',CHECKOUT_ID:${checkout.id},PRODUCT_NAME:'${checkout.product_name}',REDIRECT_URL:'${checkout.redirect_url}',VALUE_TYPE:'${checkout.value_type}',FIXED_VALUE_CENTS:${checkout.fixed_value_cents||null},POLLING_INTERVAL:5000,TIMER_DURATION_MINUTES:10};const qrCodeImg=document.getElementById('qr-code-img'),loader=document.getElementById('loader'),copyBtn=document.getElementById('copy-btn'),btnText=document.getElementById('btn-text'),copyFeedback=document.getElementById('copy-feedback'),countdownEl=document.getElementById('countdown');let pixCode='',transactionId='',statusCheckInterval;function displayError(message){console.error(message);loader.style.display='none';qrCodeImg.style.display='none';document.querySelector('.header h1').textContent='Ocorreu um Erro';document.querySelector('.header p').textContent=message;copyBtn.disabled=true;btnText.textContent='Erro ao Gerar PIX'}
+function startTimer(){let time=CONFIG.TIMER_DURATION_MINUTES*60;const timerInterval=setInterval(()=>{if(time<=0){clearInterval(timerInterval);countdownEl.textContent='Expirado';displayError('O tempo para pagamento expirou.');return}time--;const minutes=Math.floor(time/60).toString().padStart(2,'0');const seconds=(time%60).toString().padStart(2,'0');countdownEl.textContent=\`\${minutes}:\${seconds}\`},1000)}async function copyPixCode(){try{await navigator.clipboard.writeText(pixCode);copyFeedback.classList.add('visible');setTimeout(()=>copyFeedback.classList.remove('visible'),2000)}catch(err){console.error('Falha ao copiar:',err)}}
+async function checkPaymentStatus(){if(!transactionId)return;try{const response=await fetch(\`\${CONFIG.API_BASE_URL}/api/pix/status/\${transactionId}\`,{headers:{'x-api-key':CONFIG.SELLER_API_KEY}});if(!response.ok)return;const data=await response.json();if(data.status==='paid'||data.status==='COMPLETED'){clearInterval(statusCheckInterval);window.location.href=CONFIG.REDIRECT_URL}}catch(error){console.error('Erro ao verificar status:',error)}}
+async function generatePix(click_id,value_cents){try{const response=await fetch(\`\${CONFIG.API_BASE_URL}/api/pix/generate\`,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':CONFIG.SELLER_API_KEY},body:JSON.stringify({value_cents,click_id})});if(!response.ok){const errorData=await response.json();throw new Error(errorData.message||'Erro do servidor')}const data=await response.json();pixCode=data.qr_code_text;transactionId=data.transaction_id;qrCodeImg.src=data.qr_code_base64;loader.style.display='none';qrCodeImg.style.display='block';copyBtn.disabled=false;btnText.textContent='Copiar Código PIX';startTimer();statusCheckInterval=setInterval(checkPaymentStatus,CONFIG.POLLING_INTERVAL);checkPaymentStatus()}catch(error){displayError(error.message||'Não foi possível gerar o PIX.')}}
+async function initializeCheckout(){try{document.getElementById('product-name').textContent=CONFIG.PRODUCT_NAME;let final_value_cents;if(CONFIG.VALUE_TYPE==='fixed'){final_value_cents=CONFIG.FIXED_VALUE_CENTS;if(!final_value_cents)return displayError('Valor do produto não configurado.')}else{const urlValue=new URLSearchParams(window.location.search).get('value');if(!urlValue)return displayError('Valor não fornecido na URL (ex: ?value=1990).');final_value_cents=parseInt(urlValue,10)}const urlParams=new URLSearchParams(window.location.search);const bodyPayload={sellerApiKey:CONFIG.SELLER_API_KEY,checkoutId:CONFIG.CHECKOUT_ID,referer:document.referrer,user_agent:navigator.userAgent,fbclid:urlParams.get('fbclid'),fbp:document.cookie.split('; ').find(row=>row.startsWith('_fbp='))?.split('=')[1],fbc:document.cookie.split('; ').find(row=>row.startsWith('_fbc='))?.split('=')[1],utm_source:urlParams.get('utm_source'),utm_campaign:urlParams.get('utm_campaign'),utm_medium:urlParams.get('utm_medium'),utm_content:urlParams.get('utm_content'),utm_term:urlParams.get('utm_term')};Object.keys(bodyPayload).forEach(key=>(bodyPayload[key]===null||bodyPayload[key]===undefined)&&delete bodyPayload[key]);const clickResponse=await fetch(CONFIG.API_BASE_URL+'/api/registerClick',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bodyPayload)});if(!clickResponse.ok)throw new Error('Falha ao rastrear o acesso.');const clickData=await clickResponse.json();await generatePix(clickData.click_id,final_value_cents)}catch(error){displayError(error.message)}}
+copyBtn.addEventListener('click',copyPixCode);initializeCheckout()});<\/script></body></html>`;
 
             const modalContent = `
                 <p class="text-sm text-gray-400 mb-4">Copie o código abaixo, salve como 'index.html' e hospede no seu domínio.</p>
-                <textarea id="checkout-code-textarea" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="15" readonly></textarea>
+                <textarea id="checkout-code-textarea" class="form-input w-full p-2 font-mono text-xs" rows="15" readonly></textarea>
                 <button class="copy-btn btn w-full mt-4 py-2" data-target="#checkout-code-textarea">Copiar Código HTML</button>
             `;
             const modalContainer = document.getElementById('modal-container');
@@ -1343,7 +1384,7 @@
                 localStorage.setItem(`pix_status_${provider}`, 'success');
                 localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
                 
-                const successModalContent = `<div class="space-y-4 text-sm"><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Provedor:</span> <span class="text-white">${result.provider}</span></div><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Adquirente:</span> <span class="text-white">${result.acquirer}</span></div><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Tempo de Resposta:</span> <span class="text-white">${result.responseTime}s</span></div><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 0,05):</p><textarea id="pix-test-key" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="4" readonly>${result.qr_code_text}</textarea><button class="copy-btn btn w-full mt-2 py-2 text-sm" data-target="#pix-test-key">Copiar Chave PIX</button></div></div>`;
+                const successModalContent = `<div class="space-y-4 text-sm"><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Provedor:</span> <span class="text-white">${result.provider}</span></div><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Adquirente:</span> <span class="text-white">${result.acquirer}</span></div><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Tempo de Resposta:</span> <span class="text-white">${result.responseTime}s</span></div><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 0,05):</p><textarea id="pix-test-key" class="form-input w-full p-2 font-mono text-xs" rows="4" readonly>${result.qr_code_text}</textarea><button class="copy-btn btn w-full mt-2 py-2 text-sm" data-target="#pix-test-key">Copiar Chave PIX</button></div></div>`;
                 document.getElementById('modal-container').innerHTML = this.templates.modal('Conexão Bem-sucedida!', successModalContent);
 
             } catch (error) {
@@ -1375,7 +1416,7 @@
             try {
                 const result = await this.apiRequest('/api/pix/test-priority-route', 'POST');
                 const logHTML = result.log.map(line => `<li class="${line.startsWith('SUCESSO') ? 'text-green-400' : 'text-red-400'}">${line}</li>`).join('');
-                const successModalContent = `<div class="space-y-4 text-sm"><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Provedor de Sucesso:</span> <span class="text-white">${result.provider} (${result.position})</span></div><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Tempo de Resposta:</span> <span class="text-white">${result.responseTime}s</span></div><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">Log de Tentativas:</p><ul class="text-xs font-mono list-disc list-inside space-y-1">${logHTML}</ul></div><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 0,05):</p><textarea id="pix-test-key" class="form-input w-full p-2 rounded-md font-mono text-xs" rows="3" readonly>${result.qr_code_text}</textarea><button class="copy-btn btn w-full mt-2 py-2 text-sm" data-target="#pix-test-key">Copiar Chave PIX</button></div></div>`;
+                const successModalContent = `<div class="space-y-4 text-sm"><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Provedor de Sucesso:</span> <span class="text-white">${result.provider} (${result.position})</span></div><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Tempo de Resposta:</span> <span class="text-white">${result.responseTime}s</span></div><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">Log de Tentativas:</p><ul class="text-xs font-mono list-disc list-inside space-y-1">${logHTML}</ul></div><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 0,05):</p><textarea id="pix-test-key" class="form-input w-full p-2 font-mono text-xs" rows="3" readonly>${result.qr_code_text}</textarea><button class="copy-btn btn w-full mt-2 py-2 text-sm" data-target="#pix-test-key">Copiar Chave PIX</button></div></div>`;
                 document.getElementById('modal-container').innerHTML = this.templates.modal('Teste da Rota Concluído!', successModalContent);
 
             } catch (error) {
@@ -1454,7 +1495,7 @@
             }
 
             const status = localStorage.getItem(`pix_status_${provider}`);
-            const timestamp = localStorage.getItem(`bot_timestamp_${provider}`);
+            const timestamp = localStorage.getItem(`pix_timestamp_${provider}`);
 
             if (status === 'success' && timestamp) {
                 indicator.textContent = `Ativo (Testado ${this.formatTimeAgo(timestamp)})`;
