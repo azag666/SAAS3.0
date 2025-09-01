@@ -1255,6 +1255,9 @@
             document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
         },
 
+        // =================================================================
+        // FUNÇÃO DE CHECKOUT ATUALIZADA COM WEBSOCKETS
+        // =================================================================
         generateCheckoutHTML(checkoutId) {
             const checkout = this.state.data.checkouts.find(c => c.id == checkoutId);
             const { settings, pixels } = this.state.data;
@@ -1284,15 +1287,32 @@
     <div class="container"><div class="header"><h1 id="product-name">Finalize seu Pagamento</h1><p>Escaneie o QR Code ou copie o código abaixo.</p></div><div class="timer">Expira em: <span id="countdown">10:00</span></div><div id="qr-code-container"><div id="loader" class="loader"></div><img id="qr-code-img" src="" alt="PIX QR Code"></div><button class="copy-button" id="copy-btn" disabled><span id="btn-text">Carregando PIX...</span></button><div id="copy-feedback">Código PIX copiado!</div><div class="instructions">1. Abra o app do seu banco.<br>2. Escolha a opção Pagar com PIX.<br>3. Escaneie o QR Code ou use o "Copia e Cola".</div><div class="footer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg> Pagamento seguro</div></div>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const CONFIG = { API_BASE_URL: '${this.state.API_BASE_URL}', SELLER_API_KEY: '${settings.api_key}', CHECKOUT_ID: ${checkout.id}, PRODUCT_NAME: '${checkout.product_name}', REDIRECT_URL: '${checkout.redirect_url}', VALUE_TYPE: '${checkout.value_type}', FIXED_VALUE_CENTS: ${checkout.fixed_value_cents || null}, POLLING_INTERVAL: 5000, TIMER_DURATION_MINUTES: 10 };
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = \`\${wsProtocol}//\${window.location.host}\`;
+
+        const CONFIG = { API_BASE_URL: '${this.state.API_BASE_URL}', WS_URL: wsUrl, SELLER_API_KEY: '${settings.api_key}', CHECKOUT_ID: ${checkout.id}, PRODUCT_NAME: '${checkout.product_name}', REDIRECT_URL: '${checkout.redirect_url}', VALUE_TYPE: '${checkout.value_type}', FIXED_VALUE_CENTS: ${checkout.fixed_value_cents || null}, TIMER_DURATION_MINUTES: 10 };
+        
         const qrCodeImg = document.getElementById('qr-code-img'), loader = document.getElementById('loader'), copyBtn = document.getElementById('copy-btn'), btnText = document.getElementById('btn-text'), copyFeedback = document.getElementById('copy-feedback'), countdownEl = document.getElementById('countdown');
-        let pixCode = '', transactionId = '', statusCheckInterval;
-        function displayError(message) { console.error(message); loader.style.display = 'none'; qrCodeImg.style.display = 'none'; document.querySelector('.header h1').textContent = 'Ocorreu um Erro'; document.querySelector('.header p').textContent = message; copyBtn.disabled = true; btnText.textContent = 'Erro ao Gerar PIX'; }
-        function startTimer() { let time = CONFIG.TIMER_DURATION_MINUTES * 60; const timerInterval = setInterval(() => { if (time <= 0) { clearInterval(timerInterval); countdownEl.textContent = 'Expirado'; displayError('O tempo para pagamento expirou.'); return; } time--; const minutes = Math.floor(time / 60).toString().padStart(2, '0'); const seconds = (time % 60).toString().padStart(2, '0'); countdownEl.textContent = \`\${minutes}:\${seconds}\`; }, 1000); }
+        let pixCode = '', transactionId = '', timerInterval;
+
+        function displayError(message) { console.error(message); if(timerInterval) clearInterval(timerInterval); loader.style.display = 'none'; qrCodeImg.style.display = 'none'; document.querySelector('.header h1').textContent = 'Ocorreu um Erro'; document.querySelector('.header p').textContent = message; copyBtn.disabled = true; btnText.textContent = 'Erro ao Gerar PIX'; }
+        
+        function startTimer() { let time = CONFIG.TIMER_DURATION_MINUTES * 60; timerInterval = setInterval(() => { if (time <= 0) { clearInterval(timerInterval); countdownEl.textContent = 'Expirado'; displayError('O tempo para pagamento expirou.'); return; } time--; const minutes = Math.floor(time / 60).toString().padStart(2, '0'); const seconds = (time % 60).toString().padStart(2, '0'); countdownEl.textContent = \`\${minutes}:\${seconds}\`; }, 1000); }
+        
         async function copyPixCode() { try { await navigator.clipboard.writeText(pixCode); copyFeedback.classList.add('visible'); setTimeout(() => copyFeedback.classList.remove('visible'), 2000); } catch (err) { console.error('Falha ao copiar:', err); } }
-        async function checkPaymentStatus() { if (!transactionId) return; try { const response = await fetch(\`\${CONFIG.API_BASE_URL}/api/pix/status/\${transactionId}\`, { headers: { 'x-api-key': CONFIG.SELLER_API_KEY } }); if (!response.ok) return; const data = await response.json(); if (data.status === 'paid' || data.status === 'COMPLETED') { clearInterval(statusCheckInterval); window.location.href = CONFIG.REDIRECT_URL; } } catch (error) { console.error('Erro ao verificar status:', error); } }
-        async function generatePix(click_id, value_cents) { try { const response = await fetch(\`\${CONFIG.API_BASE_URL}/api/pix/generate\`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': CONFIG.SELLER_API_KEY }, body: JSON.stringify({ value_cents, click_id }) }); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Erro do servidor'); } const data = await response.json(); pixCode = data.qr_code_text; transactionId = data.transaction_id; qrCodeImg.src = data.qr_code_base64; loader.style.display = 'none'; qrCodeImg.style.display = 'block'; copyBtn.disabled = false; btnText.textContent = 'Copiar Código PIX'; startTimer(); statusCheckInterval = setInterval(checkPaymentStatus, CONFIG.POLLING_INTERVAL); checkPaymentStatus(); } catch (error) { displayError(error.message || 'Não foi possível gerar o PIX.'); } }
+        
+        function setupWebSocket(txId) {
+            const ws = new WebSocket(CONFIG.WS_URL);
+            ws.onopen = () => { console.log('WebSocket connection established.'); ws.send(JSON.stringify({ type: 'register', transactionId: txId })); };
+            ws.onmessage = (event) => { const data = JSON.parse(event.data); if (data.type === 'payment_confirmed') { console.log('Payment confirmed via WebSocket!'); window.location.href = CONFIG.REDIRECT_URL; } };
+            ws.onclose = () => console.log('WebSocket connection closed.');
+            ws.onerror = (error) => console.error('WebSocket error:', error);
+        }
+
+        async function generatePix(click_id, value_cents) { try { const response = await fetch(\`\${CONFIG.API_BASE_URL}/api/pix/generate\`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': CONFIG.SELLER_API_KEY }, body: JSON.stringify({ value_cents, click_id }) }); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Erro do servidor'); } const data = await response.json(); pixCode = data.qr_code_text; transactionId = data.transaction_id; qrCodeImg.src = data.qr_code_base64; loader.style.display = 'none'; qrCodeImg.style.display = 'block'; copyBtn.disabled = false; btnText.textContent = 'Copiar Código PIX'; startTimer(); setupWebSocket(transactionId); } catch (error) { displayError(error.message || 'Não foi possível gerar o PIX.'); } }
+        
         async function initializeCheckout() { try { document.getElementById('product-name').textContent = CONFIG.PRODUCT_NAME; let final_value_cents; if (CONFIG.VALUE_TYPE === 'fixed') { final_value_cents = CONFIG.FIXED_VALUE_CENTS; if (!final_value_cents) return displayError('Valor do produto não configurado.'); } else { const urlValue = new URLSearchParams(window.location.search).get('value'); if (!urlValue) return displayError('Valor não fornecido na URL (ex: ?value=1990).'); final_value_cents = parseInt(urlValue, 10); } const urlParams = new URLSearchParams(window.location.search); const bodyPayload = { sellerApiKey: CONFIG.SELLER_API_KEY, checkoutId: CONFIG.CHECKOUT_ID, referer: document.referrer, user_agent: navigator.userAgent, fbclid: urlParams.get('fbclid'), fbp: document.cookie.split('; ').find(row => row.startsWith('_fbp='))?.split('=')[1], fbc: document.cookie.split('; ').find(row => row.startsWith('_fbc='))?.split('=')[1], utm_source: urlParams.get('utm_source'), utm_campaign: urlParams.get('utm_campaign'), utm_medium: urlParams.get('utm_medium'), utm_content: urlParams.get('utm_content'), utm_term: urlParams.get('utm_term') }; Object.keys(bodyPayload).forEach(key => (bodyPayload[key] === null || bodyPayload[key] === undefined) && delete bodyPayload[key]); const clickResponse = await fetch(CONFIG.API_BASE_URL + '/api/registerClick', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyPayload) }); if (!clickResponse.ok) throw new Error('Falha ao rastrear o acesso.'); const clickData = await clickResponse.json(); await generatePix(clickData.click_id, final_value_cents); } catch (error) { displayError(error.message); } }
+        
         copyBtn.addEventListener('click', copyPixCode); initializeCheckout();
     });
     <\/script>
