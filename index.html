@@ -1088,22 +1088,18 @@
             if (contentContainer && this.templates[page]) {
                 contentContainer.innerHTML = `<div class="flex items-center justify-center h-full"><svg class="animate-spin h-6 w-6 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>`;
                 
-                // Allow the loader to render before heavy processing
                 setTimeout(() => {
                     contentContainer.innerHTML = this.templates[page]();
-                    
                     document.querySelectorAll('.nav-link').forEach(item => { item.classList.toggle('active', item.dataset.target === page); });
                     
                     if (page === 'dashboard') {
-                        this.fetchDashboardMetrics();
+                        this.handleFilterChange(page, 'last7days');
                     } else if (page === 'transactions') {
-                        this.handleFilterChange('transactions', 'all');
+                        this.handleFilterChange(page, 'all');
                     } else if (page === 'settings') {
                         this.updateAllPixStatusIndicators();
                     } else if (page === 'bots') {
                         this.updateAllBotStatusIndicators();
-                    } else if (page === 'dispatches') {
-                        // This page is now rendered from existing state, so it's fast.
                     }
                 }, 100);
             }
@@ -1231,16 +1227,15 @@
                 tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">Nenhuma transação encontrada para o período selecionado.</td></tr>';
             }
         },
+
         handleFilterChange(page, period, customStartDate, customEndDate) {
             const now = new Date();
             let startDate, endDate;
-            
             const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 
             switch(period) {
                 case 'today': 
-                    startDate = today.toISOString().split('T')[0];
-                    endDate = startDate;
+                    startDate = endDate = today.toISOString().split('T')[0];
                     break;
                 case 'yesterday':
                     const yesterday = new Date(today);
@@ -1269,7 +1264,21 @@
 
             this.state.dateFilter = { period, startDate, endDate };
             
-            this.navigateTo(page);
+            const filterContainer = document.getElementById(`${page}-date-filter`);
+            if (filterContainer) {
+                filterContainer.querySelectorAll('button[data-period]').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.period === period);
+                    btn.classList.toggle('!bg-sky-500', btn.dataset.period === period);
+                    btn.classList.toggle('!border-sky-400', btn.dataset.period === period);
+                    btn.classList.toggle('!text-white', btn.dataset.period === period);
+                });
+            }
+
+            if (page === 'dashboard') {
+                this.fetchDashboardMetrics();
+            } else if (page === 'transactions') {
+                this.renderTransactionsTable();
+            }
         },
         
         renderRevenueChart() {
