@@ -114,7 +114,6 @@
             appContainer.innerHTML = `<div class="flex h-screen items-center justify-center"><p>Carregando...</p></div>`;
             if (this.state.token) {
                 try {
-                    // Carrega todos os dados estáticos e transações de uma vez
                     const [staticData, transactions, dispatches] = await Promise.all([
                         this.apiRequest('/api/dashboard/data'),
                         this.apiRequest('/api/transactions'),
@@ -1020,16 +1019,14 @@
                 
                 if (page === 'dashboard') {
                     this.handleFilterChange(page, 'last7days');
-                    this.fetchAchievementsAndRanking();
                 } else if (page === 'transactions') {
-                    this.fetchTransactions();
+                    this.renderTransactionsTable();
                 } else if (page === 'settings') {
                     this.updateAllPixStatusIndicators();
                 } else if (page === 'bots') {
                     this.updateAllBotStatusIndicators();
                 } else if (page === 'dispatches') {
-                    const dispatches = await this.apiRequest('/api/dispatches');
-                    this.state.data.dispatches = dispatches;
+                    // CORREÇÃO: Não recarrega os dados, apenas renderiza o que já foi carregado
                     contentContainer.innerHTML = this.templates.dispatches(); 
                     this.updateProgressRing();
                 }
@@ -1069,10 +1066,17 @@
                 
                 const botsTableBody = document.getElementById('bots-performance-table');
                 if (metrics.bots_performance && metrics.bots_performance.length > 0) {
-                    botsTableBody.innerHTML = metrics.bots_performance.map(b => `<tr class="hover:bg-slate-800/50"><td>${b.bot_name}</td><td>${b.total_clicks || '0'}</td><td>${b.total_pix_paid || '0'}</td><td>R$ ${(b.paid_revenue || 0).toFixed(2).replace('.', ',')}</td></tr>`).join('');
+                    botsTableBody.innerHTML = metrics.bots_performance.map(b => `
+                        <tr class="hover:bg-slate-800/50">
+                            <td>${b.bot_name}</td>
+                            <td>${b.total_clicks || '0'}</td>
+                            <td>${b.total_pix_paid || '0'}</td>
+                            <td>R$ ${(b.paid_revenue || 0).toFixed(2).replace('.', ',')}</td>
+                        </tr>`).join('');
                 } else {
                     botsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">Nenhum dado de bot.</td></tr>';
                 }
+
                 const trafficTableBody = document.getElementById('traffic-by-state-table');
                 if (metrics.clicks_by_state && metrics.clicks_by_state.length > 0) {
                     trafficTableBody.innerHTML = metrics.clicks_by_state.map(s => `<tr class="hover:bg-slate-800/50"><td>${s.state}</td><td>${s.total_clicks}</td></tr>`).join('');
@@ -1081,7 +1085,7 @@
                 }
                 
                 this.renderRevenueChart();
-
+                this.fetchAchievementsAndRanking();
             } catch (e) { console.error("Erro ao carregar métricas do painel:", e); }
         },
 
@@ -1134,18 +1138,7 @@
                 if (rankingList) rankingList.innerHTML = '<p class="text-gray-500 text-sm">Erro ao carregar ranking.</p>';
             }
         },
-
-        async fetchTransactions() {
-            const tableBody = document.getElementById('transactions-table-body');
-            tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Carregando transações...</td></tr>';
-            try {
-                const transactions = await this.apiRequest('/api/transactions');
-                this.state.data.transactions = transactions;
-                this.renderTransactionsTable();
-            } catch (e) {
-                tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-red-400">Erro ao carregar transações.</td></tr>';
-            }
-        },
+        
         renderTransactionsTable() {
             const tableBody = document.getElementById('transactions-table-body');
             if (!tableBody) return;
@@ -1154,10 +1147,11 @@
             let filteredTransactions = this.state.data.transactions;
 
             if (period !== 'all' && startDate && endDate) {
-                const start = new Date(`${startDate}T00:00:00`);
-                const end = new Date(`${endDate}T23:59:59`);
+                const start = new Date(`${startDate}T00:00:00.000Z`).getTime();
+                const end = new Date(`${endDate}T23:59:59.999Z`).getTime();
+                
                 filteredTransactions = this.state.data.transactions.filter(t => {
-                    const transactionDate = new Date(t.created_at);
+                    const transactionDate = new Date(t.created_at).getTime();
                     return transactionDate >= start && transactionDate <= end;
                 });
             }
@@ -1168,42 +1162,55 @@
                     const statusText = t.status === 'paid' ? 'Pago' : 'Pendente';
                     const formattedValue = `R$ ${parseFloat(t.pix_value).toFixed(2).replace('.', ',')}`;
                     const formattedDate = new Date(t.created_at).toLocaleString('pt-BR');
-                    return `<tr class="hover:bg-slate-800/50"><td class="${statusColor}">${statusText}</td><td>${formattedValue}</td><td>${t.source_name || 'Checkout'}</td><td>${t.provider.toUpperCase()}</td><td>${formattedDate}</td></tr>`;
+                    // CORREÇÃO: Lógica para identificar origem como "Disparo"
+                    const sourceName = (t.source_name === 'Checkout' || !t.source_name) ? 'Disparo' : t.source_name;
+                    return `<tr class="hover:bg-slate-800/50"><td class="${statusColor}">${statusText}</td><td>${formattedValue}</td><td>${sourceName}</td><td>${t.provider.toUpperCase()}</td><td>${formattedDate}</td></tr>`;
                 }).join('');
             } else {
-                tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Nenhuma transação encontrada.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Nenhuma transação encontrada para o período selecionado.</td></tr>';
             }
         },
         handleFilterChange(page, period, customStartDate, customEndDate) {
             const now = new Date();
             let startDate, endDate;
+            
+            // CORREÇÃO: Garante que as datas sejam tratadas em UTC para evitar problemas de fuso horário
+            const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 
             switch(period) {
-                case 'today': startDate = endDate = now.toISOString().split('T')[0]; break;
+                case 'today': 
+                    startDate = today.toISOString().split('T')[0];
+                    endDate = startDate;
+                    break;
                 case 'yesterday':
-                    const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
-                    startDate = endDate = yesterday.toISOString().split('T')[0]; break;
+                    const yesterday = new Date(today);
+                    yesterday.setUTCDate(today.getUTCDate() - 1);
+                    startDate = endDate = yesterday.toISOString().split('T')[0];
+                    break;
                 case 'last7days':
-                    endDate = now.toISOString().split('T')[0];
-                    const sevenDaysAgo = new Date(now); sevenDaysAgo.setDate(now.getDate() - 6);
-                    startDate = sevenDaysAgo.toISOString().split('T')[0]; break;
+                    endDate = today.toISOString().split('T')[0];
+                    const sevenDaysAgo = new Date(today);
+                    sevenDaysAgo.setUTCDate(today.getUTCDate() - 6);
+                    startDate = sevenDaysAgo.toISOString().split('T')[0];
+                    break;
                 case 'thisMonth':
-                    startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-                    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]; break;
-                case 'custom': startDate = customStartDate; endDate = customEndDate; break;
-                case 'all': default: startDate = null; endDate = null;
+                    startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)).toISOString().split('T')[0];
+                    endDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 0)).toISOString().split('T')[0];
+                    break;
+                case 'custom':
+                    startDate = customStartDate;
+                    endDate = customEndDate;
+                    break;
+                case 'all':
+                default:
+                    startDate = null;
+                    endDate = null;
             }
 
             this.state.dateFilter = { period, startDate, endDate };
-
-            const filterContainer = document.getElementById(`${page}-date-filter`);
-            if (filterContainer) {
-                filterContainer.outerHTML = this.templates.dateFilterComponent(page);
-            }
             
             if (page === 'dashboard') {
                 this.fetchDashboardMetrics();
-                this.fetchAchievementsAndRanking();
             } else if (page === 'transactions') {
                 this.renderTransactionsTable();
             }
