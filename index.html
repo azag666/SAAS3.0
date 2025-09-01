@@ -454,7 +454,6 @@
             },
             dispatches() {
                 const { dispatches } = App.state.data;
-                const totalCampaigns = dispatches.length;
                 const totalSuccess = dispatches.reduce((acc, d) => acc + (d.success_count || 0), 0);
                 const totalFailure = dispatches.reduce((acc, d) => acc + (d.failure_count || 0), 0);
                 const totalSent = totalSuccess + totalFailure;
@@ -472,9 +471,7 @@
                     }, { rate: -1, content: 'N/A' });
                 }
 
-                const engagementLevels = {
-                    1: 100, 2: 500, 3: 1000, 4: 5000, 5: 10000
-                };
+                const engagementLevels = { 1: 100, 2: 500, 3: 1000, 4: 5000, 5: 10000 };
                 let currentLevel = 0;
                 let nextLevelSends = engagementLevels[1];
                 for (const level in engagementLevels) {
@@ -485,9 +482,8 @@
                         break;
                     }
                 }
-                 if(currentLevel === 5) nextLevelSends = totalSent;
-                const progressToNextLevel = totalSent >= nextLevelSends ? 100 : (totalSent / nextLevelSends) * 100;
-
+                if (currentLevel === 5) nextLevelSends = totalSent;
+                const progressToNextLevel = totalSent === 0 && nextLevelSends === 0 ? 0 : (totalSent / nextLevelSends) * 100;
 
                 const dispatchListHTML = dispatches.sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at)).map(d => {
                     const total = (d.success_count || 0) + (d.failure_count || 0);
@@ -504,8 +500,8 @@
                         <td>${total}</td>
                         <td class="font-medium ${successRate >= 80 ? 'text-green-400' : 'text-yellow-400'}">${successRate.toFixed(1)}% ${performanceIcon}</td>
                         <td><button data-log-id="${d.id}" class="view-dispatch-details-btn btn-secondary text-xs py-1 px-2">Ver Relatório</button></td>
-                    </tr>
-                `}).join('');
+                    </tr>`;
+                }).join('');
 
                 return `
                 <div class="animate-fade-in">
@@ -530,7 +526,7 @@
                             <div class="card p-6 rounded-lg flex flex-col justify-between">
                                 <h3 class="text-sm font-medium text-gray-400">Melhor Campanha</h3>
                                 <p class="text-lg font-semibold text-white mt-2 truncate" title="${bestCampaign.content}">${bestCampaign.content}</p>
-                                <p class="text-4xl font-bold text-green-400 mt-2">${bestCampaign.rate > 0 ? bestCampaign.rate.toFixed(1) + '%' : 'N/A'}</p>
+                                <p class="text-4xl font-bold text-green-400 mt-2">${bestCampaign.rate > -1 ? bestCampaign.rate.toFixed(1) + '%' : 'N/A'}</p>
                                 <p class="text-slate-400">de taxa de sucesso</p>
                             </div>
                              <div class="card p-6 rounded-lg sm:col-span-2">
@@ -1095,7 +1091,6 @@
                 }
                 
                 const response = await this.apiRequest(`/api/bots/mass-send`, 'POST', payload);
-                // Fetch the latest dispatches after sending a new one
                 this.state.data.dispatches = await this.apiRequest('/api/dispatches');
                 this.showToast(response.message, 'success');
                 document.getElementById('modal-container').innerHTML = '';
@@ -1138,27 +1133,30 @@
         async navigateTo(page) {
             this.state.currentPage = page;
             const contentContainer = document.getElementById('content');
-            if (contentContainer && this.templates[page]) {
-                contentContainer.innerHTML = `<div class="flex items-center justify-center h-full"><svg class="animate-spin h-6 w-6 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>`;
-                
-                setTimeout(() => {
-                    contentContainer.innerHTML = this.templates[page]();
-                    document.querySelectorAll('.nav-link').forEach(item => { item.classList.toggle('active', item.dataset.target === page); });
-                    
-                    if (page === 'dashboard') {
-                        this.handleFilterChange(page, 'last7days');
-                    } else if (page === 'transactions') {
-                        this.handleFilterChange(page, 'all');
-                    } else if (page === 'settings') {
-                        this.updateAllPixStatusIndicators();
-                    } else if (page === 'bots') {
-                        this.updateAllBotStatusIndicators();
-                    } else if (page === 'dispatches') {
-                        this.renderDispatchesChart();
-                    }
-                }, 100);
-            }
+            if (!contentContainer || !this.templates[page]) return;
+
+            contentContainer.innerHTML = `<div class="flex items-center justify-center h-full"><svg class="animate-spin h-6 w-6 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>`;
+            
+            // Render the main template and update nav links
+            setTimeout(() => {
+                contentContainer.innerHTML = this.templates[page]();
+                document.querySelectorAll('.nav-link').forEach(item => item.classList.toggle('active', item.dataset.target === page));
+
+                // Call page-specific functions
+                if (page === 'dashboard') {
+                    this.handleFilterChange('dashboard', this.state.dateFilter.period || 'last7days');
+                } else if (page === 'transactions') {
+                    this.handleFilterChange('transactions', this.state.dateFilter.period || 'all');
+                } else if (page === 'settings') {
+                    this.updateAllPixStatusIndicators();
+                } else if (page === 'bots') {
+                    this.updateAllBotStatusIndicators();
+                } else if (page === 'dispatches') {
+                    this.renderDispatchesChart();
+                }
+            }, 50); // A small delay to ensure the loader is visible
         },
+
         
         async fetchDashboardMetrics() {
             try {
@@ -1319,21 +1317,20 @@
 
             this.state.dateFilter = { period, startDate, endDate };
             
-            // This is the fix: only call navigateTo on pages that NEED a full re-render on filter change.
-            // For transactions, we just re-render the table.
+            const filterContainer = document.getElementById(`${page}-date-filter`);
+            if (filterContainer) {
+                filterContainer.querySelectorAll('button[data-period]').forEach(btn => {
+                    const isActive = btn.dataset.period === period;
+                    btn.classList.toggle('active', isActive);
+                    btn.classList.toggle('!bg-sky-500', isActive);
+                    btn.classList.toggle('!border-sky-400', isActive);
+                    btn.classList.toggle('!text-white', isActive);
+                });
+            }
+
             if (page === 'dashboard') {
-                 this.navigateTo(page);
+                this.fetchDashboardMetrics();
             } else if (page === 'transactions') {
-                const filterContainer = document.getElementById('transactions-date-filter');
-                 if (filterContainer) {
-                    filterContainer.querySelectorAll('button[data-period]').forEach(btn => {
-                        const isActive = btn.dataset.period === period;
-                        btn.classList.toggle('active', isActive);
-                        btn.classList.toggle('!bg-sky-500', isActive);
-                        btn.classList.toggle('!border-sky-400', isActive);
-                        btn.classList.toggle('!text-white', isActive);
-                    });
-                }
                 this.renderTransactionsTable();
             }
         },
