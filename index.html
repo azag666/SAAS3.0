@@ -1255,9 +1255,6 @@
             document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
         },
 
-        // =================================================================
-        // FUNÇÃO DE CHECKOUT ATUALIZADA COM WEBSOCKETS
-        // =================================================================
         generateCheckoutHTML(checkoutId) {
             const checkout = this.state.data.checkouts.find(c => c.id == checkoutId);
             const { settings, pixels } = this.state.data;
