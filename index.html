@@ -114,8 +114,13 @@
             appContainer.innerHTML = `<div class="flex h-screen items-center justify-center"><p>Carregando...</p></div>`;
             if (this.state.token) {
                 try {
-                    const staticData = await this.apiRequest('/api/dashboard/data');
-                    this.state.data = { ...this.state.data, ...staticData };
+                    // Carrega todos os dados estáticos e transações de uma vez
+                    const [staticData, transactions, dispatches] = await Promise.all([
+                        this.apiRequest('/api/dashboard/data'),
+                        this.apiRequest('/api/transactions'),
+                        this.apiRequest('/api/dispatches')
+                    ]);
+                    this.state.data = { ...this.state.data, ...staticData, transactions, dispatches };
                     this.renderLayout();
                     this.navigateTo('dashboard');
                 } catch (e) { 
