@@ -1327,52 +1327,83 @@
             }
         },
         
-        renderRevenueChart() {
-            const ctx = document.getElementById('revenueChart');
-            if (!ctx) return;
-            
-            const data = this.state.data.dashboard.daily_revenue || [];
-            const labels = data.map(item => new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }));
-            const revenues = data.map(item => item.revenue);
+       renderRevenueChart() {
+    const ctx = document.getElementById('revenueChart');
+    if (!ctx) return;
+    
+    // 1. Pega os dados brutos que vêm da API (agrupados por dia UTC)
+    const rawData = this.state.data.dashboard.daily_revenue || [];
+    
+    // 2. Cria um novo objeto para agrupar as receitas pelo dia correto de Brasília
+    const revenueByBrasiliaDate = {};
 
-            if (this.state.revenueChart) this.state.revenueChart.destroy();
+    // 3. Itera sobre cada dia retornado pela API
+    rawData.forEach(item => {
+        // O backend retorna uma data como "2025-09-10". O new Date() interpreta isso como
+        // 2025-09-10T00:00:00.000Z (meia-noite em UTC).
+        const utcDate = new Date(item.date);
+        
+        // 4. Formata essa data UTC para uma string de data no fuso de Brasília (dd/MM/yyyy)
+        // Isso converte corretamente: 10/09 00:05 UTC -> 09/09 21:05 Brasília -> "09/09/2025"
+        const brasiliaDateString = utcDate.toLocaleDateString('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
 
-            this.state.revenueChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Faturamento Pago', data: revenues, 
-                        backgroundColor: (context) => {
-                            const chart = context.chart;
-                            const {ctx, chartArea} = chart;
-                            if (!chartArea) return null;
-                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                            gradient.addColorStop(0, 'rgba(56, 189, 248, 0)');
-                            gradient.addColorStop(1, 'rgba(56, 189, 248, 0.3)');
-                            return gradient;
-                        },
-                        borderColor: '#38bdf8', borderWidth: 2, tension: 0.4, fill: true,
-                        pointBackgroundColor: '#38bdf8', pointRadius: 4, pointHoverRadius: 6,
-                    }]
+        // 5. Agrupa as receitas pela nova data de Brasília
+        if (revenueByBrasiliaDate[brasiliaDateString]) {
+            revenueByBrasiliaDate[brasiliaDateString] += item.revenue;
+        } else {
+            revenueByBrasiliaDate[brasiliaDateString] = item.revenue;
+        }
+    });
+
+    // 6. Extrai as chaves (labels) e valores (revenues) do objeto agrupado
+    const labels = Object.keys(revenueByBrasiliaDate);
+    const revenues = Object.values(revenueByBrasiliaDate);
+
+    // O resto do código permanece igual para renderizar o gráfico...
+    if (this.state.revenueChart) this.state.revenueChart.destroy();
+
+    this.state.revenueChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Faturamento Pago',
+                data: revenues,
+                backgroundColor: (context) => {
+                    const chart = context.chart;
+                    const {ctx, chartArea} = chart;
+                    if (!chartArea) return null;
+                    const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                    gradient.addColorStop(0, 'rgba(56, 189, 248, 0)');
+                    gradient.addColorStop(1, 'rgba(56, 189, 248, 0.3)');
+                    return gradient;
                 },
-                options: {
-                    responsive: true, maintainAspectRatio: true,
-                    scales: {
-                        y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(51, 65, 85, 0.5)' } },
-                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#0f172a', titleColor: '#f1f5f9', bodyColor: '#cbd5e1',
-                            borderColor: '#334155', borderWidth: 1,
-                            callbacks: { label: (context) => `Faturamento: R$ ${context.raw.toFixed(2).replace('.', ',')}` }
-                        }
-                    }
-                }
-            });
+                borderColor: '#38bdf8', borderWidth: 2, tension: 0.4, fill: true,
+                pointBackgroundColor: '#38bdf8', pointRadius: 4, pointHoverRadius: 6,
+            }]
         },
+        options: {
+            responsive: true, maintainAspectRatio: true,
+            scales: {
+                y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(51, 65, 85, 0.5)' } },
+                x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#0f172a', titleColor: '#f1f5f9', bodyColor: '#cbd5e1',
+                    borderColor: '#334155', borderWidth: 1,
+                    callbacks: { label: (context) => `Faturamento: R$ ${context.raw.toFixed(2).replace('.', ',')}` }
+                }
+            }
+        }
+    });
+},
 
         renderDispatchesChart() {
             const ctx = document.getElementById('dispatchesChart');
