@@ -1327,29 +1327,25 @@
             }
         },
         
-       renderRevenueChart() {
+      renderRevenueChart() {
     const ctx = document.getElementById('revenueChart');
     if (!ctx) return;
-    
+
     // 1. Pega os dados brutos que vêm da API (agrupados por dia UTC)
     const rawData = this.state.data.dashboard.daily_revenue || [];
     
-    // 2. Cria um novo objeto para agrupar as receitas pelo dia correto de Brasília
+    // 2. Cria um objeto para agrupar as receitas pelo dia correto de Brasília
     const revenueByBrasiliaDate = {};
 
     // 3. Itera sobre cada dia retornado pela API
     rawData.forEach(item => {
-        // O backend retorna uma data como "2025-09-10". O new Date() interpreta isso como
-        // 2025-09-10T00:00:00.000Z (meia-noite em UTC).
-        const utcDate = new Date(item.date);
+        // CORREÇÃO CRÍTICA: Força o JavaScript a ler a data como UTC.
+        // new Date('2025-09-09') é ambíguo. new Date('2025-09-09T00:00:00.000Z') é preciso.
+        const utcDate = new Date(`${item.date}T00:00:00.000Z`);
         
         // 4. Formata essa data UTC para uma string de data no fuso de Brasília (dd/MM/yyyy)
-        // Isso converte corretamente: 10/09 00:05 UTC -> 09/09 21:05 Brasília -> "09/09/2025"
         const brasiliaDateString = utcDate.toLocaleDateString('pt-BR', {
-            timeZone: 'America/Sao_Paulo',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
+            timeZone: 'America/Sao_Paulo'
         });
 
         // 5. Agrupa as receitas pela nova data de Brasília
@@ -1360,10 +1356,17 @@
         }
     });
 
-    // 6. Extrai as chaves (labels) e valores (revenues) do objeto agrupado
-    const labels = Object.keys(revenueByBrasiliaDate);
-    const revenues = Object.values(revenueByBrasiliaDate);
+    // 6. Converte o objeto para um array e ordena por data para garantir a ordem cronológica no gráfico
+    const sortedChartData = Object.entries(revenueByBrasiliaDate).sort((a, b) => {
+        const dateA = new Date(a[0].split('/').reverse().join('-'));
+        const dateB = new Date(b[0].split('/').reverse().join('-'));
+        return dateA - dateB;
+    });
 
+    // 7. Extrai os labels (datas) e os dados (receitas) do array ordenado
+    const labels = sortedChartData.map(item => item[0]);
+    const revenues = sortedChartData.map(item => item[1]);
+    
     // O resto do código permanece igual para renderizar o gráfico...
     if (this.state.revenueChart) this.state.revenueChart.destroy();
 
@@ -1375,8 +1378,7 @@
                 label: 'Faturamento Pago',
                 data: revenues,
                 backgroundColor: (context) => {
-                    const chart = context.chart;
-                    const {ctx, chartArea} = chart;
+                    const { ctx, chartArea } = context.chart;
                     if (!chartArea) return null;
                     const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
                     gradient.addColorStop(0, 'rgba(56, 189, 248, 0)');
@@ -1404,7 +1406,6 @@
         }
     });
 },
-
         renderDispatchesChart() {
             const ctx = document.getElementById('dispatchesChart');
             if (!ctx) return;
