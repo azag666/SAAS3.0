@@ -613,7 +613,12 @@
             },
             settings() {
                 const { settings } = App.state.data;
-                const providers = [{ value: 'pushinpay', text: 'PushinPay' }, { value: 'cnpay', text: 'CN Pay' }, { value: 'oasyfy', text: 'Oasy.fy' }];
+                const providers = [
+                    { value: 'pushinpay', text: 'PushinPay' }, 
+                    { value: 'cnpay', text: 'CN Pay' }, 
+                    { value: 'oasyfy', text: 'Oasy.fy' },
+                    { value: 'syncpay', text: 'SyncPay' }
+                ];
                 const createSelect = (name, selectedValue) => {
                     const options = providers.map(p => `<option value="${p.value}" ${p.value === selectedValue ? 'selected' : ''}>${p.text}</option>`).join('');
                     return `<select name="${name}" class="form-select w-full p-2">${options}<option value="" ${!selectedValue ? 'selected' : ''}>Nenhum</option></select>`;
@@ -641,6 +646,14 @@
                         </div>
 
                         <div id="tab-credentials" class="tab-content space-y-6">
+                             <div class="card p-6 rounded-lg">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div><h3 class="text-lg font-medium text-sky-400 inline-block">SyncPay</h3><span id="status-indicator-syncpay"></span></div>
+                                    <button type="button" data-provider="syncpay" class="test-pix-btn btn btn-secondary text-xs py-1 px-3">Testar Conexão</button>
+                                </div>
+                                <label class="block mb-2 text-sm text-gray-400">Client ID</label><input name="syncpay_client_id" type="password" value="${settings.syncpay_client_id || ''}" class="form-input w-full p-2">
+                                <label class="block mt-4 mb-2 text-sm text-gray-400">Client Secret</label><input name="syncpay_client_secret" type="password" value="${settings.syncpay_client_secret || ''}" class="form-input w-full p-2">
+                            </div>
                             <div class="card p-6 rounded-lg">
                                 <div class="flex justify-between items-start mb-4">
                                     <div><h3 class="text-lg font-medium text-sky-400 inline-block">PushinPay</h3><span id="status-indicator-pushinpay"></span></div>
@@ -648,7 +661,7 @@
                                 </div>
                                 <label class="block mb-2 text-sm text-gray-400">Bearer Token</label><input name="pushinpay_token" type="password" value="${settings.pushinpay_token || ''}" class="form-input w-full p-2">
                             </div>
-                            <div class="card p-6 rounded-lg">
+                             <div class="card p-6 rounded-lg">
                                 <div class="flex justify-between items-start mb-4">
                                     <div><h3 class="text-lg font-medium text-sky-400 inline-block">CN Pay</h3><span id="status-indicator-cnpay"></span></div>
                                     <button type="button" data-provider="cnpay" class="test-pix-btn btn btn-secondary text-xs py-1 px-3">Testar Conexão</button>
@@ -1832,7 +1845,7 @@
         },
 
         updateAllPixStatusIndicators() {
-            const providers = ['pushinpay', 'cnpay', 'oasyfy'];
+            const providers = ['pushinpay', 'cnpay', 'oasyfy', 'syncpay'];
             providers.forEach(provider => this.updatePixStatusIndicator(provider));
         },
 
