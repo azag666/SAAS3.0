@@ -226,7 +226,7 @@
                 transactions: [],
                 dashboard: {},
                 dispatches: [],
-                utmifyIntegrations: [] // NOVO ESTADO
+                utmifyIntegrations: []
             },
             currentPage: 'dashboard',
             dateFilter: {
@@ -245,7 +245,6 @@
             this.state.token = localStorage.getItem('hottrack_token');
             if (this.state.token) {
                 try {
-                    // ATUALIZADO: A chamada de /api/dashboard/data agora retorna também as integrações
                     const [staticData, transactions, dispatches] = await Promise.all([
                         this.apiRequest('/api/dashboard/data'),
                         this.apiRequest('/api/transactions'),
@@ -560,7 +559,6 @@
                 </div>`;
             },
             pressels() {
-                // ATUALIZADO: Adiciona a lista de opções para as contas Utmify
                 const { pixels, bots, pressels, utmifyIntegrations } = App.state.data;
                 const botOptions = bots.map(b => `<option value="${b.id}">${b.bot_name}</option>`).join('');
                 const utmifyOptions = utmifyIntegrations.map(u => `<option value="${u.id}">${u.account_name}</option>`).join('');
@@ -703,7 +701,6 @@
                 </div>`;
             },
             integrations() {
-                // ATUALIZADO: Template da página de integrações
                 const { utmifyIntegrations } = App.state.data;
                 const utmifyListHTML = utmifyIntegrations.map(u => `
                     <div class="p-3 bg-slate-900/50 rounded-lg flex justify-between items-center">
@@ -802,7 +799,6 @@
                 if (e.target.id === 'logoutButton') this.logout();
                 if (e.target.closest('#closeModalBtn')) document.getElementById('modal-container').innerHTML = '';
                 
-                // NOVO: Abre o modal para adicionar conta Utmify
                 if (e.target.id === 'add-utmify-btn') {
                     this.showAddUtmifyModal();
                 }
@@ -871,7 +867,6 @@
                     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
                     document.getElementById(`tab-${tabName}`).classList.add('active');
                 }
-                // ATUALIZADO: Evento para deletar também a conta Utmify
                 if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-bot-btn') || e.target.classList.contains('delete-pressel-btn') || e.target.classList.contains('delete-checkout-btn') || e.target.classList.contains('delete-utmify-btn')) {
                     const id = e.target.dataset.id;
                     let type = '', endpoint = '';
@@ -919,7 +914,6 @@
                         App.state.data.settings = { ...App.state.data.settings, ...data };
                         this.showToast('Configurações PIX salvas!', 'success');
                     }
-                    // NOVO: Handler para o form de adicionar Utmify
                     else if (form.id === 'utmifySettingsForm') {
                         const newIntegration = await this.apiRequest('/api/integrations/utmify', 'POST', data);
                         if(newIntegration) {
@@ -1055,7 +1049,6 @@
             this.init();
         },
 
-        // NOVA FUNÇÃO: Modal para adicionar conta Utmify
         showAddUtmifyModal() {
             const modalContent = `
                 <form id="utmifySettingsForm" class="space-y-4">
@@ -1513,21 +1506,30 @@
             });
         },
         
+        // ATUALIZADO: Função generatePresselCode com o novo formato
         generatePresselCode(pressel) {
             const { settings, pixels } = this.state.data;
             const selectedPixels = pixels.filter(p => pressel.pixel_ids.includes(p.id));
             const pixelsToTrackJSON = JSON.stringify(
                 selectedPixels.map(p => ({ id: p.pixel_id })),
-                null,
-                2
+                null, 4
             );
+            const noscriptPixelId = selectedPixels.length > 0 ? selectedPixels[0].pixel_id : '';
 
             const htmlContent = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>VIP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Acesso VIP</title>
+    <style>
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif; background-color: #f0f2f5; color: #1c1e21; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center; }
+        .container { padding: 20px; }
+        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #0d6efd; margin: 20px auto; animation: spin 1s ease infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        h1 { font-size: 1.5em; margin: 0 0 10px 0; }
+        p { font-size: 1em; color: #606770; }
+    </style>
     <script>
         const API_BASE_URL = '${this.state.API_BASE_URL}';
         const SELLER_API_KEY = '${settings.api_key}';
@@ -1535,33 +1537,30 @@
         const TELEGRAM_USERNAME = '${pressel.bot_name}';
         const WHITE_PAGE_URL = '${pressel.white_page_url || 'https://google.com'}';
         const PIXELS_TO_TRACK = ${pixelsToTrackJSON};
-        
+
         const isBot = () => /bot|facebook|crawler|spider|preview/i.test(navigator.userAgent);
         const isMobile = () => /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+        const getCookie = (name) => document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))?.[2] || null;
 
-        async function handleRedirect() {
-            if (isBot() || !isMobile()) {
-                window.location.replace(WHITE_PAGE_URL);
-                return;
-            }
+        async function registerAndRedirect() {
             try {
                 const params = new URLSearchParams(window.location.search);
                 const response = await fetch(\`\${API_BASE_URL}/api/registerClick\`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                          sellerApiKey: SELLER_API_KEY,
-                          presselId: PRESSEL_ID,
-                          referer: document.referrer || null,
-                          fbclid: params.get("fbclid") || null,
-                          fbp: document.cookie.match(/_fbp=([^;]+)/)?.[1] || null,
-                          fbc: document.cookie.match(/_fbc=([^;]+)/)?.[1] || null,
-                          user_agent: navigator.userAgent,
-                          utm_source: params.get("utm_source"),
-                          utm_campaign: params.get("utm_campaign"),
-                          utm_medium: params.get("utm_medium"),
-                          utm_content: params.get("utm_content"),
-                          utm_term: params.get("utm_term")
+                        sellerApiKey: SELLER_API_KEY,
+                        presselId: PRESSEL_ID,
+                        referer: document.referrer || null,
+                        fbclid: params.get("fbclid"),
+                        fbp: getCookie("_fbp"),
+                        fbc: getCookie("_fbc"),
+                        user_agent: navigator.userAgent,
+                        utm_source: params.get("utm_source"),
+                        utm_campaign: params.get("utm_campaign"),
+                        utm_medium: params.get("utm_medium"),
+                        utm_content: params.get("utm_content"),
+                        utm_term: params.get("utm_term")
                     })
                 });
                 const data = await response.json();
@@ -1571,22 +1570,48 @@
                     window.location.replace(WHITE_PAGE_URL);
                 }
             } catch (error) {
+                console.error("Erro ao registrar clique:", error);
                 window.location.replace(WHITE_PAGE_URL);
             }
         }
+
+        function waitForFbCookiesAndRedirect() {
+            if (isBot() || !isMobile()) {
+                window.location.replace(WHITE_PAGE_URL);
+                return;
+            }
+            let attempts = 0;
+            const maxAttempts = 15;
+            const interval = setInterval(() => {
+                const fbc = getCookie("_fbc");
+                const fbclid = new URLSearchParams(window.location.search).get("fbclid");
+                if (fbc || !fbclid || attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    registerAndRedirect();
+                }
+                attempts++;
+            }, 200);
+        }
         
-        setTimeout(handleRedirect, 500);
+        window.onload = waitForFbCookiesAndRedirect;
     <\/script>
     <script>
         !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src='https://connect.facebook.net/en_US/fbevents.js';s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script');
         PIXELS_TO_TRACK.forEach(p => { fbq('init', p.id); });
         fbq('track', 'PageView');
     <\/script>
-    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=\${selectedPixels.length > 0 ? selectedPixels[0].pixel_id : ''}&ev=PageView&noscript=1"/></noscript>
+    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${noscriptPixelId}&ev=PageView&noscript=1"/></noscript>
 </head>
-<body><p>Redirecionando...</p></body>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <h1>A preparar o seu acesso...</h1>
+        <p>Aguarde um momento, estamos a redirecioná-lo em segurança.</p>
+    </div>
+</body>
 </html>`;
-            const modalContent = `<p class="text-sm text-gray-400 mb-4">Copie e cole no HTML da sua página.</p><textarea id="pressel-code-textarea" class="form-input w-full p-2 font-mono text-xs" rows="15" readonly></textarea><button class="copy-btn btn w-full mt-4 py-2" data-target="#pressel-code-textarea">Copiar Código</button>`;
+
+            const modalContent = `<p class="text-sm text-gray-400 mb-4">Código gerado com o novo formato de alta conversão. Copie e cole no HTML da sua página.</p><textarea id="pressel-code-textarea" class="form-input w-full p-2 font-mono text-xs" rows="15" readonly></textarea><button class="copy-btn btn w-full mt-4 py-2" data-target="#pressel-code-textarea">Copiar Código</button>`;
             
             document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
             document.getElementById('pressel-code-textarea').value = htmlContent;
