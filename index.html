@@ -225,7 +225,8 @@
                 settings: {}, 
                 transactions: [],
                 dashboard: {},
-                dispatches: []
+                dispatches: [],
+                utmifyIntegrations: [] // NOVO ESTADO
             },
             currentPage: 'dashboard',
             dateFilter: {
@@ -244,6 +245,7 @@
             this.state.token = localStorage.getItem('hottrack_token');
             if (this.state.token) {
                 try {
+                    // ATUALIZADO: A chamada de /api/dashboard/data agora retorna também as integrações
                     const [staticData, transactions, dispatches] = await Promise.all([
                         this.apiRequest('/api/dashboard/data'),
                         this.apiRequest('/api/transactions'),
@@ -558,17 +560,35 @@
                 </div>`;
             },
             pressels() {
-                const { pixels, bots, pressels } = App.state.data;
+                // ATUALIZADO: Adiciona a lista de opções para as contas Utmify
+                const { pixels, bots, pressels, utmifyIntegrations } = App.state.data;
                 const botOptions = bots.map(b => `<option value="${b.id}">${b.bot_name}</option>`).join('');
+                const utmifyOptions = utmifyIntegrations.map(u => `<option value="${u.id}">${u.account_name}</option>`).join('');
                 const pixelCheckboxes = pixels.map(p => `<label class="flex items-center space-x-2 text-gray-300 hover:text-white cursor-pointer p-2 rounded-md hover:bg-slate-700/50"><input type="checkbox" name="pixel_ids" value="${p.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500"><span>${p.account_name}</span></label>`).join('');
                 const presselList = pressels.map(pr => `<div class="p-3 card flex justify-between items-center text-sm"><div><p class="font-semibold">${pr.name}</p><p class="text-xs text-gray-400">Bot: ${pr.bot_name}</p></div><div class="space-x-2"><button data-id="${pr.id}" class="generate-pressel-code-btn btn text-xs py-1 px-2">Ver Código</button><button data-id="${pr.id}" class="delete-pressel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
+                
                 return `
                 <div class="animate-fade-in">
                     <div class="mb-6"><h1 class="text-3xl font-bold text-white">Criador de Pressel</h1><p class="text-slate-400">Configure suas páginas de pressel para captura de leads.</p></div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div class="card p-6 rounded-lg">
                             <h2 class="text-xl font-bold mb-4 text-white">Criar Nova Pressel</h2>
-                            <form id="presselForm" class="space-y-4"><input name="name" placeholder="Nome da Pressel (Ex: Campanha Black Friday)" class="form-input w-full p-2" required><input name="white_page_url" type="url" placeholder="URL da Página Branca (Opcional)" class="form-input w-full p-2"><select name="bot_id" class="form-select w-full p-2" required><option value="">Selecione um Bot</option>${botOptions}</select><div class="card p-3"><p class="font-semibold mb-2">Selecione os Pixels:</p><div class="space-y-1">${pixelCheckboxes.length ? pixelCheckboxes : '<p class="text-gray-500 text-sm">Cadastre um pixel primeiro.</p>'}</div></div><button type="submit" class="btn w-full p-3 rounded-md text-base font-bold">Salvar e Gerar Código</button></form>
+                            <form id="presselForm" class="space-y-4">
+                                <input name="name" placeholder="Nome da Pressel (Ex: Campanha Black Friday)" class="form-input w-full p-2" required>
+                                <input name="white_page_url" type="url" placeholder="URL da Página Branca" class="form-input w-full p-2" required>
+                                <select name="bot_id" class="form-select w-full p-2" required><option value="">Selecione um Bot</option>${botOptions}</select>
+                                
+                                <div>
+                                    <label class="text-sm font-medium text-gray-400 mb-1 block">Enviar Eventos para Utmify (Opcional)</label>
+                                    <select name="utmify_integration_id" class="form-select w-full p-2">
+                                        <option value="">Não enviar</option>
+                                        ${utmifyOptions}
+                                    </select>
+                                </div>
+                                
+                                <div class="card p-3"><p class="font-semibold mb-2">Selecione os Pixels:</p><div class="space-y-1">${pixelCheckboxes.length ? pixelCheckboxes : '<p class="text-gray-500 text-sm">Cadastre um pixel primeiro.</p>'}</div></div>
+                                <button type="submit" class="btn w-full p-3 rounded-md text-base font-bold">Salvar e Gerar Código</button>
+                            </form>
                         </div>
                         <div class="card p-6 rounded-lg"><h2 class="text-xl font-bold mb-4 text-white">Pressels Criadas</h2><div id="pressel-list" class="space-y-3">${presselList.length ? presselList : '<p class="text-gray-500 text-sm">Nenhuma pressel criada.</p>'}</div></div>
                     </div>
@@ -683,20 +703,29 @@
                 </div>`;
             },
             integrations() {
-                const { settings } = App.state.data;
+                // ATUALIZADO: Template da página de integrações
+                const { utmifyIntegrations } = App.state.data;
+                const utmifyListHTML = utmifyIntegrations.map(u => `
+                    <div class="p-3 bg-slate-900/50 rounded-lg flex justify-between items-center">
+                        <span class="font-medium text-sm">${u.account_name}</span>
+                        <button data-id="${u.id}" class="delete-utmify-btn btn btn-red text-xs py-1 px-2">Excluir</button>
+                    </div>
+                `).join('');
+
                 return `
                 <div class="animate-fade-in">
                     <div class="mb-6"><h1 class="text-3xl font-bold text-white">Integrações</h1><p class="text-slate-400">Conecte o HotTrack a outras ferramentas.</p></div>
                     <div class="max-w-2xl">
-                        <form id="utmifySettingsForm" class="space-y-8">
-                             <div class="card p-6 rounded-lg">
-                                <h2 class="text-xl font-semibold text-white">Utmify</h2>
-                                <p class="text-sm text-gray-400 mt-1 mb-4">Integre com a Utmify para espelhar suas vendas e analisar a performance por UTMs.</p>
-                                <label class="block mb-2 text-sm text-gray-400">Token da API Utmify (x-api-token)</label>
-                                <input name="utmify_api_token" type="password" value="${settings.utmify_api_token || ''}" class="form-input w-full p-2">
+                        <div class="card p-6 rounded-lg">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold text-white">Contas Utmify</h2>
+                                <button id="add-utmify-btn" class="btn btn-secondary text-sm py-1 px-3">Adicionar Conta</button>
                             </div>
-                            <div><button type="submit" class="btn w-full p-3 font-bold rounded-md">Salvar Integrações</button></div>
-                        </form>
+                            <p class="text-sm text-gray-400 mt-1 mb-4">Adicione suas contas da Utmify. Depois, na criação de uma Pressel, você poderá escolher para qual conta os eventos de venda devem ser enviados.</p>
+                            <div id="utmify-list" class="space-y-3">
+                                ${utmifyListHTML.length ? utmifyListHTML : '<p class="text-gray-500 text-sm">Nenhuma conta Utmify cadastrada.</p>'}
+                            </div>
+                        </div>
                     </div>
                 </div>`;
             },
@@ -718,7 +747,7 @@
                 </div>`;
             },
             modal(title, content) {
-                return `<div id="modal" class="modal active"><div class="card p-6 rounded-lg w-full max-w-4xl animate-fade-in"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-white">${title}</h2><button id="closeModalBtn" class="text-gray-400 hover:text-white text-3xl">&times;</button></div>${content}</div></div>`;
+                return `<div id="modal" class="modal active"><div class="card p-6 rounded-lg w-full max-w-md animate-fade-in"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-white">${title}</h2><button id="closeModalBtn" class="text-gray-400 hover:text-white text-3xl">&times;</button></div>${content}</div></div>`;
             }
         },
 
@@ -772,6 +801,12 @@
 
                 if (e.target.id === 'logoutButton') this.logout();
                 if (e.target.closest('#closeModalBtn')) document.getElementById('modal-container').innerHTML = '';
+                
+                // NOVO: Abre o modal para adicionar conta Utmify
+                if (e.target.id === 'add-utmify-btn') {
+                    this.showAddUtmifyModal();
+                }
+
                 const sidebarLink = e.target.closest('.nav-link');
                 if (sidebarLink && sidebarLink.dataset.target) this.navigateTo(sidebarLink.dataset.target);
                 const copyBtn = e.target.closest('.copy-btn');
@@ -836,13 +871,16 @@
                     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
                     document.getElementById(`tab-${tabName}`).classList.add('active');
                 }
-                if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-bot-btn') || e.target.classList.contains('delete-pressel-btn') || e.target.classList.contains('delete-checkout-btn')) {
+                // ATUALIZADO: Evento para deletar também a conta Utmify
+                if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-bot-btn') || e.target.classList.contains('delete-pressel-btn') || e.target.classList.contains('delete-checkout-btn') || e.target.classList.contains('delete-utmify-btn')) {
                     const id = e.target.dataset.id;
                     let type = '', endpoint = '';
                     if (e.target.classList.contains('delete-pixel-btn')) { type = 'pixels'; endpoint = 'pixels'; }
                     if (e.target.classList.contains('delete-bot-btn')) { type = 'bots'; endpoint = 'bots'; }
                     if (e.target.classList.contains('delete-pressel-btn')) { type = 'pressels'; endpoint = 'pressels'; }
                     if (e.target.classList.contains('delete-checkout-btn')) { type = 'checkouts'; endpoint = 'checkouts'; }
+                    if (e.target.classList.contains('delete-utmify-btn')) { type = 'utmifyIntegrations'; endpoint = 'integrations/utmify'; }
+                    
                     if (confirm(`Tem certeza que deseja excluir este item?`)) {
                         try {
                             await this.apiRequest(`/api/${endpoint}/${id}`, 'DELETE');
@@ -881,10 +919,15 @@
                         App.state.data.settings = { ...App.state.data.settings, ...data };
                         this.showToast('Configurações PIX salvas!', 'success');
                     }
+                    // NOVO: Handler para o form de adicionar Utmify
                     else if (form.id === 'utmifySettingsForm') {
-                        await this.apiRequest('/api/settings/utmify', 'POST', data);
-                        App.state.data.settings = { ...App.state.data.settings, ...data };
-                        this.showToast('Integração Utmify salva!', 'success');
+                        const newIntegration = await this.apiRequest('/api/integrations/utmify', 'POST', data);
+                        if(newIntegration) {
+                            this.state.data.utmifyIntegrations.unshift(newIntegration);
+                            document.getElementById('modal-container').innerHTML = '';
+                            this.navigateTo('integrations');
+                            this.showToast('Conta Utmify adicionada!', 'success');
+                        }
                     }
                     else if (form.id === 'pixelForm') {
                         const newPixel = await this.apiRequest('/api/pixels', 'POST', data);
@@ -1010,6 +1053,26 @@
             this.state.token = null;
             localStorage.removeItem('hottrack_token');
             this.init();
+        },
+
+        // NOVA FUNÇÃO: Modal para adicionar conta Utmify
+        showAddUtmifyModal() {
+            const modalContent = `
+                <form id="utmifySettingsForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Nome da Conta</label>
+                        <input name="account_name" type="text" placeholder="Ex: Produto X - Utmify" class="form-input w-full p-2" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Token da API Utmify (x-api-token)</label>
+                        <input name="api_token" type="password" class="form-input w-full p-2" required>
+                    </div>
+                    <div class="pt-2">
+                        <button type="submit" class="btn w-full p-2 font-bold rounded-md">Salvar Integração</button>
+                    </div>
+                </form>
+            `;
+            document.getElementById('modal-container').innerHTML = this.templates.modal('Adicionar Conta Utmify', modalContent);
         },
 
         showDispatchModal() {
@@ -1344,24 +1407,15 @@
     const ctx = document.getElementById('revenueChart');
     if (!ctx) return;
 
-    // 1. Pega os dados brutos que vêm da API (agrupados por dia UTC)
     const rawData = this.state.data.dashboard.daily_revenue || [];
-    
-    // 2. Cria um objeto para agrupar as receitas pelo dia correto de Brasília
     const revenueByBrasiliaDate = {};
 
-    // 3. Itera sobre cada dia retornado pela API
     rawData.forEach(item => {
-        // CORREÇÃO CRÍTICA: Força o JavaScript a ler a data como UTC.
-        // new Date('2025-09-09') é ambíguo. new Date('2025-09-09T00:00:00.000Z') é preciso.
         const utcDate = new Date(`${item.date}T00:00:00.000Z`);
-        
-        // 4. Formata essa data UTC para uma string de data no fuso de Brasília (dd/MM/yyyy)
         const brasiliaDateString = utcDate.toLocaleDateString('pt-BR', {
             timeZone: 'America/Sao_Paulo'
         });
 
-        // 5. Agrupa as receitas pela nova data de Brasília
         if (revenueByBrasiliaDate[brasiliaDateString]) {
             revenueByBrasiliaDate[brasiliaDateString] += item.revenue;
         } else {
@@ -1369,18 +1423,15 @@
         }
     });
 
-    // 6. Converte o objeto para um array e ordena por data para garantir a ordem cronológica no gráfico
     const sortedChartData = Object.entries(revenueByBrasiliaDate).sort((a, b) => {
         const dateA = new Date(a[0].split('/').reverse().join('-'));
         const dateB = new Date(b[0].split('/').reverse().join('-'));
         return dateA - dateB;
     });
 
-    // 7. Extrai os labels (datas) e os dados (receitas) do array ordenado
     const labels = sortedChartData.map(item => item[0]);
     const revenues = sortedChartData.map(item => item[1]);
     
-    // O resto do código permanece igual para renderizar o gráfico...
     if (this.state.revenueChart) this.state.revenueChart.destroy();
 
     this.state.revenueChart = new Chart(ctx, {
@@ -1462,21 +1513,15 @@
             });
         },
         
-        // --- FUNÇÃO CORRIGIDA ---
         generatePresselCode(pressel) {
             const { settings, pixels } = this.state.data;
-
-            // 1. Filtra os pixels corretos para esta pressel
             const selectedPixels = pixels.filter(p => pressel.pixel_ids.includes(p.id));
-            
-            // 2. Formata o array de pixels como o sistema antigo esperava
             const pixelsToTrackJSON = JSON.stringify(
                 selectedPixels.map(p => ({ id: p.pixel_id })),
                 null,
                 2
             );
 
-            // 3. Monta o HTML final usando o template do sistema antigo
             const htmlContent = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1512,7 +1557,6 @@
                           fbp: document.cookie.match(/_fbp=([^;]+)/)?.[1] || null,
                           fbc: document.cookie.match(/_fbc=([^;]+)/)?.[1] || null,
                           user_agent: navigator.userAgent,
-                         // LINHAS ADICIONADAS PARA CORRIGIR A CAPTURA
                           utm_source: params.get("utm_source"),
                           utm_campaign: params.get("utm_campaign"),
                           utm_medium: params.get("utm_medium"),
@@ -1531,7 +1575,6 @@
             }
         }
         
-        // Adiciona o atraso de 500ms para permitir que o Pixel crie os cookies.
         setTimeout(handleRedirect, 500);
     <\/script>
     <script>
@@ -1543,9 +1586,7 @@
 </head>
 <body><p>Redirecionando...</p></body>
 </html>`;
-
-            // Mantém a mesma lógica de modal para exibir o código
-            const modalContent = `<p class="text-sm text-gray-400 mb-4">Código gerado com a lógica do sistema antigo. Copie e cole no HTML da sua página.</p><textarea id="pressel-code-textarea" class="form-input w-full p-2 font-mono text-xs" rows="15" readonly></textarea><button class="copy-btn btn w-full mt-4 py-2" data-target="#pressel-code-textarea">Copiar Código</button>`;
+            const modalContent = `<p class="text-sm text-gray-400 mb-4">Copie e cole no HTML da sua página.</p><textarea id="pressel-code-textarea" class="form-input w-full p-2 font-mono text-xs" rows="15" readonly></textarea><button class="copy-btn btn w-full mt-4 py-2" data-target="#pressel-code-textarea">Copiar Código</button>`;
             
             document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
             document.getElementById('pressel-code-textarea').value = htmlContent;
