@@ -265,6 +265,20 @@
             document.getElementById('app').innerHTML = this.templates.layout();
             this.addDashboardEventListeners();
         },
+
+        // NOVA FUNÇÃO para formatar os números
+        formatNumber(number, isCurrency = false) {
+            if (typeof number !== 'number') {
+                number = parseFloat(number) || 0;
+            }
+            if (isCurrency) {
+                // Formata como moeda brasileira (R$ 1.234,56)
+                return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            } else {
+                // Formata como número com separador de milhar (1.234)
+                return number.toLocaleString('pt-BR');
+            }
+        },
         
         templates: {
             auth(page = 'login') {
@@ -903,6 +917,7 @@
             }, 50);
         },
         
+        // FUNÇÃO ATUALIZADA com a formatação de números
         async fetchDashboardMetrics() {
             try {
                 const { startDate, endDate } = this.state.dateFilter;
@@ -914,20 +929,20 @@
                 const metrics = await this.apiRequest(`/api/dashboard/metrics?${query}`);
                 this.state.data.dashboard = metrics;
 
-                document.getElementById('metric-clicks').textContent = metrics.total_clicks || '0';
-                document.getElementById('metric-generated').textContent = metrics.total_pix_generated || '0';
-                document.getElementById('metric-paid').textContent = metrics.total_pix_paid || '0';
-                document.getElementById('metric-total-revenue').textContent = `R$ ${(metrics.total_revenue || 0).toFixed(2).replace('.', ',')}`;
-                document.getElementById('metric-paid-revenue').textContent = `R$ ${(metrics.paid_revenue || 0).toFixed(2).replace('.', ',')}`;
+                document.getElementById('metric-clicks').textContent = this.formatNumber(metrics.total_clicks);
+                document.getElementById('metric-generated').textContent = this.formatNumber(metrics.total_pix_generated);
+                document.getElementById('metric-paid').textContent = this.formatNumber(metrics.total_pix_paid);
+                document.getElementById('metric-total-revenue').textContent = this.formatNumber(metrics.total_revenue, true);
+                document.getElementById('metric-paid-revenue').textContent = this.formatNumber(metrics.paid_revenue, true);
                 
                 const botsTableBody = document.getElementById('bots-performance-table');
                 if (botsTableBody && metrics.bots_performance && metrics.bots_performance.length > 0) {
                     botsTableBody.innerHTML = metrics.bots_performance.map(b => `
                         <tr class="hover:bg-slate-800/50">
                             <td>${b.bot_name}</td>
-                            <td>${b.total_clicks || '0'}</td>
-                            <td>${b.total_pix_paid || '0'}</td>
-                            <td>R$ ${(b.paid_revenue || 0).toFixed(2).replace('.', ',')}</td>
+                            <td>${this.formatNumber(b.total_clicks)}</td>
+                            <td>${this.formatNumber(b.total_pix_paid)}</td>
+                            <td>${this.formatNumber(b.paid_revenue, true)}</td>
                         </tr>`).join('');
                 } else if(botsTableBody) {
                     botsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500 py-8">Nenhum dado de bot.</td></tr>';
@@ -935,7 +950,7 @@
 
                 const trafficTableBody = document.getElementById('traffic-by-state-table');
                 if (trafficTableBody && metrics.clicks_by_state && metrics.clicks_by_state.length > 0) {
-                    trafficTableBody.innerHTML = metrics.clicks_by_state.map(s => `<tr class="hover:bg-slate-800/50"><td>${s.state}</td><td>${s.total_clicks}</td></tr>`).join('');
+                    trafficTableBody.innerHTML = metrics.clicks_by_state.map(s => `<tr class="hover:bg-slate-800/50"><td>${s.state}</td><td>${this.formatNumber(s.total_clicks)}</td></tr>`).join('');
                 } else if(trafficTableBody){
                     trafficTableBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-500 py-8">Nenhum tráfego registrado.</td></tr>';
                 }
@@ -945,6 +960,7 @@
             } catch (e) { console.error("Erro ao carregar métricas do painel:", e); }
         },
 
+        // FUNÇÃO ATUALIZADA com a formatação de números
         async fetchAchievementsAndRanking() {
             try {
                 const data = await this.apiRequest('/api/dashboard/achievements-and-ranking');
@@ -957,7 +973,7 @@
                         const icon = ach.is_completed ? '✅' : '🔒';
                         const textColor = ach.is_completed ? 'text-green-400' : 'text-gray-400';
                         const missingAmount = ach.sales_goal / 100 - paidRevenue;
-                        const formattedMissing = missingAmount > 0 ? `Falta R$ ${missingAmount.toFixed(2).replace('.', ',')}` : 'Concluída!';
+                        const formattedMissing = missingAmount > 0 ? `Falta ${this.formatNumber(missingAmount, true)}` : 'Concluída!';
                         
                         return `
                             <div class="card p-4 rounded-lg flex items-center gap-3 bg-slate-900/50">
@@ -977,7 +993,7 @@
                     rankingList.innerHTML = data.topSellersRanking.map((seller, index) => {
                         const rank = index + 1;
                         const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
-                        const revenue = `R$ ${parseFloat(seller.total_revenue).toFixed(2).replace('.', ',')}`;
+                        const revenue = this.formatNumber(seller.total_revenue, true);
                         return `<div class="p-2 bg-slate-900/50 rounded-lg flex justify-between items-center"><span class="font-bold text-lg w-8 text-center">${medal}</span><span class="text-sm flex-1">${seller.name}</span><span class="text-xs text-gray-400">${revenue}</span></div>`;
                     }).join('');
                 } else if (rankingList){
@@ -992,6 +1008,7 @@
             }
         },
         
+        // FUNÇÃO ATUALIZADA com a formatação de números
         renderTransactionsTable() {
             const tableBody = document.getElementById('transactions-table-body');
             if (!tableBody) return;
@@ -1013,7 +1030,7 @@
                 tableBody.innerHTML = filteredTransactions.map(t => {
                     const statusClass = t.status === 'paid' ? 'text-green-400 bg-green-500/10' : 'text-yellow-400 bg-yellow-500/10';
                     const statusText = t.status === 'paid' ? 'Pago' : 'Pendente';
-                    const formattedValue = `R$ ${parseFloat(t.pix_value).toFixed(2).replace('.', ',')}`;
+                    const formattedValue = this.formatNumber(t.pix_value, true);
                     const formattedDate = new Date(t.created_at).toLocaleString('pt-BR');
                     const sourceName = (t.source_name === 'Checkout' || !t.source_name) ? 'Disparo' : t.source_name;
                     return `<tr class="hover:bg-slate-800/50">
@@ -1141,7 +1158,7 @@
                 tooltip: {
                     backgroundColor: '#0f172a', titleColor: '#f1f5f9', bodyColor: '#cbd5e1',
                     borderColor: '#334155', borderWidth: 1,
-                    callbacks: { label: (context) => `Faturamento: R$ ${context.raw.toFixed(2).replace('.', ',')}` }
+                    callbacks: { label: (context) => `Faturamento: ${this.formatNumber(context.raw, true)}` }
                 }
             }
         }
