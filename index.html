@@ -1076,87 +1076,78 @@
         },
 
         handleFilterChange(page, period, customStartDate, customEndDate) {
-            const now = new Date();
-            let startDate, endDate;
-            const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const now = new Date();
+    let startDate, endDate;
 
-            switch(period) {
-                case 'today': 
-                    startDate = endDate = today.toISOString().split('T')[0];
-                    break;
-                case 'yesterday':
-                    const yesterday = new Date(today);
-                    yesterday.setUTCDate(today.getUTCDate() - 1);
-                    startDate = endDate = yesterday.toISOString().split('T')[0];
-                    break;
-                case 'last7days':
-                    endDate = today.toISOString().split('T')[0];
-                    const sevenDaysAgo = new Date(today);
-                    sevenDaysAgo.setUTCDate(today.getUTCDate() - 6);
-                    startDate = sevenDaysAgo.toISOString().split('T')[0];
-                    break;
-                case 'thisMonth':
-                    startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)).toISOString().split('T')[0];
-                    endDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 0)).toISOString().split('T')[0];
-                    break;
-                case 'custom':
-                    startDate = customStartDate;
-                    endDate = customEndDate;
-                    break;
-                case 'all':
-                default:
-                    startDate = null;
-                    endDate = null;
-            }
+    switch(period) {
+        case 'today':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0); // Início do dia local
+            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999); // Fim do dia local
+            break;
+        case 'yesterday':
+            const yesterday = new Date(now);
+            yesterday.setDate(now.getDate() - 1);
+            startDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0, 0);
+            endDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59, 999);
+            break;
+        case 'last7days':
+            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+            const sevenDaysAgo = new Date(now);
+            sevenDaysAgo.setDate(now.getDate() - 6);
+            startDate = new Date(sevenDaysAgo.getFullYear(), sevenDaysAgo.getMonth(), sevenDaysAgo.getDate(), 0, 0, 0, 0);
+            break;
+        case 'thisMonth':
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+            break;
+        case 'custom':
+            // Garante que as datas personalizadas cubram o dia inteiro no fuso local
+            if (customStartDate) startDate = new Date(`${customStartDate}T00:00:00`);
+            if (customEndDate) endDate = new Date(`${customEndDate}T23:59:59.999`);
+            break;
+        case 'all':
+        default:
+            startDate = null;
+            endDate = null;
+    }
 
-            this.state.dateFilter = { period, startDate, endDate };
-            
-            const filterContainer = document.getElementById(`${page}-date-filter`);
-            if (filterContainer) {
-                filterContainer.querySelectorAll('button[data-period]').forEach(btn => {
-                    const isActive = btn.dataset.period === period;
-                    btn.classList.toggle('active', isActive);
-                    btn.classList.toggle('!bg-sky-500', isActive);
-                    btn.classList.toggle('!border-sky-400', isActive);
-                    btn.classList.toggle('!text-white', isActive);
-                });
-            }
+    // Converte as datas locais para o formato ISO (UTC) que o backend espera
+    const finalStartDate = startDate ? startDate.toISOString() : null;
+    const finalEndDate = endDate ? endDate.toISOString() : null;
 
-            if (page === 'dashboard') {
-                this.fetchDashboardMetrics();
-            } else if (page === 'transactions') {
-                this.renderTransactionsTable();
-            }
-        },
+    this.state.dateFilter = { period, startDate: finalStartDate, endDate: finalEndDate };
+    
+    const filterContainer = document.getElementById(`${page}-date-filter`);
+    if (filterContainer) {
+        filterContainer.querySelectorAll('button[data-period]').forEach(btn => {
+            const isActive = btn.dataset.period === period;
+            btn.classList.toggle('active', isActive);
+            btn.classList.toggle('!bg-sky-500', isActive);
+            btn.classList.toggle('!border-sky-400', isActive);
+            btn.classList.toggle('!text-white', isActive);
+        });
+    }
+
+    if (page === 'dashboard') {
+        this.fetchDashboardMetrics();
+    } else if (page === 'transactions') {
+        this.renderTransactionsTable();
+    }
+},
         
-      renderRevenueChart() {
+    renderRevenueChart() {
     const ctx = document.getElementById('revenueChart');
     if (!ctx) return;
 
+    // Após a correção do backend, 'rawData' estará agrupado pela data local correta.
     const rawData = this.state.data.dashboard.daily_revenue || [];
-    const revenueByBrasiliaDate = {};
-
-    rawData.forEach(item => {
-        const utcDate = new Date(`${item.date}T00:00:00.000Z`);
-        const brasiliaDateString = utcDate.toLocaleDateString('pt-BR', {
-            timeZone: 'America/Sao_Paulo'
-        });
-
-        if (revenueByBrasiliaDate[brasiliaDateString]) {
-            revenueByBrasiliaDate[brasiliaDateString] += item.revenue;
-        } else {
-            revenueByBrasiliaDate[brasiliaDateString] = item.revenue;
-        }
+    
+    // A API retorna 'AAAA-MM-DD'. Apenas formatamos para 'DD/MM/AAAA' para exibição.
+    const labels = rawData.map(item => {
+        const [year, month, day] = item.date.split('-');
+        return `${day}/${month}/${year}`;
     });
-
-    const sortedChartData = Object.entries(revenueByBrasiliaDate).sort((a, b) => {
-        const dateA = new Date(a[0].split('/').reverse().join('-'));
-        const dateB = new Date(b[0].split('/').reverse().join('-'));
-        return dateA - dateB;
-    });
-
-    const labels = sortedChartData.map(item => item[0]);
-    const revenues = sortedChartData.map(item => item[1]);
+    const revenues = rawData.map(item => item.revenue);
     
     if (this.state.revenueChart) this.state.revenueChart.destroy();
 
