@@ -218,7 +218,8 @@
             API_BASE_URL: 'https://novaapi-one.vercel.app',
             token: null,
             data: { 
-                pixels: [], 
+                pixels: [],
+                bots: [],
                 pressels: [], 
                 settings: {}, 
                 transactions: [],
@@ -266,16 +267,13 @@
             this.addDashboardEventListeners();
         },
 
-        // NOVA FUNÇÃO para formatar os números
         formatNumber(number, isCurrency = false) {
             if (typeof number !== 'number') {
                 number = parseFloat(number) || 0;
             }
             if (isCurrency) {
-                // Formata como moeda brasileira (R$ 1.234,56)
                 return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             } else {
-                // Formata como número com separador de milhar (1.234)
                 return number.toLocaleString('pt-BR');
             }
         },
@@ -336,6 +334,7 @@
                         </div>
                         <nav id="sidebarNav" class="flex-grow flex flex-col space-y-1">
                             <div data-target="dashboard" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>Dashboard</div>
+                            <div data-target="bots" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V5a1 1 0 00-1.447-.894l-4 2A1 1 0 0011 7v10zM4 17a1 1 0 001.447.894l4-2A1 1 0 0010 15V5a1 1 0 00-1.447-.894l-4 2A1 1 0 004 7v10z" /></svg>Gerenciar Bots</div>
                             <div data-target="pressels" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>Criador de Pressel</div>
                             <div data-target="pixels" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h10a3 3 0 013 3v5a.997.997 0 01-.293-.707zM5 4a1 1 0 00-1 1v.01L8 9.01l4-4.002V5a1 1 0 00-1-1H5z" clip-rule="evenodd" /></svg>Gerenciar Pixels</div>
                             <div data-target="transactions" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.158-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-.165 0-.33.018-.488.054a1 1 0 01-.502 1.765l.986.328c.73.243 1.196.96 1.196 1.765 0 1.132-.98 1.99-2.206 1.99-1.225 0-2.205-.858-2.205-1.99 0-.962.63-1.698 1.447-1.938l.986-.329a1 1 0 01.502-1.765z" /><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.838.385l-.234-.14a1 1 0 00-1.18.157l-1 1.732a1 1 0 00.157 1.18l.234.14A4.5 4.5 0 005.5 8.5v.092l-1.07.356a1 1 0 00-.503 1.765l.986.329a2.5 2.5 0 001.09.243v.092a4.5 4.5 0 001.838-.385l.234.14a1 1 0 001.18-.157l1-1.732a1 1 0 00-.157-1.18l-.234-.14a4.5 4.5 0 001.03-2.062V5z" clip-rule="evenodd" /></svg>Transações</div>
@@ -435,11 +434,38 @@
                     </div>
                 </div>`;
             },
+            bots() {
+                 const botListHTML = App.state.data.bots.map(b => `
+                    <div class="p-3 bg-slate-900/50 rounded-lg flex justify-between items-center">
+                        <div>
+                            <span class="text-sm font-medium">${b.bot_name}</span>
+                            <span id="status-indicator-bot-${b.id}"></span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button data-id="${b.id}" class="delete-bot-btn btn btn-red text-xs py-1 px-2">Excluir</button>
+                        </div>
+                    </div>`).join('');
+                return `
+                <div class="animate-fade-in">
+                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Gerenciar Bots</h1><p class="text-slate-400">Conecte seus bots do Telegram para automatizar processos.</p></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="card p-6 rounded-lg">
+                            <h2 class="text-xl font-semibold mb-4 text-white">Adicionar Novo Bot</h2>
+                            <form id="botForm" class="space-y-4">
+                                <input name="bot_name" placeholder="Username do Bot (sem @)" class="form-input w-full p-2" required>
+                                <button type="submit" class="btn w-full p-2 rounded-md">Adicionar Bot</button>
+                            </form>
+                        </div>
+                        <div class="card p-6 rounded-lg"><h2 class="text-xl font-semibold text-white mb-4">Bots Salvos</h2><div id="bot-list" class="space-y-3 max-h-96 overflow-y-auto">${botListHTML.length ? botListHTML : '<p class="text-gray-500 text-sm">Nenhum bot salvo.</p>'}</div></div>
+                    </div>
+                </div>`;
+            },
             pressels() {
-                const { pixels, pressels, utmifyIntegrations } = App.state.data;
+                const { pixels, bots, pressels, utmifyIntegrations } = App.state.data;
+                const botOptions = bots.map(b => `<option value="${b.id}">${b.bot_name}</option>`).join('');
                 const utmifyOptions = utmifyIntegrations.map(u => `<option value="${u.id}">${u.account_name}</option>`).join('');
                 const pixelCheckboxes = pixels.map(p => `<label class="flex items-center space-x-2 text-gray-300 hover:text-white cursor-pointer p-2 rounded-md hover:bg-slate-700/50"><input type="checkbox" name="pixel_ids" value="${p.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500"><span>${p.account_name}</span></label>`).join('');
-                const presselList = pressels.map(pr => `<div class="p-3 card flex justify-between items-center text-sm"><div><p class="font-semibold">${pr.name}</p></div><div class="space-x-2"><button data-id="${pr.id}" class="generate-pressel-code-btn btn text-xs py-1 px-2">Ver Código</button><button data-id="${pr.id}" class="delete-pressel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
+                const presselList = pressels.map(pr => `<div class="p-3 card flex justify-between items-center text-sm"><div><p class="font-semibold">${pr.name}</p><p class="text-xs text-gray-400">Bot: ${pr.bot_name}</p></div><div class="space-x-2"><button data-id="${pr.id}" class="generate-pressel-code-btn btn text-xs py-1 px-2">Ver Código</button><button data-id="${pr.id}" class="delete-pressel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
                 
                 return `
                 <div class="animate-fade-in">
@@ -450,6 +476,7 @@
                             <form id="presselForm" class="space-y-4">
                                 <input name="name" placeholder="Nome da Pressel (Ex: Campanha Black Friday)" class="form-input w-full p-2" required>
                                 <input name="white_page_url" type="url" placeholder="URL da Página Branca" class="form-input w-full p-2" required>
+                                <select name="bot_id" class="form-select w-full p-2" required><option value="">Selecione um Bot</option>${botOptions}</select>
                                 
                                 <div>
                                     <label class="text-sm font-medium text-gray-400 mb-1 block">Enviar Eventos para Utmify (Opcional)</label>
@@ -692,10 +719,11 @@
                     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
                     document.getElementById(`tab-${tabName}`).classList.add('active');
                 }
-                if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-pressel-btn') || e.target.classList.contains('delete-utmify-btn')) {
+                if (e.target.classList.contains('delete-pixel-btn') || e.target.classList.contains('delete-bot-btn') || e.target.classList.contains('delete-pressel-btn') || e.target.classList.contains('delete-utmify-btn')) {
                     const id = e.target.dataset.id;
                     let type = '', endpoint = '';
                     if (e.target.classList.contains('delete-pixel-btn')) { type = 'pixels'; endpoint = 'pixels'; }
+                    if (e.target.classList.contains('delete-bot-btn')) { type = 'bots'; endpoint = 'bots'; }
                     if (e.target.classList.contains('delete-pressel-btn')) { type = 'pressels'; endpoint = 'pressels'; }
                     if (e.target.classList.contains('delete-utmify-btn')) { type = 'utmifyIntegrations'; endpoint = 'integrations/utmify'; }
                     
@@ -749,6 +777,10 @@
                     else if (form.id === 'pixelForm') {
                         const newPixel = await this.apiRequest('/api/pixels', 'POST', data);
                         if (newPixel) { this.state.data.pixels.unshift(newPixel); this.navigateTo('pixels'); }
+                    }
+                    else if (form.id === 'botForm') {
+                        const newBot = await this.apiRequest('/api/bots', 'POST', data);
+                        if (newBot) { this.state.data.bots.unshift(newBot); this.navigateTo('bots'); }
                     }
                     else if (form.id === 'presselForm') {
                         const pixel_ids = Array.from(form.querySelectorAll('input[name="pixel_ids"]:checked')).map(cb => cb.value);
@@ -913,11 +945,12 @@
                     this.handleFilterChange(page, this.state.dateFilter.period || 'all');
                 } else if (page === 'settings') {
                     this.updateAllPixStatusIndicators();
+                } else if (page === 'bots') {
+                    this.updateAllBotStatusIndicators();
                 }
             }, 50);
         },
         
-        // FUNÇÃO ATUALIZADA com a formatação de números
         async fetchDashboardMetrics() {
             try {
                 const { startDate, endDate } = this.state.dateFilter;
@@ -959,8 +992,7 @@
                 this.fetchAchievementsAndRanking();
             } catch (e) { console.error("Erro ao carregar métricas do painel:", e); }
         },
-
-        // FUNÇÃO ATUALIZADA com a formatação de números
+        
         async fetchAchievementsAndRanking() {
             try {
                 const data = await this.apiRequest('/api/dashboard/achievements-and-ranking');
@@ -1008,7 +1040,6 @@
             }
         },
         
-        // FUNÇÃO ATUALIZADA com a formatação de números
         renderTransactionsTable() {
             const tableBody = document.getElementById('transactions-table-body');
             if (!tableBody) return;
@@ -1191,6 +1222,7 @@
         const API_BASE_URL = '${this.state.API_BASE_URL}';
         const SELLER_API_KEY = '${settings.api_key}';
         const PRESSEL_ID = ${pressel.id};
+        const TELEGRAM_USERNAME = '${pressel.bot_name}';
         const WHITE_PAGE_URL = '${pressel.white_page_url || 'https://google.com'}';
         const PIXELS_TO_TRACK = ${pixelsToTrackJSON};
 
@@ -1221,7 +1253,7 @@
                 });
                 const data = await response.json();
                 if (response.ok && data.status === "success") {
-                    window.location.replace(WHITE_PAGE_URL);
+                    window.location.replace(\`https://t.me/\${TELEGRAM_USERNAME}?start=\${data.click_id}\`);
                 } else {
                     window.location.replace(WHITE_PAGE_URL);
                 }
@@ -1338,6 +1370,22 @@
                 button.innerHTML = originalText; button.disabled = false;
             }
         },
+
+        updateAllBotStatusIndicators() {
+            if (this.state.data.bots && this.state.data.bots.length > 0) {
+                this.state.data.bots.forEach(bot => this.updateBotStatusIndicator(bot.id));
+            }
+        },
+        
+        updateBotStatusIndicator(botId) {
+            const indicator = document.getElementById(`status-indicator-bot-${botId}`);
+            if (!indicator) return;
+            // Como o teste foi removido, podemos deixar um status neutro ou remover o indicador.
+            // Por enquanto, vou remover o conteúdo para não mostrar "Não testado".
+            indicator.textContent = '';
+            indicator.className = '';
+        },
+
         updateAllPixStatusIndicators() {
             const providers = ['pushinpay', 'cnpay', 'oasyfy', 'syncpay'];
             providers.forEach(provider => this.updatePixStatusIndicator(provider));
