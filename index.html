@@ -310,9 +310,10 @@
                         </div>
                         <p class="text-slate-400 mt-2">Crie sua conta e comece a rastrear.</p>
                     </div>
-                    <form id="registerForm" class="space-y-6">
+                    <form id="registerForm" class="space-y-4">
                         <div><label class="text-sm font-medium text-gray-400 mb-1 block">Nome</label><input name="name" type="text" required class="form-input w-full p-3"></div>
                         <div><label class="text-sm font-medium text-gray-400 mb-1 block">E-mail</label><input name="email" type="email" required class="form-input w-full p-3"></div>
+                        <div><label class="text-sm font-medium text-gray-400 mb-1 block">Telefone (com DDD)</label><input name="phone_number" type="tel" placeholder="(XX) XXXXX-XXXX" required class="form-input w-full p-3"></div>
                         <div><label class="text-sm font-medium text-gray-400 mb-1 block">Senha (mínimo 8 caracteres)</label><input name="password" type="password" required minlength="8" class="form-input w-full p-3"></div>
                         <button type="submit" class="btn w-full font-semibold py-3 rounded-md">Criar Minha Conta</button>
                     </form>
@@ -640,7 +641,7 @@
                     if (form.id === 'loginForm') {
                         await this.login(data.email, data.password);
                     } else if (form.id === 'registerForm') {
-                        await this.register(data.name, data.email, data.password);
+                        await this.register(data.name, data.email, data.password, data.phone_number);
                     }
 
                     button.innerHTML = originalButtonText;
@@ -869,10 +870,10 @@
             }
         },
         
-        async register(name, email, password) {
+        async register(name, email, password, phone_number) {
             try {
-                await this.apiRequest('/api/sellers/register', 'POST', { name, email, password });
-                this.showToast('Cadastro realizado! Faça o login.', 'success');
+                const data = await this.apiRequest('/api/sellers/register', 'POST', { name, email, password, phone_number });
+                this.showToast(data.message, 'success');
                 this.renderLogin('login');
             } catch (e) {}
         },
@@ -1380,8 +1381,6 @@
         updateBotStatusIndicator(botId) {
             const indicator = document.getElementById(`status-indicator-bot-${botId}`);
             if (!indicator) return;
-            // Como o teste foi removido, podemos deixar um status neutro ou remover o indicador.
-            // Por enquanto, vou remover o conteúdo para não mostrar "Não testado".
             indicator.textContent = '';
             indicator.className = '';
         },
