@@ -313,7 +313,6 @@
                     <form id="registerForm" class="space-y-4">
                         <div><label class="text-sm font-medium text-gray-400 mb-1 block">Nome</label><input name="name" type="text" required class="form-input w-full p-3"></div>
                         <div><label class="text-sm font-medium text-gray-400 mb-1 block">E-mail</label><input name="email" type="email" required class="form-input w-full p-3"></div>
-                        <div><label class="text-sm font-medium text-gray-400 mb-1 block">Telefone (com DDD)</label><input name="phone_number" type="tel" placeholder="(XX) XXXXX-XXXX" required class="form-input w-full p-3"></div>
                         <div><label class="text-sm font-medium text-gray-400 mb-1 block">Senha (mínimo 8 caracteres)</label><input name="password" type="password" required minlength="8" class="form-input w-full p-3"></div>
                         <button type="submit" class="btn w-full font-semibold py-3 rounded-md">Criar Minha Conta</button>
                     </form>
@@ -329,12 +328,12 @@
                         <div class="text-center py-4 mb-6 flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <svg class="h-8 w-8 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
-                                <h1 class="text-2xl font-bold text-white">HotTrack<span class="text-xs text-red-500 font-semibold ml-2 align-super">BETA</span></h1>
+                                <h1 class="text-2xl font-bold text-white">HotTrack</h1>
                             </div>
                             <button id="close-sidebar-btn" class="md:hidden text-gray-400 text-3xl hover:text-white">&times;</button>
                         </div>
                         <nav id="sidebarNav" class="flex-grow flex flex-col space-y-1">
-                            <div data-target="dashboard" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>Dashboard</div>
+                            <div data-target="dashboard" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>Dashboard</div>
                             <div data-target="bots" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V5a1 1 0 00-1.447-.894l-4 2A1 1 0 0011 7v10zM4 17a1 1 0 001.447.894l4-2A1 1 0 0010 15V5a1 1 0 00-1.447-.894l-4 2A1 1 0 004 7v10z" /></svg>Gerenciar Bots</div>
                             <div data-target="pressels" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>Criador de Pressel</div>
                             <div data-target="pixels" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h10a3 3 0 013 3v5a.997.997 0 01-.293-.707zM5 4a1 1 0 00-1 1v.01L8 9.01l4-4.002V5a1 1 0 00-1-1H5z" clip-rule="evenodd" /></svg>Gerenciar Pixels</div>
@@ -342,7 +341,7 @@
                             <div class="h-px bg-slate-700 my-2"></div>
                             <div data-target="settings" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" /></svg>API PIX</div>
                             <div data-target="integrations" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0l-1.5-1.5a2 2 0 112.828-2.828l1.5 1.5z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M6.414 11.586a2 2 0 10-2.828 2.828l3 3a2 2 0 002.828 0l1.5-1.5a2 2 0 10-2.828-2.828l-1.5 1.5z" clip-rule="evenodd" /></svg>Integrações</div>
-                            <div data-target="documentation" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>Credenciais</div>
+                            <div data-target="documentation" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>API & Docs</div>
                         </nav>
                         <div class="mt-auto"><button id="logoutButton" class="w-full text-slate-400 hover:bg-red-900/50 hover:text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" /></svg>Sair da Conta</button></div>
                     </aside>
@@ -521,7 +520,7 @@
                     <form id="pixSettingsForm" class="max-w-4xl">
                         <div class="flex border-b border-slate-700 mb-6" id="pix-settings-tabs">
                             <button type="button" data-tab="priority" class="tab-button active">Ordem de Prioridade</button>
-                            <button type="button" data-tab="credentials" class="tab-button ml-2">Credenciais</button>
+                            <button type="button" data-tab="credentials" class="tab-button ml-2">Chaves da API</button>
                         </div>
 
                         <div id="tab-priority" class="tab-content active space-y-8">
@@ -603,15 +602,24 @@
             documentation() {
                 return `
                 <div class="animate-fade-in">
-                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Credenciais da API</h1><p class="text-slate-400">Sua chave de API para integrações externas.</p></div>
-                    <div class="grid grid-cols-1 gap-8 max-w-2xl">
+                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">API & Documentação</h1><p class="text-slate-400">Sua chave de API para integrações e o guia de implementação.</p></div>
+                    <div class="grid grid-cols-1 gap-8 max-w-4xl">
                         <div class="card p-6 rounded-lg">
-                            <h2 class="text-xl font-semibold mb-4 text-white">Sua Chave de API HotTrack</h2>
+                            <h2 class="text-xl font-semibold mb-2 text-white">Sua Chave de API HotTrack</h2>
                             <p class="text-sm text-gray-400 mb-4">Use esta chave para autenticar suas requisições na API HotTrack (ex: gerar PIX, consultar status).</p>
                             <div class="flex items-center gap-2">
                                 <input id="hottrack-api-key" type="password" readonly value="${App.state.data.settings.api_key || ''}" class="form-input flex-grow p-2">
-                                <button type="button" class="toggle-visibility-btn p-2 text-gray-400 hover:text-white" data-target="#hottrack-api-key"><svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg></button>
+                                <button type="button" class="toggle-visibility-btn p-2 text-gray-400 hover:text-white" data-target="#hottrack-api-key">
+                                    <svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
+                                </button>
                                 <button type="button" class="copy-btn btn text-sm py-2 px-3" data-target="#hottrack-api-key">Copiar</button>
+                                <!-- BOTÃO ADICIONADO -->
+                                <a href="https://documentacaohot.netlify.app/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary text-sm py-2 px-3 flex items-center gap-2 whitespace-nowrap">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                    </svg>
+                                    <span>Doc API</span>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -641,7 +649,8 @@
                     if (form.id === 'loginForm') {
                         await this.login(data.email, data.password);
                     } else if (form.id === 'registerForm') {
-                        await this.register(data.name, data.email, data.password, data.phone_number);
+                        const { name, email, password } = data;
+                        await this.register(name, email, password);
                     }
 
                     button.innerHTML = originalButtonText;
@@ -870,9 +879,9 @@
             }
         },
         
-        async register(name, email, password, phone_number) {
+        async register(name, email, password) {
             try {
-                const data = await this.apiRequest('/api/sellers/register', 'POST', { name, email, password, phone_number });
+                const data = await this.apiRequest('/api/sellers/register', 'POST', { name, email, password });
                 this.showToast(data.message, 'success');
                 this.renderLogin('login');
             } catch (e) {}
@@ -1049,8 +1058,8 @@
             let filteredTransactions = this.state.data.transactions;
 
             if (period !== 'all' && startDate && endDate) {
-                const start = new Date(`${startDate}T00:00:00.000Z`).getTime();
-                const end = new Date(`${endDate}T23:59:59.999Z`).getTime();
+                const start = new Date(startDate).getTime();
+                const end = new Date(endDate).getTime();
                 
                 filteredTransactions = this.state.data.transactions.filter(t => {
                     const transactionDate = new Date(t.created_at).getTime();
@@ -1075,118 +1084,108 @@
             }
         },
 
-        handleFilterChange(page, period, customStartDate, customEndDate) {
-    const now = new Date();
-    let startDate, endDate;
+       handleFilterChange(page, period, customStartDate, customEndDate) {
+            const now = new Date();
+            let startDate, endDate;
 
-    switch(period) {
-        case 'today':
-            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0); // Início do dia local
-            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999); // Fim do dia local
-            break;
-        case 'yesterday':
-            const yesterday = new Date(now);
-            yesterday.setDate(now.getDate() - 1);
-            startDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0, 0);
-            endDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59, 999);
-            break;
-        case 'last7days':
-            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-            const sevenDaysAgo = new Date(now);
-            sevenDaysAgo.setDate(now.getDate() - 6);
-            startDate = new Date(sevenDaysAgo.getFullYear(), sevenDaysAgo.getMonth(), sevenDaysAgo.getDate(), 0, 0, 0, 0);
-            break;
-        case 'thisMonth':
-            startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-            break;
-        case 'custom':
-            // Garante que as datas personalizadas cubram o dia inteiro no fuso local
-            if (customStartDate) startDate = new Date(`${customStartDate}T00:00:00`);
-            if (customEndDate) endDate = new Date(`${customEndDate}T23:59:59.999`);
-            break;
-        case 'all':
-        default:
-            startDate = null;
-            endDate = null;
-    }
+            const setTimeToStartOfDay = (date) => {
+                date.setHours(0, 0, 0, 0);
+                return date;
+            };
+            const setTimeToEndOfDay = (date) => {
+                date.setHours(23, 59, 59, 999);
+                return date;
+            };
 
-    // Converte as datas locais para o formato ISO (UTC) que o backend espera
-    const finalStartDate = startDate ? startDate.toISOString() : null;
-    const finalEndDate = endDate ? endDate.toISOString() : null;
-
-    this.state.dateFilter = { period, startDate: finalStartDate, endDate: finalEndDate };
-    
-    const filterContainer = document.getElementById(`${page}-date-filter`);
-    if (filterContainer) {
-        filterContainer.querySelectorAll('button[data-period]').forEach(btn => {
-            const isActive = btn.dataset.period === period;
-            btn.classList.toggle('active', isActive);
-            btn.classList.toggle('!bg-sky-500', isActive);
-            btn.classList.toggle('!border-sky-400', isActive);
-            btn.classList.toggle('!text-white', isActive);
-        });
-    }
-
-    if (page === 'dashboard') {
-        this.fetchDashboardMetrics();
-    } else if (page === 'transactions') {
-        this.renderTransactionsTable();
-    }
-},
-        
-    renderRevenueChart() {
-    const ctx = document.getElementById('revenueChart');
-    if (!ctx) return;
-
-    // Após a correção do backend, 'rawData' estará agrupado pela data local correta.
-    const rawData = this.state.data.dashboard.daily_revenue || [];
-    
-    // A API retorna 'AAAA-MM-DD'. Apenas formatamos para 'DD/MM/AAAA' para exibição.
-    const labels = rawData.map(item => {
-        const [year, month, day] = item.date.split('-');
-        return `${day}/${month}/${year}`;
-    });
-    const revenues = rawData.map(item => item.revenue);
-    
-    if (this.state.revenueChart) this.state.revenueChart.destroy();
-
-    this.state.revenueChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Faturamento Pago',
-                data: revenues,
-                backgroundColor: (context) => {
-                    const { ctx, chartArea } = context.chart;
-                    if (!chartArea) return null;
-                    const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                    gradient.addColorStop(0, 'rgba(56, 189, 248, 0)');
-                    gradient.addColorStop(1, 'rgba(56, 189, 248, 0.3)');
-                    return gradient;
-                },
-                borderColor: '#38bdf8', borderWidth: 2, tension: 0.4, fill: true,
-                pointBackgroundColor: '#38bdf8', pointRadius: 4, pointHoverRadius: 6,
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: true,
-            scales: {
-                y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(51, 65, 85, 0.5)' } },
-                x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#0f172a', titleColor: '#f1f5f9', bodyColor: '#cbd5e1',
-                    borderColor: '#334155', borderWidth: 1,
-                    callbacks: { label: (context) => `Faturamento: ${this.formatNumber(context.raw, true)}` }
-                }
+            switch(period) {
+                case 'today':
+                    startDate = setTimeToStartOfDay(new Date());
+                    endDate = setTimeToEndOfDay(new Date());
+                    break;
+                case 'yesterday':
+                    const yesterday = new Date();
+                    yesterday.setDate(now.getDate() - 1);
+                    startDate = setTimeToStartOfDay(yesterday);
+                    endDate = setTimeToEndOfDay(yesterday);
+                    break;
+                case 'last7days':
+                    endDate = setTimeToEndOfDay(new Date());
+                    const sevenDaysAgo = new Date();
+                    sevenDaysAgo.setDate(now.getDate() - 6);
+                    startDate = setTimeToStartOfDay(sevenDaysAgo);
+                    break;
+                case 'thisMonth':
+                    startDate = setTimeToStartOfDay(new Date(now.getFullYear(), now.getMonth(), 1));
+                    endDate = setTimeToEndOfDay(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+                    break;
+                case 'custom':
+                    if (customStartDate) startDate = new Date(customStartDate + 'T00:00:00');
+                    if (customEndDate) endDate = new Date(customEndDate + 'T23:59:59.999');
+                    break;
+                default:
+                    startDate = null; endDate = null;
             }
-        }
-    });
-},
+
+            this.state.dateFilter = { 
+                period, 
+                startDate: startDate ? startDate.toISOString() : null, 
+                endDate: endDate ? endDate.toISOString() : null
+            };
+            
+            const filterContainer = document.getElementById(`${page}-date-filter`);
+            if (filterContainer) {
+                filterContainer.querySelectorAll('button[data-period]').forEach(btn => btn.classList.toggle('active', btn.dataset.period === period));
+            }
+
+            if (page === 'dashboard') this.fetchDashboardMetrics();
+            else if (page === 'transactions') this.renderTransactionsTable();
+        },
+        
+        renderRevenueChart() {
+            const ctx = document.getElementById('revenueChart');
+            if (!ctx) return;
+            const rawData = this.state.data.dashboard.daily_revenue || [];
+            const labels = rawData.map(item => new Date(item.date).toLocaleDateString('pt-BR', {timeZone: 'UTC'}));
+            const revenues = rawData.map(item => item.revenue);
+            
+            if (this.state.revenueChart) this.state.revenueChart.destroy();
+
+            this.state.revenueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Faturamento Pago',
+                        data: revenues,
+                        backgroundColor: (context) => {
+                            const { ctx, chartArea } = context.chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            gradient.addColorStop(0, 'rgba(56, 189, 248, 0)');
+                            gradient.addColorStop(1, 'rgba(56, 189, 248, 0.3)');
+                            return gradient;
+                        },
+                        borderColor: '#38bdf8', borderWidth: 2, tension: 0.4, fill: true,
+                        pointBackgroundColor: '#38bdf8', pointRadius: 4, pointHoverRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: true,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(51, 65, 85, 0.5)' } },
+                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a', titleColor: '#f1f5f9', bodyColor: '#cbd5e1',
+                            borderColor: '#334155', borderWidth: 1,
+                            callbacks: { label: (context) => `Faturamento: ${this.formatNumber(context.raw, true)}` }
+                        }
+                    }
+                }
+            });
+        },
         generatePresselCode(pressel) {
             const { settings, pixels } = this.state.data;
             const selectedPixels = pixels.filter(p => pressel.pixel_ids.includes(p.id));
