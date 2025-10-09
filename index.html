@@ -517,10 +517,11 @@
             settings() {
                 const { settings } = App.state.data;
                 const providers = [
-                    { value: 'pushinpay', text: 'PushinPay' }, 
-                    { value: 'cnpay', text: 'CN Pay' }, 
+                    { value: 'pushinpay', text: 'PushinPay' },
+                    { value: 'cnpay', text: 'CN Pay' },
                     { value: 'oasyfy', text: 'Oasy.fy' },
-                    { value: 'syncpay', text: 'SyncPay' }
+                    { value: 'syncpay', text: 'SyncPay' },
+                    { value: 'brpix', text: 'BR PIX' }
                 ];
                 const createSelect = (name, selectedValue) => {
                     const options = providers.map(p => `<option value="${p.value}" ${p.value === selectedValue ? 'selected' : ''}>${p.text}</option>`).join('');
@@ -549,7 +550,15 @@
                         </div>
 
                         <div id="tab-credentials" class="tab-content space-y-6">
-                             <div class="card p-6 rounded-lg">
+                            <div class="card p-6 rounded-lg">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div><h3 class="text-lg font-medium text-sky-400 inline-block">BR PIX</h3><span id="status-indicator-brpix"></span></div>
+                                    <button type="button" data-provider="brpix" class="test-pix-btn btn btn-secondary text-xs py-1 px-3">Testar Conexão</button>
+                                </div>
+                                <label class="block mb-2 text-sm text-gray-400">Secret Key</label><input name="brpix_secret_key" type="password" value="${settings.brpix_secret_key || ''}" class="form-input w-full p-2">
+                                <label class="block mt-4 mb-2 text-sm text-gray-400">Company ID</label><input name="brpix_company_id" type="password" value="${settings.brpix_company_id || ''}" class="form-input w-full p-2">
+                            </div>
+                            <div class="card p-6 rounded-lg">
                                 <div class="flex justify-between items-start mb-4">
                                     <div><h3 class="text-lg font-medium text-sky-400 inline-block">SyncPay</h3><span id="status-indicator-syncpay"></span></div>
                                     <button type="button" data-provider="syncpay" class="test-pix-btn btn btn-secondary text-xs py-1 px-3">Testar Conexão</button>
@@ -893,21 +902,17 @@
         
         async register(name, email, password) {
             try {
-                // O cadastro continua funcionando normalmente no backend
                 const data = await this.apiRequest('/api/sellers/register', 'POST', { name, email, password });
                 this.showToast('Cadastro realizado! Redirecionando para aprovação...', 'success');
                 
-                // Constrói a URL do WhatsApp com a mensagem e o email
                 const message = `Olá, gostaria de solicitar a aprovação do meu cadastro. Email: ${email}`;
                 const whatsappUrl = `https://wa.me/5541995211148?text=${encodeURIComponent(message)}`;
                 
-                // Redireciona o usuário para o WhatsApp
                 setTimeout(() => {
                     window.location.href = whatsappUrl;
-                }, 1000); // Pequeno delay para o usuário ler a mensagem de sucesso
+                }, 1000);
 
             } catch (e) {
-                // A manipulação de erro permanece a mesma
             }
         },
 
@@ -1400,7 +1405,7 @@
         },
 
         updateAllPixStatusIndicators() {
-            const providers = ['pushinpay', 'cnpay', 'oasyfy', 'syncpay'];
+            const providers = ['pushinpay', 'cnpay', 'oasyfy', 'syncpay', 'brpix'];
             providers.forEach(provider => this.updatePixStatusIndicator(provider));
         },
 
