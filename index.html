@@ -1215,7 +1215,7 @@
                 }
             });
         },
-        generatePresselCode(pressel) {
+       generatePresselCode(pressel) {
             const { settings, pixels } = this.state.data;
             const selectedPixels = pixels.filter(p => pressel.pixel_ids.includes(p.id));
             const pixelsToTrackJSON = JSON.stringify(
@@ -1224,6 +1224,7 @@
             );
             const noscriptPixelId = selectedPixels.length > 0 ? selectedPixels[0].pixel_id : '';
 
+            // O conteúdo HTML agora é gerado com a lógica otimizada
             const htmlContent = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1239,6 +1240,16 @@
         p { font-size: 1em; color: #606770; }
     </style>
     <script>
+        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src='https://connect.facebook.net/en_US/fbevents.js';s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script');
+    <\/script>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <h1>A preparar o seu acesso...</h1>
+        <p>Aguarde um momento, estamos a redirecioná-lo em segurança.</p>
+    </div>
+    <script>
         const API_BASE_URL = '${this.state.API_BASE_URL}';
         const SELLER_API_KEY = '${settings.api_key}';
         const PRESSEL_ID = ${pressel.id};
@@ -1247,7 +1258,6 @@
         const PIXELS_TO_TRACK = ${pixelsToTrackJSON};
 
         const isBot = () => /bot|facebook|crawler|spider|preview/i.test(navigator.userAgent);
-        const isMobile = () => /android|iphone|ipad|ipod/i.test(navigator.userAgent);
         const getCookie = (name) => document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))?.[2] || null;
 
         async function registerAndRedirect() {
@@ -1282,9 +1292,9 @@
                 window.location.replace(WHITE_PAGE_URL);
             }
         }
-
-        function waitForFbCookiesAndRedirect() {
-            if (isBot() || !isMobile()) {
+        
+        function startFlow() {
+            if (isBot()) {
                 window.location.replace(WHITE_PAGE_URL);
                 return;
             }
@@ -1300,22 +1310,12 @@
                 attempts++;
             }, 200);
         }
-        
-        window.onload = waitForFbCookiesAndRedirect;
-    <\/script>
-    <script>
-        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src='https://connect.facebook.net/en_US/fbevents.js';s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script');
+
         PIXELS_TO_TRACK.forEach(p => { fbq('init', p.id); });
         fbq('track', 'PageView');
+        startFlow();
     <\/script>
     <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${noscriptPixelId}&ev=PageView&noscript=1"/></noscript>
-</head>
-<body>
-    <div class="container">
-        <div class="spinner"></div>
-        <h1>A preparar o seu acesso...</h1>
-        <p>Aguarde um momento, estamos a redirecioná-lo em segurança.</p>
-    </div>
 </body>
 </html>`;
 
@@ -1324,7 +1324,7 @@
             document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
             document.getElementById('pressel-code-textarea').value = htmlContent;
         },
-
+        
         async testIndividualPixConnection(provider, button) {
             const originalText = button.innerHTML;
             button.innerHTML = 'Testando...';
