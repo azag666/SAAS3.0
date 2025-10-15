@@ -241,6 +241,15 @@
             if (window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')) {
                 this.state.API_BASE_URL = 'http://localhost:3000';
             }
+
+            const path = window.location.pathname;
+
+            if (path.startsWith('/oferta/')) {
+                const checkoutId = path.split('/')[2];
+                this.renderCheckoutPage(checkoutId);
+                return;
+            }
+            
             this.state.token = localStorage.getItem('hottrack_token');
             if (this.state.token) {
                 try {
@@ -257,6 +266,43 @@
             } else {
                 this.renderLogin();
                 this.addAuthEventListeners(); 
+            }
+        },
+
+        async renderCheckoutPage(checkoutId) {
+            const appContainer = document.getElementById('app');
+            appContainer.innerHTML = '<p class="text-center text-lg mt-20">Carregando oferta...</p>';
+
+            try {
+                const checkoutData = await this.apiRequest(`/api/oferta/${checkoutId}`);
+                const { config } = checkoutData;
+
+                const packagesHTML = config.pricing.packages.map(pkg => `
+                    <div class="package-item p-4 rounded-lg cursor-pointer hover:border-sky-400 border border-slate-700 bg-slate-800/50">
+                        <h3 class="font-bold text-lg text-white">${pkg.title}</h3>
+                        <p class="text-sm text-gray-400">${pkg.description}</p>
+                        <p class="text-2xl font-bold text-sky-400 mt-2">R$ ${(pkg.value_cents / 100).toFixed(2).replace('.', ',')}</p>
+                    </div>
+                `).join('');
+
+                const checkoutHTML = `
+                    <div class="min-h-screen flex items-center justify-center p-4 animate-fade-in">
+                        <div class="card w-full max-w-md p-6 md:p-8 rounded-2xl">
+                            ${config.content.media_url ? `<img src="${config.content.media_url}" alt="Preview" class="w-full h-48 object-cover rounded-lg mb-6">` : ''}
+                            <h1 class="text-2xl font-bold text-center text-white">${config.content.main_title.replace('{cidade}', 'sua Cidade')}</h1>
+                            <p class="text-gray-400 text-center mb-6">${config.content.subtitle}</p>
+                            <div class="space-y-4">
+                                ${packagesHTML}
+                            </div>
+                            <button class="btn w-full mt-6 py-3 font-bold">Pagar Agora</button>
+                        </div>
+                    </div>
+                `;
+                
+                appContainer.innerHTML = checkoutHTML;
+
+            } catch (error) {
+                appContainer.innerHTML = `<p class="text-center text-red-400 text-lg mt-20">Oferta não encontrada ou inválida.</p>`;
             }
         },
 
