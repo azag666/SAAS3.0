@@ -277,11 +277,11 @@
                 const checkoutData = await this.apiRequest(`/api/oferta/${checkoutId}`);
                 const { config } = checkoutData;
 
-                const packagesHTML = config.pricing.packages.map(pkg => `
-                    <div class="package-item p-4 rounded-lg cursor-pointer hover:border-sky-400 border border-slate-700 bg-slate-800/50">
-                        <h3 class="font-bold text-lg text-white">${pkg.title}</h3>
-                        <p class="text-sm text-gray-400">${pkg.description}</p>
-                        <p class="text-2xl font-bold text-sky-400 mt-2">R$ ${(pkg.value_cents / 100).toFixed(2).replace('.', ',')}</p>
+                const packagesHTML = config.pricing.packages.map((pkg, index) => `
+                    <div data-package-index="${index}" class="package-item p-4 rounded-lg cursor-pointer hover:border-sky-400 border border-slate-700 bg-slate-800/50 transition-all">
+                        <h3 class="font-bold text-lg text-white pointer-events-none">${pkg.title}</h3>
+                        <p class="text-sm text-gray-400 pointer-events-none">${pkg.description}</p>
+                        <p class="text-2xl font-bold text-sky-400 mt-2 pointer-events-none">R$ ${(pkg.value_cents / 100).toFixed(2).replace('.', ',')}</p>
                     </div>
                 `).join('');
 
@@ -291,19 +291,83 @@
                             ${config.content.media_url ? `<img src="${config.content.media_url}" alt="Preview" class="w-full h-48 object-cover rounded-lg mb-6">` : ''}
                             <h1 class="text-2xl font-bold text-center text-white">${config.content.main_title.replace('{cidade}', 'sua Cidade')}</h1>
                             <p class="text-gray-400 text-center mb-6">${config.content.subtitle}</p>
-                            <div class="space-y-4">
+                            <div id="packages-list" class="space-y-4">
                                 ${packagesHTML}
                             </div>
-                            <button class="btn w-full mt-6 py-3 font-bold">Pagar Agora</button>
+                            <button id="pay-button" class="btn w-full mt-6 py-3 font-bold" disabled>Selecione um pacote</button>
                         </div>
                     </div>
                 `;
                 
                 appContainer.innerHTML = checkoutHTML;
 
+                let selectedPackage = null;
+                const packagesList = document.getElementById('packages-list');
+                const payButton = document.getElementById('pay-button');
+
+                packagesList.addEventListener('click', (e) => {
+                    const clickedPackage = e.target.closest('.package-item');
+                    if (!clickedPackage) return;
+
+                    packagesList.querySelectorAll('.package-item').forEach(p => {
+                        p.classList.remove('border-sky-400', 'ring-2', 'ring-sky-400');
+                    });
+                    clickedPackage.classList.add('border-sky-400', 'ring-2', 'ring-sky-400');
+                    
+                    const packageIndex = clickedPackage.dataset.packageIndex;
+                    selectedPackage = config.pricing.packages[packageIndex];
+                    
+                    payButton.textContent = `Pagar Agora (${(selectedPackage.value_cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`;
+                    payButton.disabled = false;
+                });
+
+                payButton.addEventListener('click', async () => {
+                    if (!selectedPackage) {
+                        alert('Por favor, selecione um pacote.');
+                        return;
+                    }
+
+                    payButton.textContent = 'Gerando PIX...';
+                    payButton.disabled = true;
+
+                    try {
+                        const pixData = await this.apiRequest('/api/oferta/generate-pix', 'POST', {
+                            checkoutId: checkoutId,
+                            value_cents: selectedPackage.value_cents
+                        });
+                        this.showPixModal(pixData);
+                    } catch (error) {
+                        alert('Erro ao gerar PIX. Tente novamente.');
+                    } finally {
+                        payButton.textContent = `Pagar Agora (${(selectedPackage.value_cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`;
+                        payButton.disabled = false;
+                    }
+                });
+
             } catch (error) {
                 appContainer.innerHTML = `<p class="text-center text-red-400 text-lg mt-20">Oferta não encontrada ou inválida.</p>`;
             }
+        },
+
+        showPixModal(pixData) {
+            const modalContent = `
+                <div class="text-center">
+                    <h3 class="text-lg font-bold text-green-400">PIX Gerado com Sucesso!</h3>
+                    <p class="text-sm text-gray-400 mt-2 mb-4">Copie o código abaixo e pague no seu aplicativo do banco.</p>
+                    <textarea id="pix-code-textarea" class="form-input w-full p-2 font-mono text-xs bg-slate-900" rows="5" readonly>${pixData.qr_code_text}</textarea>
+                    <button id="copy-pix-btn" class="btn w-full mt-4 py-2">Copiar Código PIX</button>
+                </div>
+            `;
+            const modalContainer = document.getElementById('modal-container');
+            modalContainer.innerHTML = this.templates.modal('Pagamento via PIX', modalContent);
+
+            document.getElementById('copy-pix-btn').addEventListener('click', (e) => {
+                const textarea = document.getElementById('pix-code-textarea');
+                textarea.select();
+                document.execCommand('copy');
+                e.target.textContent = 'Copiado!';
+                setTimeout(() => { e.target.textContent = 'Copiar Código PIX'; }, 2000);
+            });
         },
 
         renderLogin(page = 'login') {
@@ -1270,7 +1334,6 @@
             );
             const noscriptPixelId = selectedPixels.length > 0 ? selectedPixels[0].pixel_id : '';
 
-            // O conteúdo HTML agora é gerado com a lógica otimizada
             const htmlContent = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
