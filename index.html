@@ -277,201 +277,53 @@
                 const checkoutData = await this.apiRequest(`/api/oferta/${checkoutId}`);
                 const { config } = checkoutData;
 
-                // 1. Apply custom styles
-                const mainColor = config.design?.main_color || '#38bdf8';
-                const fontColor = config.design?.font_color || '#f1f5f9';
-                
-                // 2. Determine Pricing HTML
-                let pricingHTML = '';
-                let payButtonText = '';
-                
-                if (config.pricing.type === 'FIXED') {
-                    pricingHTML = config.pricing.packages.map((pkg, index) => `
-                        <div data-package-index="${index}" data-value-cents="${pkg.value_cents}" class="package-item p-4 rounded-xl cursor-pointer hover:border-[3px] hover:border-white border border-slate-700 bg-slate-800/50 transition-all">
-                            <h3 class="font-bold text-lg pointer-events-none" style="color:${fontColor}">${pkg.title}</h3>
-                            <p class="text-sm text-gray-400 pointer-events-none">${pkg.description}</p>
-                            <p class="text-2xl font-bold mt-2 pointer-events-none" style="color:${mainColor}">R$ ${(pkg.value_cents / 100).toFixed(2).replace('.', ',')}</p>
-                        </div>
-                    `).join('');
-                    payButtonText = 'Selecione um pacote';
-                } else if (config.pricing.type === 'OPEN') {
-                    const minValue = (config.pricing.min_value_cents / 100).toFixed(2).replace('.', ',');
-                    pricingHTML = `
-                        <div class="card p-4 rounded-xl space-y-3">
-                            <p class="text-sm text-gray-400">Contribua com o projeto! O valor mínimo é R$ ${minValue}.</p>
-                            <input id="open-value-input" type="number" step="0.01" min="${minValue}" value="${minValue}" placeholder="Valor da sua contribuição" class="form-input w-full p-3 text-lg text-center" style="border-color:${mainColor}; color:${fontColor};">
-                        </div>
-                    `;
-                    payButtonText = `Pagar com PIX`;
-                }
-
-                // 3. Render Testimonials
-                const testimonialsHTML = config.content.testimonials && config.content.testimonials.length > 0 ? `
-                    <div class="mt-8 pt-6 border-t border-slate-700">
-                        <h2 class="text-lg font-semibold text-white mb-4 text-center">O que dizem os membros:</h2>
-                        <div class="space-y-4">
-                            ${config.content.testimonials.map(t => `
-                                <div class="flex items-start bg-slate-800/50 p-3 rounded-xl">
-                                    <img src="${t.img}" alt="Avatar" class="w-10 h-10 rounded-full mr-3 object-cover shadow-md">
-                                    <div>
-                                        <p class="font-semibold text-sm" style="color:${mainColor}">${t.name}</p>
-                                        <p class="text-gray-300 text-sm">${t.text}</p>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
+                const packagesHTML = config.pricing.packages.map((pkg, index) => `
+                    <div data-package-index="${index}" class="package-item p-4 rounded-lg cursor-pointer hover:border-sky-400 border border-slate-700 bg-slate-800/50 transition-all">
+                        <h3 class="font-bold text-lg text-white pointer-events-none">${pkg.title}</h3>
+                        <p class="text-sm text-gray-400 pointer-events-none">${pkg.description}</p>
+                        <p class="text-2xl font-bold text-sky-400 mt-2 pointer-events-none">R$ ${(pkg.value_cents / 100).toFixed(2).replace('.', ',')}</p>
                     </div>
-                ` : '';
+                `).join('');
 
-                // 4. Inject Tracking Pixel
-                const trackingPixel = config.tracking?.pixel_id ? `
-                    <script>
-                        !function(f,b,e,v,n,t,s)
-                        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-                        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-                        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-                        n.queue=[];t=b.createElement(e);t.async=!0;
-                        t.src=v;s=b.getElementsByTagName(e)[0];
-                        s.parentNode.insertBefore(t,s)}(window, document,'script',
-                        'https://connect.facebook.net/en_US/fbevents.js');
-                        fbq('init', '${config.tracking.pixel_id}');
-                        fbq('track', 'PageView');
-                    </script>
-                    <noscript><img height="1" width="1" style="display:none"
-                        src="https://www.facebook.com/tr?id=${config.tracking.pixel_id}&ev=PageView&noscript=1"
-                    /></noscript>
-                ` : '';
-
-                // 5. Build Final HTML
                 const checkoutHTML = `
-                    <style>
-                        .btn, .package-item:hover, .package-item.selected { 
-                            background-color: ${mainColor} !important; 
-                            border-color: ${mainColor} !important; 
-                            color: ${fontColor} !important;
-                        }
-                        .btn:hover {
-                            box-shadow: 0 0 25px ${mainColor} !important; 
-                        }
-                        .package-item.selected {
-                            border: 3px solid ${mainColor} !important;
-                            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-                        }
-                        .package-item h3 { color: ${fontColor} !important; }
-                        body, .form-input, .text-gray-300 { color: ${fontColor} !important; }
-                        .form-input { border-color: var(--border-color); }
-                    </style>
-                    ${trackingPixel}
                     <div class="min-h-screen flex items-center justify-center p-4 animate-fade-in">
                         <div class="card w-full max-w-md p-6 md:p-8 rounded-2xl">
-                            ${config.content.media_url ? `<img src="${config.content.media_url}" alt="Preview" class="w-full h-48 object-cover rounded-xl mb-6 shadow-lg">` : ''}
-                            <h1 class="text-2xl font-bold text-center mb-1" style="color:${mainColor};">${config.content.main_title.replace('{cidade}', 'sua Cidade')}</h1>
+                            ${config.content.media_url ? `<img src="${config.content.media_url}" alt="Preview" class="w-full h-48 object-cover rounded-lg mb-6">` : ''}
+                            <h1 class="text-2xl font-bold text-center text-white">${config.content.main_title.replace('{cidade}', 'sua Cidade')}</h1>
                             <p class="text-gray-400 text-center mb-6">${config.content.subtitle}</p>
                             <div id="packages-list" class="space-y-4">
-                                ${pricingHTML}
+                                ${packagesHTML}
                             </div>
-                            ${config.offers?.order_bump ? `
-                                <div id="order-bump-container" class="mt-6 border border-dashed border-red-500 p-4 rounded-xl bg-red-900/10 hidden">
-                                    <label class="flex items-center space-x-2 cursor-pointer">
-                                        <input type="checkbox" id="order-bump-checkbox" class="h-5 w-5 text-red-500 rounded border-red-500 focus:ring-red-500">
-                                        <span class="font-bold text-sm text-red-400">${config.offers.order_bump.title} (+R$ ${(config.offers.order_bump.value_cents / 100).toFixed(2).replace('.', ',')})</span>
-                                    </label>
-                                </div>
-                            ` : ''}
-                            <button id="pay-button" class="btn w-full mt-6 py-3 font-bold rounded-xl" ${config.pricing.type === 'FIXED' ? 'disabled' : ''}>${payButtonText}</button>
-                            
-                            ${testimonialsHTML}
+                            <button id="pay-button" class="btn w-full mt-6 py-3 font-bold" disabled>Selecione um pacote</button>
                         </div>
                     </div>
                 `;
                 
                 appContainer.innerHTML = checkoutHTML;
 
-                // Cache elements after rendering
+                let selectedPackage = null;
                 const packagesList = document.getElementById('packages-list');
                 const payButton = document.getElementById('pay-button');
-                let selectedPackage = null;
-                
-                // 6. Update JavaScript Logic for Open Pricing and Order Bump (in event listeners)
 
-                // Event listener for package selection (only for FIXED pricing)
-                if (config.pricing.type === 'FIXED') {
-                    packagesList.addEventListener('click', (e) => {
-                        const clickedPackage = e.target.closest('.package-item');
-                        if (!clickedPackage) return;
+                packagesList.addEventListener('click', (e) => {
+                    const clickedPackage = e.target.closest('.package-item');
+                    if (!clickedPackage) return;
 
-                        packagesList.querySelectorAll('.package-item').forEach(p => {
-                            p.classList.remove('selected');
-                        });
-                        clickedPackage.classList.add('selected');
-                        
-                        const packageIndex = clickedPackage.dataset.packageIndex;
-                        selectedPackage = config.pricing.packages[packageIndex];
-                        
-                        // Check for Order Bump
-                        const orderBumpCheckbox = document.getElementById('order-bump-checkbox');
-                        const bumpContainer = document.getElementById('order-bump-container');
-                        const isBumpEnabled = orderBumpCheckbox?.checked;
-                        
-                        let finalValue = selectedPackage.value_cents;
-                        if (isBumpEnabled) {
-                            finalValue += config.offers.order_bump.value_cents;
-                        }
-
-                        payButton.textContent = `Pagar Agora (${(finalValue / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`;
-                        payButton.disabled = false;
-                        
-                        // Show Order Bump container if one is configured
-                        if (bumpContainer) {
-                             bumpContainer.classList.remove('hidden');
-                        }
+                    packagesList.querySelectorAll('.package-item').forEach(p => {
+                        p.classList.remove('border-sky-400', 'ring-2', 'ring-sky-400');
                     });
+                    clickedPackage.classList.add('border-sky-400', 'ring-2', 'ring-sky-400');
                     
-                    // Add listener for order bump checkbox
-                    const orderBumpCheckbox = document.getElementById('order-bump-checkbox');
-                    if (orderBumpCheckbox) {
-                        orderBumpCheckbox.addEventListener('change', () => {
-                            if (selectedPackage) { // Recalculate if a package is already selected
-                                let finalValue = selectedPackage.value_cents;
-                                if (orderBumpCheckbox.checked) {
-                                    finalValue += config.offers.order_bump.value_cents;
-                                }
-                                payButton.textContent = `Pagar Agora (${(finalValue / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`;
-                            }
-                        });
-                    }
-                }
-                
-                // Event listener for pay button click
-                payButton.addEventListener('click', async () => {
-                    let value_cents;
-                    let isOrderBumpSelected = false;
+                    const packageIndex = clickedPackage.dataset.packageIndex;
+                    selectedPackage = config.pricing.packages[packageIndex];
                     
-                    if (config.pricing.type === 'FIXED') {
-                        const selectedItem = packagesList.querySelector('.package-item.selected');
-                        if (!selectedItem) { alert('Por favor, selecione um pacote.'); return; }
-                        
-                        const initialValue = parseInt(selectedItem.dataset.valueCents, 10);
-                        value_cents = initialValue;
-                        
-                        const orderBumpCheckbox = document.getElementById('order-bump-checkbox');
-                        if (orderBumpCheckbox?.checked && config.offers.order_bump) {
-                            value_cents += config.offers.order_bump.value_cents;
-                            isOrderBumpSelected = true;
-                        }
+                    payButton.textContent = `Pagar Agora (${(selectedPackage.value_cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`;
+                    payButton.disabled = false;
+                });
 
-                    } else if (config.pricing.type === 'OPEN') {
-                        const input = document.getElementById('open-value-input');
-                        const value = parseFloat(input.value);
-                        const minValue = config.pricing.min_value_cents / 100;
-                        
-                        if (isNaN(value) || value < minValue) {
-                             alert(`O valor deve ser de pelo menos R$ ${minValue.toFixed(2).replace('.', ',')}.`);
-                             return;
-                        }
-                        value_cents = Math.round(value * 100);
-                    } else {
-                        alert('Configuração de preço inválida.');
+                payButton.addEventListener('click', async () => {
+                    if (!selectedPackage) {
+                        alert('Por favor, selecione um pacote.');
                         return;
                     }
 
@@ -481,108 +333,17 @@
                     try {
                         const pixData = await this.apiRequest('/api/oferta/generate-pix', 'POST', {
                             checkoutId: checkoutId,
-                            value_cents: value_cents
+                            value_cents: selectedPackage.value_cents
                         });
-                        
-                        // Store configuration for post-payment redirect
-                        pixData.isOrderBumpSelected = isOrderBumpSelected;
-                        pixData.mainRedirectUrl = config.redirect_url;
-                        pixData.bumpRedirectUrl = config.offers?.order_bump?.redirect_url;
-
                         this.showPixModal(pixData);
-
                     } catch (error) {
                         alert('Erro ao gerar PIX. Tente novamente.');
                     } finally {
-                        // Recalculate button text based on selected value (fixed or open)
-                        if (config.pricing.type === 'OPEN') {
-                            const inputValue = document.getElementById('open-value-input').value;
-                            payButton.textContent = `Pagar com PIX (${(parseFloat(inputValue) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`;
-                        } else {
-                             let finalValue = selectedPackage ? selectedPackage.value_cents : 0;
-                             if(selectedPackage && isOrderBumpSelected && config.offers.order_bump) {
-                                finalValue += config.offers.order_bump.value_cents;
-                             }
-                             payButton.textContent = selectedPackage ? `Pagar Agora (${(finalValue / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})` : 'Selecione um pacote';
-                        }
+                        payButton.textContent = `Pagar Agora (${(selectedPackage.value_cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`;
                         payButton.disabled = false;
                     }
                 });
 
-                // 7. Inject Back Redirect Logic (only if enabled)
-                if (config.offers?.back_redirect) {
-                    window.addEventListener('beforeunload', (event) => {
-                        // This check is the standard way to block the unload event.
-                        event.preventDefault();
-                        event.returnValue = ''; // Setting a string value triggers the browser's "leave site?" dialog
-                        
-                        // Immediately display the custom page
-                        appContainer.innerHTML = `
-                            <style>
-                                #back-redirect-pay-btn { 
-                                    background-color: ${mainColor} !important; 
-                                    border-color: ${mainColor} !important; 
-                                    color: ${fontColor} !important;
-                                }
-                                #back-redirect-pay-btn:hover {
-                                     box-shadow: 0 0 25px ${mainColor} !important; 
-                                }
-                                #back-redirect-pay-btn-red {
-                                    background-color: #991b1b !important; 
-                                    border-color: #ef4444 !important; 
-                                }
-                                #back-redirect-pay-btn-red:hover {
-                                    background-color: #b91c1c !important;
-                                }
-                            </style>
-                            <div class="min-h-screen flex items-center justify-center p-4 animate-fade-in text-center">
-                                <div class="card w-full max-w-md p-6 md:p-8 rounded-2xl">
-                                    <h1 class="text-3xl font-bold text-red-500 mb-4">${config.offers.back_redirect.title}</h1>
-                                    <img src="${config.offers.back_redirect.image_url}" alt="Última Chance" class="w-full h-48 object-cover rounded-xl mb-6 shadow-lg">
-                                    <p class="text-gray-300 mb-4">Você está prestes a sair sem garantir nosso melhor preço.</p>
-                                    <p class="text-xl font-bold text-green-400 mb-6">Por apenas R$ ${(config.offers.back_redirect.value_cents / 100).toFixed(2).replace('.', ',')}</p>
-                                    <button id="back-redirect-pay-btn-red" class="btn w-full mt-4 py-3 font-bold rounded-xl" style="background-color: #f87171; border-color: #f87171;">Eu quero o Desconto!</button>
-                                    <button id="back-redirect-cancel-btn" class="btn btn-secondary w-full mt-3 py-3 font-bold rounded-xl">Não, obrigado</button>
-                                </div>
-                            </div>
-                        `;
-                        
-                        document.getElementById('back-redirect-pay-btn-red').addEventListener('click', async () => {
-                            const backRedirectPayBtn = document.getElementById('back-redirect-pay-btn-red');
-                            backRedirectPayBtn.textContent = 'Gerando PIX...';
-                            backRedirectPayBtn.disabled = true;
-
-                            try {
-                                const pixData = await this.apiRequest('/api/oferta/generate-pix', 'POST', {
-                                    checkoutId: checkoutId,
-                                    value_cents: config.offers.back_redirect.value_cents
-                                });
-                                
-                                pixData.isOrderBumpSelected = false; 
-                                pixData.mainRedirectUrl = config.redirect_url;
-                                pixData.bumpRedirectUrl = null; 
-
-                                this.showPixModal(pixData);
-
-                            } catch (error) {
-                                alert('Erro ao gerar PIX. Tente novamente.');
-                            } finally {
-                                backRedirectPayBtn.textContent = 'Eu quero o Desconto!';
-                                backRedirectPayBtn.disabled = false;
-                            }
-                        });
-                        
-                        document.getElementById('back-redirect-cancel-btn').addEventListener('click', () => {
-                            window.location.replace(config.redirect_url);
-                        });
-                        
-                        // Clear the unload handler to prevent double-triggering
-                        window.removeEventListener('beforeunload', event);
-
-                        // The user is on the back redirect page, so do nothing else in this handler.
-                        return;
-                    });
-                }
             } catch (error) {
                 appContainer.innerHTML = `<p class="text-center text-red-400 text-lg mt-20">Oferta não encontrada ou inválida.</p>`;
             }
@@ -595,7 +356,6 @@
                     <p class="text-sm text-gray-400 mt-2 mb-4">Copie o código abaixo e pague no seu aplicativo do banco.</p>
                     <textarea id="pix-code-textarea" class="form-input w-full p-2 font-mono text-xs bg-slate-900" rows="5" readonly>${pixData.qr_code_text}</textarea>
                     <button id="copy-pix-btn" class="btn w-full mt-4 py-2">Copiar Código PIX</button>
-                    <p id="pix-status-message" class="text-sm mt-3 text-yellow-400">Aguardando confirmação do pagamento...</p>
                 </div>
             `;
             const modalContainer = document.getElementById('modal-container');
@@ -608,39 +368,6 @@
                 e.target.textContent = 'Copiado!';
                 setTimeout(() => { e.target.textContent = 'Copiar Código PIX'; }, 2000);
             });
-            
-            // Polling to check payment status
-            const statusMessage = document.getElementById('pix-status-message');
-            const intervalId = setInterval(async () => {
-                try {
-                    const status = await this.apiRequest(`/api/pix/status/${pixData.transaction_id}`);
-                    if (status.status === 'paid') {
-                        clearInterval(intervalId);
-                        statusMessage.textContent = 'Pagamento Confirmado! Redirecionando...';
-                        statusMessage.classList.remove('text-yellow-400');
-                        statusMessage.classList.add('text-green-400');
-                        
-                        let redirectUrl = pixData.mainRedirectUrl;
-                        if (pixData.isOrderBumpSelected && pixData.bumpRedirectUrl) {
-                            redirectUrl = pixData.bumpRedirectUrl;
-                        } else if (!redirectUrl) {
-                             // Fallback in case mainRedirectUrl was not explicitly passed, but is available from the context where pixData was set
-                            redirectUrl = pixData.mainRedirectUrl; 
-                        }
-                        
-                        setTimeout(() => {
-                            window.location.replace(redirectUrl || '/'); // Redirect to main if no URL is available
-                        }, 1000);
-                    }
-                } catch (e) {
-                    // Stop polling if there's a critical error (like API down)
-                    clearInterval(intervalId); 
-                    console.error("Erro no polling de PIX:", e);
-                    statusMessage.textContent = 'Erro ao consultar status. Por favor, verifique no seu banco.';
-                    statusMessage.classList.remove('text-yellow-400');
-                    statusMessage.classList.add('text-red-400');
-                }
-            }, 3000);
         },
 
         renderLogin(page = 'login') {
