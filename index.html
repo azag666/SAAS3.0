@@ -291,6 +291,7 @@
                 endDate: null
             },
             revenueChart: null,
+            pixPollingIntervalId: null, // Para guardar o ID do intervalo de polling
         },
 
         async init() {
@@ -523,7 +524,6 @@
                         orderBumpCheckbox.addEventListener('change', updatePayButtonText);
                     }
 
-                    // ******** ALTERAÇÃO AQUI ********
                     payButton.addEventListener('click', async () => {
                         if (!selectedPackage) { alert('Por favor, selecione um pacote válido.'); return; }
 
@@ -547,7 +547,7 @@
                                 value_cents: totalValueCents,
                                 click_id: clickIdFromUrl // Envia null ou o valor
                             });
-                            this.showPixModal(pixData);
+                            this.showPixModal(pixData); // Mostra o modal com QR Code e inicia polling
                         } catch (error) {
                             alert('Erro ao gerar PIX. Tente novamente.');
                         } finally {
@@ -555,7 +555,6 @@
                             payButton.disabled = !selectedPackage;
                         }
                     });
-                    // ******** FIM DA ALTERAÇÃO ********
                 }
 
                 if (config.conversion_elements.countdown.enabled) {
@@ -616,7 +615,6 @@
                     window.fbq('init', config.pixel_id); window.fbq('track', 'Purchase', { value: config.purchase_value, currency: 'BRL' }); console.log(`Pixel ${config.pixel_id} init and Purchase fired.`);
                 }
 
-                // ******** ALTERAÇÃO AQUI ********
                 if (config.utmify_integration_id) {
                     const urlParams = new URLSearchParams(window.location.search);
                     const trackingParameters = {};
@@ -649,7 +647,6 @@
                         console.error("Error firing Utmify event via backend:", utmifyError);
                     }
                 }
-                // ******** FIM DA ALTERAÇÃO ********
 
             } catch (error) {
                 console.error("Erro ao renderizar página de obrigado:", error);
@@ -657,13 +654,27 @@
             }
         },
 
+        // ******** FUNÇÃO showPixModal ATUALIZADA ********
         showPixModal(pixData) {
+            // Limpa qualquer polling anterior ao abrir um novo modal
+            if (this.state.pixPollingIntervalId) {
+                clearInterval(this.state.pixPollingIntervalId);
+                this.state.pixPollingIntervalId = null;
+            }
+
+            // Monta o HTML do QR Code (se base64 estiver disponível)
+            const qrCodeHTML = pixData.qr_code_base64
+                ? `<img src="data:image/png;base64,${pixData.qr_code_base64}" alt="QR Code PIX" class="mx-auto my-4 border border-slate-600 p-2 rounded-lg bg-white max-w-[200px]">`
+                : '<p class="text-xs text-slate-500 my-4">(QR Code não disponível)</p>'; // Fallback
+
             const modalContent = `
                 <div class="text-center">
-                    <h3 class="text-lg font-bold text-green-400">PIX Gerado com Sucesso!</h3>
-                    <p class="text-sm text-gray-400 mt-2 mb-4">Copie o código abaixo e pague no seu aplicativo do banco.</p>
-                    <textarea id="pix-code-textarea" class="form-input w-full p-2 font-mono text-xs bg-slate-900" rows="5" readonly>${pixData.qr_code_text || 'Erro ao obter código'}</textarea>
+                    <h3 id="pix-modal-title" class="text-lg font-bold text-green-400">PIX Gerado com Sucesso!</h3>
+                    <p class="text-sm text-gray-400 mt-2 mb-4">Escaneie o QR Code ou copie o código abaixo e pague no seu aplicativo do banco.</p>
+                    ${qrCodeHTML}
+                    <textarea id="pix-code-textarea" class="form-input w-full p-2 font-mono text-xs bg-slate-900" rows="4" readonly>${pixData.qr_code_text || 'Erro ao obter código'}</textarea>
                     <button id="copy-pix-btn" class="btn w-full mt-4 py-2">Copiar Código PIX</button>
+                    <p id="pix-status-message" class="text-xs text-sky-400 mt-3 animate-pulse">Aguardando pagamento...</p>
                 </div>
             `;
             const modalContainer = document.getElementById('modal-container');
@@ -675,27 +686,165 @@
                     const textarea = document.getElementById('pix-code-textarea');
                     if (textarea && textarea.value !== 'Erro ao obter código') {
                         textarea.select();
-                        try { document.execCommand('copy'); e.target.textContent = 'Copiado!'; setTimeout(() => { e.target.textContent = 'Copiar Código PIX'; }, 2000); } catch (err) { console.error('Falha:', err); alert('Não foi possível copiar.'); }
-                    } else { alert('Sem código.'); }
+                        try {
+                            document.execCommand('copy');
+                            e.target.textContent = 'Copiado!';
+                            setTimeout(() => { e.target.textContent = 'Copiar Código PIX'; }, 2000);
+                        } catch (err) {
+                            console.error('Falha ao copiar:', err); alert('Não foi possível copiar.');
+                        }
+                    } else { alert('Sem código PIX para copiar.'); }
                 });
             }
+
+            // Inicia a verificação de status se tivermos um transaction_id
+            if (pixData.transaction_id) {
+                console.log("Iniciando polling para transaction_id:", pixData.transaction_id);
+                this.startPixStatusPolling(pixData.transaction_id);
+            } else {
+                 console.error("Não foi possível iniciar o polling: transaction_id ausente em pixData.");
+                 const statusMsg = document.getElementById('pix-status-message');
+                 if(statusMsg) statusMsg.textContent = "Erro: ID da transação não encontrado.";
+            }
+
+             // Adiciona listener para limpar o polling quando o modal for fechado (pelo botão X)
+             const closeModalBtn = document.getElementById('closeModalBtn');
+             if (closeModalBtn) {
+                 // Usamos uma função nomeada para poder remover depois se necessário
+                 const closeModalListener = () => {
+                     if (this.state.pixPollingIntervalId) {
+                         clearInterval(this.state.pixPollingIntervalId);
+                         this.state.pixPollingIntervalId = null;
+                         console.log("Polling interrompido pelo fechamento do modal (Botão X).");
+                     }
+                 };
+                 // Limpa listener antigo se existir antes de adicionar um novo
+                 if (closeModalBtn._listener) {
+                     closeModalBtn.removeEventListener('click', closeModalBtn._listener);
+                 }
+                 closeModalBtn.addEventListener('click', closeModalListener);
+                 closeModalBtn._listener = closeModalListener; // Guarda a referência
+             }
         },
+
+        // ******** FUNÇÃO startPixStatusPolling ATUALIZADA ********
+        startPixStatusPolling(transactionId) {
+            // Limpa qualquer intervalo anterior
+            if (this.state.pixPollingIntervalId) {
+                clearInterval(this.state.pixPollingIntervalId);
+            }
+
+            // Define o intervalo para verificar a cada 5 segundos
+            this.state.pixPollingIntervalId = setInterval(async () => {
+                console.log(`Verificando status PIX para ${transactionId}...`);
+                try {
+                    // Assume que a API Key está no settings (se necessário para a rota de status)
+                    const apiKey = this.state.data?.settings?.api_key;
+                    // Monta o header apenas se a apiKey existir
+                    const headers = apiKey ? { 'x-api-key': apiKey } : {};
+                    // Passa os headers para a requisição
+                    const response = await this.apiRequest(`/api/pix/status/${transactionId}`, 'GET', null, headers);
+
+                    const statusMsg = document.getElementById('pix-status-message');
+                    const modalTitle = document.getElementById('pix-modal-title');
+
+                    if (response.status === 'paid') {
+                        console.log("PIX Pago detectado!", response);
+                        clearInterval(this.state.pixPollingIntervalId); // Para o polling
+                        this.state.pixPollingIntervalId = null;
+
+                        if (statusMsg) {
+                            statusMsg.textContent = "Pagamento confirmado! Redirecionando...";
+                            statusMsg.classList.remove('animate-pulse', 'text-sky-400');
+                            statusMsg.classList.add('text-green-400', 'font-bold');
+                        }
+                         if (modalTitle) {
+                             modalTitle.textContent = "Pagamento Aprovado!";
+                             modalTitle.classList.remove('text-green-400');
+                             modalTitle.classList.add('text-green-500');
+                         }
+
+
+                        // Tenta redirecionar se a URL foi fornecida
+                        if (response.redirectUrl) {
+                             // Pega os parâmetros da URL ATUAL
+                             const currentParams = new URLSearchParams(window.location.search);
+                             // Pega o click_id retornado pelo backend (garante que é o correto associado à transação)
+                             const clickIdFromStatus = response.click_id?.replace('/start ', ''); // Remove /start
+                             if (clickIdFromStatus) {
+                                 currentParams.set('click_id', clickIdFromStatus); // Define ou atualiza o click_id
+                             } else {
+                                // Se o backend não retornar, tenta pegar da URL atual como fallback
+                                const clickIdCurrent = currentParams.get('click_id') || currentParams.get('cid');
+                                if (clickIdCurrent) {
+                                    currentParams.set('click_id', clickIdCurrent); // Garante que 'click_id' seja usado
+                                    currentParams.delete('cid'); // Remove 'cid' se existir
+                                }
+                             }
+
+                             // Remove parâmetros potencialmente sensíveis ou desnecessários antes de anexar
+                             currentParams.delete('name');
+                             currentParams.delete('email');
+                             currentParams.delete('phone');
+
+                             // Constrói a URL final
+                             const finalRedirectUrl = `${response.redirectUrl}${currentParams.toString() ? '?' + currentParams.toString() : ''}`;
+
+                             console.log("Redirecionando para:", finalRedirectUrl);
+                             setTimeout(() => {
+                                 window.location.href = finalRedirectUrl;
+                             }, 1500); // Pequeno delay para o usuário ver a mensagem
+                        } else {
+                            console.log("Pagamento confirmado, mas nenhuma URL de redirecionamento configurada no checkout.");
+                            if (statusMsg) statusMsg.textContent = "Pagamento confirmado com sucesso!";
+                        }
+
+                    } else if (response.status === 'pending') {
+                        // Continua aguardando
+                        if (statusMsg) statusMsg.textContent = "Aguardando pagamento...";
+                    } else if (response.status === 'not_found') {
+                         console.warn("Transação não encontrada durante o polling. Interrompendo.");
+                         clearInterval(this.state.pixPollingIntervalId);
+                         this.state.pixPollingIntervalId = null;
+                         if (statusMsg) statusMsg.textContent = "Erro: Transação não encontrada.";
+                    } else {
+                         // Outros status (ex: 'expired', 'failed')
+                         console.warn("Status inesperado recebido:", response.status);
+                         clearInterval(this.state.pixPollingIntervalId);
+                         this.state.pixPollingIntervalId = null;
+                         if (statusMsg) {
+                             statusMsg.textContent = `Status: ${response.status}`;
+                             statusMsg.classList.remove('animate-pulse', 'text-sky-400');
+                             statusMsg.classList.add('text-red-400');
+                         }
+                    }
+
+                } catch (error) {
+                    console.error("Erro durante o polling do status PIX:", error);
+                    // Considera parar o polling em caso de erro grave (ex: API Key inválida)
+                    if (error.message.includes('API Key inválida')) {
+                         clearInterval(this.state.pixPollingIntervalId);
+                         this.state.pixPollingIntervalId = null;
+                         console.error("Polling interrompido devido a erro de API Key.");
+                    }
+                    const statusMsg = document.getElementById('pix-status-message');
+                     if (statusMsg) statusMsg.textContent = "Erro ao verificar status.";
+                }
+            }, 5000); // Verifica a cada 5 segundos
+        },
+        // ******** FIM DAS FUNÇÕES ATUALIZADAS ********
 
         renderLogin(page = 'login') { document.getElementById('app').innerHTML = this.templates.auth(page); },
         renderLayout() { document.getElementById('app').innerHTML = this.templates.layout(); this.addDashboardEventListeners(); },
 
-        // *** FUNÇÃO formatNumber CORRIGIDA ***
         formatNumber(number, isCurrency = false) {
-            let num = parseFloat(number); // Converte para número
+            let num = parseFloat(number);
             if (isNaN(num)) {
-                 num = 0; // Garante que é um número, mesmo que seja 0
+                 num = 0;
             }
-
             if (isCurrency) {
-                 // AGORA, espera Reais (float) e formata diretamente
                 return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             } else {
-                 // Para números não monetários, formata como antes
                 return num.toLocaleString('pt-BR');
             }
         },
@@ -741,7 +890,6 @@
                     <div class="text-center mt-6"><a href="#" id="showLogin" class="text-sm text-sky-400 hover:text-sky-300 hover:underline">Já tem uma conta? Faça Login</a></div>
                 </div>`;
             },
-            // *** TEMPLATE layout ATUALIZADO (SIDEBAR REFEITA) ***
             layout() {
                 return `
                 <div class="relative min-h-screen md:flex">
@@ -979,6 +1127,10 @@
                                         <div><label for="background_color" class="text-sm font-medium text-gray-400 mb-1 block">Fundo</label><input id="background_color" type="color" value="#0f172a" class="form-input h-10 w-16 p-1"></div>
                                         <div><label for="accent_color" class="text-sm font-medium text-gray-400 mb-1 block">Destaque</label><input id="accent_color" type="color" value="#38bdf8" class="form-input h-10 w-16 p-1"></div>
                                     </div>
+                                    <div class="md:col-span-2">
+                                        <label for="success_redirect_url" class="text-sm font-medium text-gray-400 mb-1 block">URL de Redirecionamento Pós-Pagamento (Opcional)</label>
+                                        <input id="success_redirect_url" type="url" class="form-input w-full p-2" placeholder="https://seu-site.com/obrigado">
+                                    </div>
                                 </div>
                             </div>
                         </form>
@@ -998,7 +1150,6 @@
                         </div>
                     </div>
 
-                    {/* */}
                     <div id="result-screen" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center animate-fade-in z-50 p-4">
                         <div class="card p-8 rounded-2xl w-full max-w-2xl mx-auto">
                             <div class="flex justify-between items-center mb-4">
@@ -1367,6 +1518,7 @@
             });
         },
 
+        // ******** FUNÇÃO addDashboardEventListeners ATUALIZADA ********
         addDashboardEventListeners() {
             const appEl = document.getElementById('app');
             if (!appEl) return;
@@ -1402,22 +1554,37 @@
                 // Logout
                 if (e.target.id === 'logoutButton') this.logout();
 
-                // Close Modal (Agora fecha qualquer modal com esse botão)
-                if (e.target.closest('#closeModalBtn')) {
-                     document.getElementById('modal-container').innerHTML = '';
-                     // Adicional: Se estivermos na tela de resultado do criador de TY, volta para o criador
-                     const resultScreenTY = document.getElementById('thankYouCreator')?.querySelector('#result-screen:not(.hidden)');
-                     if(resultScreenTY) {
-                         const form = document.getElementById('thank-you-form');
-                         resultScreenTY.classList.add('hidden');
-                         if(form) form.classList.remove('hidden');
-                     }
-                      // Adicional: Se estivermos na tela de resultado do criador de Checkout, volta para lista
-                     const resultScreenCheckout = document.getElementById('pageCreator')?.querySelector('#result-screen:not(.hidden)');
-                     if(resultScreenCheckout) {
-                        this.navigateTo('checkouts'); // Ou poderia voltar para o criador se preferir
-                     }
+                // Close Modal (Atualizado)
+                const closeModalButton = e.target.closest('#closeModalBtn');
+                if (closeModalButton) {
+                    const modalContainer = document.getElementById('modal-container');
+                    const pixModalActive = modalContainer?.querySelector('#pix-code-textarea'); // Verifica se é o modal do PIX
+                    const checkoutResultScreenActive = document.querySelector('#creator-screen #result-screen:not(.hidden)'); // Verifica se é o modal de resultado do checkout/TY
+
+                    // Limpa o conteúdo do modal container geral (se existir)
+                    if (modalContainer) modalContainer.innerHTML = '';
+
+                    // Lógica específica para o Modal do PIX
+                    if (pixModalActive && this.state.pixPollingIntervalId) {
+                        clearInterval(this.state.pixPollingIntervalId);
+                        this.state.pixPollingIntervalId = null;
+                        console.log("Polling PIX interrompido pelo fechamento manual do modal (Botão X).");
+                    }
+
+                    // Lógica específica para o Modal de Resultado (Checkout/Página de Obrigado)
+                    if (checkoutResultScreenActive) {
+                         checkoutResultScreenActive.classList.add('hidden'); // Esconde a tela de resultado
+                         // Decide para onde navegar:
+                         if (document.getElementById('thankYouCreator')) {
+                             // Se estava no criador de TY, volta para a lista de TY
+                             this.navigateTo('thankYouPages');
+                         } else if (document.getElementById('pageCreator')) {
+                             // Se estava no criador de Checkout, volta para a lista de Checkouts
+                             this.navigateTo('checkouts');
+                         }
+                    }
                 }
+
 
                 // Open Add Utmify Modal
                 if (e.target.id === 'add-utmify-btn') {
@@ -1430,8 +1597,6 @@
                     // Limpa estados de edição ao navegar pelo menu
                     if (sidebarLink.dataset.target === 'checkouts') { this.state.editingCheckoutId = null; }
                     if (sidebarLink.dataset.target === 'thankYouPages') { this.state.editingThankYouPageId = null; }
-
-                    // (Mantém a lógica antiga de 'pageCreator' por segurança, embora o link tenha sido removido)
                     if (sidebarLink.dataset.target === 'pageCreator') { this.state.editingCheckoutId = null; }
                     if (sidebarLink.dataset.target === 'thankYouCreator') { this.state.editingThankYouPageId = null; }
 
@@ -1446,7 +1611,7 @@
                 const copyCheckoutLinkBtn = e.target.closest('.copy-checkout-link-btn');
                 if (copyCheckoutLinkBtn) {
                     const link = `${window.location.origin}/oferta/${copyCheckoutLinkBtn.dataset.id}`;
-                    try { await navigator.clipboard.writeText(link); const o=copyCheckoutLinkBtn.textContent; copyCheckoutLinkBtn.textContent='Copiado!'; setTimeout(()=>{copyCheckoutLinkBtn.textContent=o},2000); } catch(err){this.showToast('Erro.', 'error');}
+                    try { await navigator.clipboard.writeText(link); const o=copyCheckoutLinkBtn.textContent; copyCheckoutLinkBtn.textContent='Copiado!'; setTimeout(()=>{copyCheckoutLinkBtn.textContent='Copiar Link'},2000); } catch(err){this.showToast('Erro.', 'error');}
                 }
 
                 // Botões Criador/Listagem Página de Obrigado
@@ -1459,21 +1624,22 @@
                      const link = `${window.location.origin}/obrigado/${copyThankYouLinkBtn.dataset.id}`;
                      try { await navigator.clipboard.writeText(link); const o=copyThankYouLinkBtn.textContent; copyThankYouLinkBtn.textContent='Copiado!'; setTimeout(()=>{copyThankYouLinkBtn.textContent='Copiar Link'},2000); } catch(err){this.showToast('Erro.', 'error');}
                 }
-                if (e.target.id === 'view-ty-pages-btn') {
+                if (e.target.id === 'view-ty-pages-btn') { // Botão "Ver Minhas Páginas" no modal de sucesso TY
                     const resultScreen = e.target.closest('#result-screen');
                     if(resultScreen) resultScreen.classList.add('hidden');
                     this.navigateTo('thankYouPages');
                 }
-                if (e.target.id === 'create-another-btn') { // Botão "Criar Outra" no modal de sucesso
+                 if (e.target.id === 'create-another-btn') { // Botão "Criar Outra" ou "Ver Meus Checkouts" no modal de sucesso
                      const resultScreen = e.target.closest('#result-screen');
                      if(resultScreen) resultScreen.classList.add('hidden');
 
                      if (document.getElementById('thankYouCreator')) {
+                         // Se estava no criador de TY, reinicia ele
                          this.state.editingThankYouPageId = null;
-                         this.initThankYouCreatorPage(); // Reinicializa o criador
+                         this.initThankYouCreatorPage();
                      } else if (document.getElementById('pageCreator')) {
-                         this.state.editingCheckoutId = null;
-                         this.initCreatorPage(); // Reinicializa o criador
+                          // Se estava no criador de Checkout, vai para a lista
+                         this.navigateTo('checkouts');
                      }
                 }
 
@@ -1505,23 +1671,29 @@
                 const deleteBtn = e.target.closest('.delete-pixel-btn, .delete-bot-btn, .delete-pressel-btn, .delete-utmify-btn, .delete-checkout-btn, .delete-thankyou-btn');
                 if (deleteBtn) {
                      const id = deleteBtn.dataset.id;
-                    let type = '', endpoint = '', itemName = 'item', refreshFunction = () => this.navigateTo(this.state.currentPage);
+                    let type = '', endpoint = '', itemName = 'item', refreshFunction = () => this.navigateTo(this.state.currentPage); // Default refresh
 
                     if (deleteBtn.classList.contains('delete-pixel-btn')) { type = 'pixels'; endpoint = 'pixels'; itemName = 'pixel'; }
                     if (deleteBtn.classList.contains('delete-bot-btn')) { type = 'bots'; endpoint = 'bots'; itemName = 'bot'; }
                     if (deleteBtn.classList.contains('delete-pressel-btn')) { type = 'pressels'; endpoint = 'pressels'; itemName = 'pressel'; }
                     if (deleteBtn.classList.contains('delete-utmify-btn')) { type = 'utmifyIntegrations'; endpoint = 'integrations/utmify'; itemName = 'integração Utmify'; }
-                    if (deleteBtn.classList.contains('delete-checkout-btn')) { type = 'checkouts'; endpoint = 'checkouts'; itemName = 'checkout'; refreshFunction = this.fetchAndRenderCheckouts; }
-                    if (deleteBtn.classList.contains('delete-thankyou-btn')) { /* type = 'thankYouPages' */; endpoint = 'thank-you-pages'; itemName = 'página de obrigado'; refreshFunction = this.fetchAndRenderThankYouPages; }
+                    if (deleteBtn.classList.contains('delete-checkout-btn')) { /* type = 'checkouts' - não precisa atualizar state direto */ endpoint = 'checkouts'; itemName = 'checkout'; refreshFunction = this.fetchAndRenderCheckouts; } // Refresh específico
+                    if (deleteBtn.classList.contains('delete-thankyou-btn')) { /* type = 'thankYouPages' */; endpoint = 'thank-you-pages'; itemName = 'página de obrigado'; refreshFunction = this.fetchAndRenderThankYouPages; } // Refresh específico
 
                     if (confirm(`Tem certeza que deseja excluir est${itemName.includes('integração') || itemName.includes('página') ? 'a' : 'e'} ${itemName}?`)) {
+                        deleteBtn.textContent = 'Excluindo...'; deleteBtn.disabled = true; // Feedback visual
                         try {
                             await this.apiRequest(`/api/${endpoint}/${id}`, 'DELETE');
-                            if(type && Array.isArray(this.state.data[type])) { this.state.data[type] = this.state.data[type].filter(item => item.id != id); }
-                            await refreshFunction.call(this);
+                            // Remove do state apenas se não tiver refreshFunction específica
+                            if(type && Array.isArray(this.state.data[type]) && refreshFunction === this.navigateTo) {
+                                this.state.data[type] = this.state.data[type].filter(item => item.id != id);
+                            }
+                            await refreshFunction.call(this); // Chama a função de refresh (seja a genérica ou específica)
                             this.showToast(`${itemName.charAt(0).toUpperCase() + itemName.slice(1)} excluíd${itemName.includes('integração') || itemName.includes('página') ? 'a' : 'o'} com sucesso!`, 'success');
                         } catch(err) {
-                             this.showToast(`Erro ao excluir ${itemName === 'integração Utmify' || itemName === 'página de obrigado' ? 'a' : 'o'} ${itemName}.`, 'error');
+                             this.showToast(`Erro ao excluir ${itemName === 'integração Utmify' || itemName === 'página de obrigado' ? 'a' : 'o'} ${itemName}. Detalhes: ${err.message}`, 'error');
+                             // Restaura o botão em caso de erro
+                             deleteBtn.textContent = 'Excluir'; deleteBtn.disabled = false;
                         }
                     }
                 }
@@ -1531,6 +1703,7 @@
                 if (filterContainer) { const p=filterContainer.id.split('-')[0]; const b=e.target.closest('button'); if(b?.dataset.period){this.handleFilterChange(p,b.dataset.period);}else if(b?.id===`apply-custom-date-filter-${p}`){const sD=document.getElementById(`${p}-start-date`).value; const eD=document.getElementById(`${p}-end-date`).value; if(sD&&eD){this.handleFilterChange(p,'custom',sD,eD);}else{this.showToast('Selecione datas.','error');}}else if(b?.id===`clear-date-filter-${p}`){this.handleFilterChange(p,'all');} }
             };
             appEl.addEventListener('click', appEl._clickListener);
+            // ******** FIM DA ATUALIZAÇÃO DO addDashboardEventListeners ********
 
             appEl._submitListener = async (e) => {
                 const form = e.target.closest('form');
@@ -1582,7 +1755,7 @@
                             }
                         }
                     }
-                } catch(err) { /* Erros já tratados */ }
+                } catch(err) { /* Erros já tratados no apiRequest */ }
                 finally {
                     if(button) { button.innerHTML = originalButtonText; button.disabled = false; }
                 }
@@ -1590,17 +1763,19 @@
             appEl.addEventListener('submit', appEl._submitListener);
         },
 
-        async apiRequest(endpoint, method = 'GET', body = null) {
+        // Adicionada sobrecarga para aceitar headers customizados
+        async apiRequest(endpoint, method = 'GET', body = null, customHeaders = {}) {
             try {
-                const headers = { 'Content-Type': 'application/json' };
+                const headers = { 'Content-Type': 'application/json', ...customHeaders }; // Mescla headers customizados
                 if (this.state.token) { headers['Authorization'] = `Bearer ${this.state.token}`; }
 
+                // Mantém a lógica de adicionar x-api-key se necessário E não foi fornecido um customizado
                 const apiKeyRequired = endpoint.includes('/api/checkouts/create-hosted') ||
                                        (endpoint.includes('/api/checkouts/') && method === 'PUT') ||
                                        endpoint.includes('/api/thank-you-pages/create') ||
                                        (endpoint.includes('/api/thank-you-pages/') && method === 'PUT');
 
-                if (this.state.data.settings && this.state.data.settings.api_key && apiKeyRequired) {
+                if (this.state.data.settings?.api_key && apiKeyRequired && !headers['x-api-key']) {
                     headers['x-api-key'] = this.state.data.settings.api_key;
                 }
 
@@ -1609,9 +1784,22 @@
 
                 const response = await fetch(`${this.state.API_BASE_URL}${endpoint}`, options);
 
-                if (response.status === 204) return null;
+                if (response.status === 204) return null; // No Content
 
-                const data = await response.json();
+                const responseBody = await response.text(); // Lê como texto primeiro
+                let data;
+                try {
+                    data = JSON.parse(responseBody); // Tenta parsear como JSON
+                } catch (jsonError) {
+                    // Se falhar o parse JSON e a resposta não for OK, trata como erro de texto
+                    if (!response.ok) {
+                        console.error(`API Error ${response.status} on ${method} ${endpoint}. Response: ${responseBody}`);
+                        throw new Error(responseBody || `Erro ${response.status}`);
+                    }
+                    // Se falhar o parse mas a resposta for OK (ex: 200 com texto puro), retorna o texto
+                    data = responseBody;
+                }
+
 
                 if (!response.ok) {
                     console.error(`API Error ${response.status} on ${method} ${endpoint}:`, data);
@@ -1619,7 +1807,7 @@
                     if (data && data.message) {
                        errorMsg = data.message;
                     } else if (typeof data === 'string') {
-                       errorMsg = data;
+                       errorMsg = data; // Usa o texto da resposta como mensagem de erro
                     }
                     throw new Error(errorMsg);
                 }
@@ -1627,24 +1815,28 @@
             } catch (error) {
                  if (error instanceof Error) {
                     this.showToast(error.message, 'error');
-                    if ((error.message.includes('inválido') || error.message.includes('expirado')) && !endpoint.includes('/create') && !endpoint.includes('/checkouts/') && !endpoint.includes('/thank-you-pages/')) {
+                     // Verifica se o erro é de autenticação e desloga, exceto em rotas específicas
+                    const isAuthError = error.message.includes('inválido') || error.message.includes('expirado') || error.message.includes('API Key inválida');
+                    const shouldLogout = isAuthError && !endpoint.includes('/sellers/login') && !endpoint.startsWith('/oferta/') && !endpoint.startsWith('/obrigado/');
+                    if (shouldLogout) {
                        this.logout();
                     }
                  } else {
                     console.error(`Network Error on ${method} ${endpoint}:`, error);
                     this.showToast('Falha na conexão com o servidor.', 'error');
                  }
-                 throw error;
+                 throw error; // Re-throw para quem chamou poder tratar
             }
         },
+
 
         async login(email, password) {
             try {
                 const data = await this.apiRequest('/api/sellers/login', 'POST', { email, password });
                 this.state.token = data.token;
                 localStorage.setItem('hottrack_token', data.token);
-                window.location.reload();
-            } catch (e) { /* Erro já mostrado */ }
+                window.location.reload(); // Recarrega para buscar dados e renderizar layout
+            } catch (e) { /* Erro já mostrado pelo apiRequest */ }
         },
 
         async register(name, email, password) {
@@ -1654,14 +1846,21 @@
                 const message = `Olá, gostaria de solicitar a aprovação do meu cadastro. Email: ${email}`;
                 const whatsappUrl = `https://wa.me/5541995211148?text=${encodeURIComponent(message)}`;
                 setTimeout(() => { window.location.href = whatsappUrl; }, 1000);
-            } catch (e) { /* Erro já mostrado */ }
+            } catch (e) { /* Erro já mostrado pelo apiRequest */ }
         },
 
         logout() {
             this.state.token = null;
             this.state.editingCheckoutId = null;
             this.state.editingThankYouPageId = null;
+            this.state.pixPollingIntervalId = null; // Limpa o ID do polling
             localStorage.removeItem('hottrack_token');
+            // Limpa cache de status de PIX (opcional)
+            const providers = ['pushinpay', 'cnpay', 'oasyfy', 'syncpay', 'brpix'];
+            providers.forEach(p => {
+                localStorage.removeItem(`pix_status_${p}`);
+                localStorage.removeItem(`pix_timestamp_${p}`);
+            });
             window.location.reload();
         },
 
@@ -1689,19 +1888,20 @@
 
             if (page === 'pageCreator' || page === 'thankYouCreator') {
                 contentContainer.classList.remove('overflow-y-auto', 'p-4', 'md:p-8');
-                contentContainer.classList.add('overflow-hidden');
+                contentContainer.classList.add('overflow-hidden'); // Ajuste para ocupar toda a altura
             } else {
                 contentContainer.classList.add('overflow-y-auto', 'p-4', 'md:p-8');
                 contentContainer.classList.remove('overflow-hidden');
             }
 
+            // Garante que o DOM seja atualizado antes de tentar acessar elementos
             await new Promise(resolve => setTimeout(resolve, 10));
 
             try {
-                contentContainer.innerHTML = this.templates[page]();
+                contentContainer.innerHTML = this.templates[page](); // Renderiza o template HTML
                 document.querySelectorAll('.nav-link[data-target]').forEach(item => item.classList.toggle('active', item.dataset.target === page));
 
-                // Inicializa JS específico da página
+                // Inicializa JS específico da página APÓS renderizar o HTML
                 if (page === 'dashboard') { this.handleFilterChange(page, this.state.dateFilter.period || 'last7days'); }
                 else if (page === 'transactions') { this.handleFilterChange(page, this.state.dateFilter.period || 'all'); }
                 else if (page === 'settings') { this.updateAllPixStatusIndicators(); }
@@ -1717,10 +1917,9 @@
             }
         },
 
-        // *** FUNÇÃO fetchDashboardMetrics CORRIGIDA ***
         async fetchDashboardMetrics() {
              const metricsContainer = document.getElementById('metric-clicks');
-             if (!metricsContainer) return;
+             if (!metricsContainer) { console.warn("Dashboard metrics container not found."); return; } // Check se o elemento existe
 
             try {
                 const { startDate, endDate } = this.state.dateFilter;
@@ -1732,16 +1931,17 @@
                 const updateElement = (id, value, isCurrency = false) => {
                     const el = document.getElementById(id);
                     if (el) {
-                        // Passa o valor (Reais ou contagem) diretamente para formatNumber
                         el.textContent = this.formatNumber(value, isCurrency);
+                    } else {
+                        //console.warn(`Element with ID ${id} not found for metrics update.`);
                     }
                 };
 
                 updateElement('metric-clicks', metrics.total_clicks);
                 updateElement('metric-generated', metrics.total_pix_generated);
                 updateElement('metric-paid', metrics.total_pix_paid);
-                updateElement('metric-total-revenue', metrics.total_revenue, true); // Passa Reais
-                updateElement('metric-paid-revenue', metrics.paid_revenue, true); // Passa Reais
+                updateElement('metric-total-revenue', metrics.total_revenue, true);
+                updateElement('metric-paid-revenue', metrics.paid_revenue, true);
 
                 const botsTableBody = document.getElementById('bots-performance-table');
                 if (botsTableBody && metrics.bots_performance) {
@@ -1756,6 +1956,8 @@
                     } else {
                         botsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500 py-8">Nenhum dado de bot.</td></tr>';
                     }
+                } else if (!botsTableBody) {
+                    //console.warn("Bots performance table body not found.");
                 }
 
                 const trafficTableBody = document.getElementById('traffic-by-state-table');
@@ -1765,6 +1967,8 @@
                     } else {
                        trafficTableBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-500 py-8">Nenhum tráfego registrado.</td></tr>';
                     }
+                 } else if (!trafficTableBody) {
+                     //console.warn("Traffic by state table body not found.");
                  }
 
                 this.renderRevenueChart();
@@ -1772,32 +1976,28 @@
             } catch (e) { console.error("Erro ao carregar métricas do painel:", e); }
         },
 
-        // *** FUNÇÃO fetchAchievementsAndRanking CORRIGIDA ***
         async fetchAchievementsAndRanking() {
             const achievementsList = document.getElementById('achievements-list');
             const rankingList = document.getElementById('ranking-list');
             const userRankStatus = document.getElementById('user-rank-status');
 
-            if (!achievementsList || !rankingList || !userRankStatus) return;
+            if (!achievementsList || !rankingList || !userRankStatus) {
+                // console.warn("Achievements or ranking elements not found.");
+                return;
+            }
 
             try {
                 const data = await this.apiRequest('/api/dashboard/achievements-and-ranking');
 
-                // Pega o faturamento pago (em Reais) do dashboard
                 const paidRevenueReais = parseFloat(this.state.data.dashboard.paid_revenue || 0);
 
                 if (data.userAchievements && data.userAchievements.length > 0) {
                     achievementsList.innerHTML = data.userAchievements.map(ach => {
                         const icon = ach.is_completed ? '✅' : '🔒';
                         const textColor = ach.is_completed ? 'text-green-400' : 'text-gray-400';
-
-                        // Assumindo que sales_goal vem em REAIS (ex: 1000.00)
                         const salesGoalReais = parseFloat(ach.sales_goal || 0);
                         const missingAmountReais = Math.max(0, salesGoalReais - paidRevenueReais);
-
-                        const formattedMissing = missingAmountReais > 0
-                            ? `Falta ${this.formatNumber(missingAmountReais, true)}` // Passa Reais
-                            : 'Concluída!';
+                        const formattedMissing = missingAmountReais > 0 ? `Falta ${this.formatNumber(missingAmountReais, true)}` : 'Concluída!';
 
                         return `
                             <div class="card p-4 rounded-lg flex items-center gap-3 bg-slate-900/50">
@@ -1816,7 +2016,6 @@
                     rankingList.innerHTML = data.topSellersRanking.map((seller, index) => {
                         const rank = index + 1;
                         const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
-                        // total_revenue vem em Reais, passa direto
                         const revenue = this.formatNumber(seller.total_revenue || 0, true);
                         return `<div class="p-2 bg-slate-900/50 rounded-lg flex justify-between items-center"><span class="font-bold text-lg w-8 text-center">${medal}</span><span class="text-sm flex-1">${seller.name || 'Vendedor'}</span><span class="text-xs text-gray-400">${revenue}</span></div>`;
                     }).join('');
@@ -1836,7 +2035,7 @@
 
         async fetchTransactions() {
             const tableBody = document.getElementById('transactions-table-body');
-            if (!tableBody) return;
+            if (!tableBody) { console.warn("Transactions table body not found."); return; }
             tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">Carregando transações...</td></tr>';
 
             try {
@@ -1851,7 +2050,6 @@
             }
         },
 
-        // *** FUNÇÃO renderTransactionsTable CORRIGIDA ***
         renderTransactionsTable() {
             const tableBody = document.getElementById('transactions-table-body');
             if (!tableBody) return;
@@ -1860,7 +2058,7 @@
                 tableBody.innerHTML = transactionsToRender.map(t => {
                     const statusClass = t.status === 'paid' ? 'text-green-400 bg-green-500/10' : 'text-yellow-400 bg-yellow-500/10';
                     const statusText = t.status === 'paid' ? 'Pago' : 'Pendente';
-                    const formattedValue = this.formatNumber(t.pix_value, true); // Passa Reais
+                    const formattedValue = this.formatNumber(t.pix_value, true);
                     const formattedDate = t.created_at ? new Date(t.created_at).toLocaleString('pt-BR') : 'Data inválida';
                     const sourceName = t.source_name || 'Desconhecida';
                     const providerName = t.provider ? t.provider.toUpperCase() : 'N/A';
@@ -1906,17 +2104,15 @@
             else if (page === 'transactions') this.fetchTransactions();
         },
 
-        // *** FUNÇÃO renderRevenueChart CORRIGIDA ***
         renderRevenueChart() {
             const ctx = document.getElementById('revenueChart');
-            if (!ctx || !(ctx instanceof HTMLCanvasElement)) return;
+            if (!ctx || !(ctx instanceof HTMLCanvasElement)) { /* console.warn("Revenue chart canvas not found."); */ return; }
 
             const rawData = this.state.data.dashboard.daily_revenue || [];
 
             const labels = rawData.map(item => {
                  try { const date = new Date(item.date + 'T00:00:00'); return date.toLocaleDateString('pt-BR', {timeZone: 'UTC'}); } catch { return 'Data Inválida'; }
             });
-            // Passa os valores em REAIS (float) diretamente
             const revenuesInReais = rawData.map(item => parseFloat(item.revenue || 0));
 
             if (this.state.revenueChart) {
@@ -1930,7 +2126,7 @@
                        labels: labels,
                        datasets: [{
                            label: 'Faturamento Pago',
-                           data: revenuesInReais, // Usa Reais
+                           data: revenuesInReais,
                            backgroundColor: (context) => {
                                const { ctx, chartArea } = context.chart; if (!chartArea) return null; const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top); gradient.addColorStop(0, 'rgba(56, 189, 248, 0)'); gradient.addColorStop(1, 'rgba(56, 189, 248, 0.3)'); return gradient;
                            },
@@ -1943,7 +2139,7 @@
                        scales: {
                            y: {
                                beginAtZero: true,
-                               ticks: { color: '#94a3b8', callback: (value) => this.formatNumber(value, true) }, // formatNumber lida com Reais
+                               ticks: { color: '#94a3b8', callback: (value) => this.formatNumber(value, true) },
                                grid: { color: 'rgba(51, 65, 85, 0.5)' }
                            },
                            x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
@@ -1954,7 +2150,7 @@
                                backgroundColor: '#0f172a', titleColor: '#f1f5f9', bodyColor: '#cbd5e1',
                                borderColor: '#334155', borderWidth: 1,
                                callbacks: {
-                                   label: (context) => `Faturamento: ${this.formatNumber(context.raw, true)}` // context.raw agora é Reais
+                                   label: (context) => `Faturamento: ${this.formatNumber(context.raw, true)}`
                                }
                            }
                        }
@@ -2121,7 +2317,7 @@
                 const successModalContent = `<div class="text-left"><p class="text-sm text-gray-400 mb-2">Resultado:</p><ul class="text-xs list-disc list-inside space-y-1 mb-4">${logHTML}</ul><p class="text-sm text-gray-400 mb-2">PIX Gerado (pode ser pago para teste):</p><textarea id="pix-code-textarea" class="form-input w-full p-2 font-mono text-xs bg-slate-900" rows="5" readonly>${result.qr_code_text || 'Erro'}</textarea><button type="button" class="copy-btn btn w-full mt-4 py-2" data-target="#pix-code-textarea">Copiar Código</button></div>`;
                 document.getElementById('modal-container').innerHTML = this.templates.modal('Teste da Rota Concluído!', successModalContent);
             } catch (error) {
-                const logHTML = Array.isArray(error.log) ? error.log.map(line => `<li class="text-red-400">${line}</li>`).join('') : '<li>Nenhum log disponível.</li>';
+                const logHTML = error.log && Array.isArray(error.log) ? error.log.map(line => `<li class="text-red-400">${line}</li>`).join('') : '<li>Nenhum log disponível.</li>';
                 const errorModalContent = `<div class="text-left"><p class="text-lg font-bold text-red-400">Falha na Rota de Prioridade</p><p class="text-sm text-gray-400 mt-2 mb-2">Todos os provedores falharam. Log:</p><ul class="text-xs list-disc list-inside space-y-1">${logHTML}</ul></div>`;
                 document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste', errorModalContent);
             } finally {
@@ -2213,8 +2409,8 @@
             tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-gray-500 py-8">Carregando...</td></tr>';
             try {
                 const checkouts = await this.apiRequest('/api/checkouts');
-                this.state.data.checkouts = checkouts;
-                if (checkouts.length > 0) {
+                this.state.data.checkouts = checkouts || []; // Garante que seja um array
+                if (checkouts && checkouts.length > 0) {
                     tableBody.innerHTML = checkouts.map(c => `
                         <tr class="hover:bg-slate-800/50">
                             <td class="font-medium">${c.name || 'Checkout Sem Título'}</td>
@@ -2241,7 +2437,7 @@
             tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-gray-500 py-8">Carregando...</td></tr>';
             try {
                 const pages = await this.apiRequest('/api/thank-you-pages');
-                if (pages.length > 0) {
+                if (pages && pages.length > 0) {
                     tableBody.innerHTML = pages.map(p => `
                         <tr class="hover:bg-slate-800/50">
                             <td class="font-medium">${p.name || 'Página Sem Nome'}</td>
@@ -2262,11 +2458,13 @@
             }
         },
 
+        // *** FUNÇÃO initCreatorPage ATUALIZADA para incluir success_redirect_url ***
         async initCreatorPage() {
             const FRONTEND_URL = window.location.origin;
             const contentEl = document.getElementById('content');
             if (!contentEl) { console.error("Container #content não encontrado."); return; }
 
+            // Verifica se os elementos existem antes de acessá-los
             const creatorTitle = contentEl.querySelector('#creator-title');
             const submitBtn = contentEl.querySelector('#submit-btn');
             const checkoutForm = contentEl.querySelector('#checkout-form');
@@ -2276,44 +2474,46 @@
             const utmifySelect = contentEl.querySelector('#utmify_integration_id');
             const resultScreen = contentEl.querySelector('#result-screen');
             const checkoutLinkOutput = contentEl.querySelector('#checkout-link-output');
+            const successRedirectUrlInput = contentEl.querySelector('#success_redirect_url'); // Campo novo
 
-            if (packagesContainer) packagesContainer.innerHTML = '';
-            if (testimonialsContainer) testimonialsContainer.innerHTML = '';
+            if (!creatorTitle || !submitBtn || !checkoutForm || !packagesContainer || !testimonialsContainer || !pixelSelect || !utmifySelect || !resultScreen || !checkoutLinkOutput || !successRedirectUrlInput) {
+                console.error("Um ou mais elementos do Criador de Ofertas não foram encontrados no DOM.");
+                this.showToast("Erro ao carregar o criador de ofertas.", "error");
+                return;
+            }
 
-            if (pixelSelect) {
-                 pixelSelect.innerHTML = '<option value="">-- Selecione um Pixel --</option>' + App.state.data.pixels.map(p => `<option value="${p.pixel_id}">${p.account_name} (${p.pixel_id})</option>`).join('');
-            }
-            if (utmifySelect) {
-                utmifySelect.innerHTML = '<option value="">-- Nenhuma --</option>' + App.state.data.utmifyIntegrations.map(u => `<option value="${u.id}">${u.account_name}</option>`).join('');
-            }
+            packagesContainer.innerHTML = '';
+            testimonialsContainer.innerHTML = '';
+
+            pixelSelect.innerHTML = '<option value="">-- Selecione um Pixel --</option>' + App.state.data.pixels.map(p => `<option value="${p.pixel_id}">${p.account_name} (${p.pixel_id})</option>`).join('');
+            utmifySelect.innerHTML = '<option value="">-- Nenhuma --</option>' + App.state.data.utmifyIntegrations.map(u => `<option value="${u.id}">${u.account_name}</option>`).join('');
 
             let packageCount = 0;
             function addPackage(title = 'Acesso Completo', desc = 'Todo o conteúdo liberado.', val = '29.90') {
-                 if (!packagesContainer) return;
                 packageCount++; const el = document.createElement('div'); el.id = `package-${packageCount}`; el.className = 'grid grid-cols-1 md:grid-cols-7 gap-4 border border-slate-700 p-4 rounded-lg';
                 el.innerHTML = `<div class="md:col-span-2"><label class="text-xs text-gray-400 mb-1 block">Nome</label><input type="text" class="form-input w-full p-2 package-title" value="${title}" required></div> <div class="md:col-span-3"><label class="text-xs text-gray-400 mb-1 block">Descrição</label><input type="text" class="form-input w-full p-2 package-description" value="${desc}" required></div> <div class="md:col-span-1"><label class="text-xs text-gray-400 mb-1 block">Valor (R$)</label><input type="number" step="0.01" min="0" class="form-input w-full p-2 package-value" value="${val}" required></div> <div class="flex items-end"><button type="button" class="btn btn-danger w-full h-10 remove-package-btn" data-id="${packageCount}">X</button></div>`;
                 packagesContainer.appendChild(el);
             }
             let testimonialCount = 0;
             function addTestimonial(name = '', photo_url = '', text = '') {
-                 if (!testimonialsContainer) return;
                 testimonialCount++; const el = document.createElement('div'); el.id = `testimonial-${testimonialCount}`; el.className = 'border border-slate-700 p-4 rounded-lg space-y-3';
                 el.innerHTML = `<div class="flex justify-end"><button type="button" class="btn btn-danger text-xs py-1 px-2 remove-testimonial-btn" data-id="${testimonialCount}">Remover</button></div> <div class="grid grid-cols-1 md:grid-cols-2 gap-4"> <div><label class="text-xs text-gray-400 mb-1 block">Nome</label><input type="text" class="form-input w-full p-2 testimonial-name" value="${name}" placeholder="Ex: João da Silva"></div> <div><label class="text-xs text-gray-400 mb-1 block">URL da Foto (Opcional)</label><input type="url" class="form-input w-full p-2 testimonial-photo" value="${photo_url}" placeholder="https://..."></div> </div> <div><label class="text-xs text-gray-400 mb-1 block">Texto</label><textarea class="form-textarea w-full p-2 testimonial-text" rows="3" placeholder="Excelente produto...">${text}</textarea></div>`;
                 testimonialsContainer.appendChild(el);
             }
             function populateCreatorForm(config) {
                 const get = (selector) => contentEl.querySelector(selector);
-                get('#main_title').value = config.content.main_title || ''; get('#subtitle').value = config.content.subtitle || ''; get('#media_url').value = config.content.media_url || '';
-                get('#pricing-type-select').value = config.pricing.type || 'fixed'; packagesContainer.innerHTML=''; if (config.pricing.type === 'fixed' && config.pricing.packages?.length > 0) { config.pricing.packages.forEach(pkg => addPackage(pkg.title, pkg.description, (pkg.value_cents / 100).toFixed(2))); } else { addPackage(); }
-                get('#enable_order_bump').checked = config.order_bump.enabled; get('#order-bump-fields').classList.toggle('hidden', !config.order_bump.enabled); get('#order_bump_product_name').value = config.order_bump.product_name || ''; get('#order_bump_description').value = config.order_bump.description || ''; get('#order_bump_value').value = (config.order_bump.value_cents / 100).toFixed(2) || '0.00';
-                get('#enable_countdown').checked = config.conversion_elements.countdown.enabled; get('#countdown-fields').classList.toggle('hidden', !config.conversion_elements.countdown.enabled); get('#countdown_minutes').value = config.conversion_elements.countdown.minutes || 15;
-                get('#guarantee_text').value = config.conversion_elements.guarantee.text || ''; get('#guarantee_seal_url').value = config.conversion_elements.guarantee.seal_url || '';
+                get('#main_title').value = config.content?.main_title || ''; get('#subtitle').value = config.content?.subtitle || ''; get('#media_url').value = config.content?.media_url || '';
+                get('#pricing-type-select').value = config.pricing?.type || 'fixed'; packagesContainer.innerHTML=''; if (config.pricing?.type === 'fixed' && config.pricing.packages?.length > 0) { config.pricing.packages.forEach(pkg => addPackage(pkg.title, pkg.description, (pkg.value_cents / 100).toFixed(2))); } else { addPackage(); }
+                get('#enable_order_bump').checked = config.order_bump?.enabled; get('#order-bump-fields').classList.toggle('hidden', !config.order_bump?.enabled); get('#order_bump_product_name').value = config.order_bump?.product_name || ''; get('#order_bump_description').value = config.order_bump?.description || ''; get('#order_bump_value').value = (config.order_bump?.value_cents / 100).toFixed(2) || '0.00';
+                get('#enable_countdown').checked = config.conversion_elements?.countdown?.enabled; get('#countdown-fields').classList.toggle('hidden', !config.conversion_elements?.countdown?.enabled); get('#countdown_minutes').value = config.conversion_elements?.countdown?.minutes || 15;
+                get('#guarantee_text').value = config.conversion_elements?.guarantee?.text || ''; get('#guarantee_seal_url').value = config.conversion_elements?.guarantee?.seal_url || '';
                 testimonialsContainer.innerHTML=''; if (config.testimonials?.length > 0) { config.testimonials.forEach(t => addTestimonial(t.name, t.photo_url, t.text)); }
-                get('#pixel_id').value = config.tracking.pixel_id || ''; get('#utmify_integration_id').value = config.tracking.utmify_integration_id || ''; get('#background_color').value = config.style.background_color || '#0f172a'; get('#accent_color').value = config.style.accent_color || '#38bdf8';
+                get('#pixel_id').value = config.tracking?.pixel_id || ''; get('#utmify_integration_id').value = config.tracking?.utmify_integration_id || ''; get('#background_color').value = config.style?.background_color || '#0f172a'; get('#accent_color').value = config.style?.accent_color || '#38bdf8';
+                get('#success_redirect_url').value = config.redirects?.success_url || ''; // Popula o campo novo
             }
             function getFormData() {
                  const getElValue=(s,d='')=>contentEl.querySelector(s)?.value||d; const getElChecked=(s)=>contentEl.querySelector(s)?.checked||false; const getElFloat=(s,d=0)=>parseFloat(contentEl.querySelector(s)?.value)||d; const getElInt=(s,d=0)=>parseInt(contentEl.querySelector(s)?.value)||d; const pT=getElValue('#pricing-type-select','fixed'); let pD; if(pT==='fixed'){pD={type:'fixed',packages:Array.from(contentEl.querySelectorAll('#packages-container > div')).map(p=>({title:p.querySelector('.package-title')?.value||'',description:p.querySelector('.package-description')?.value||'',value_cents:Math.round((parseFloat(p.querySelector('.package-value')?.value)||0)*100)}))};}else{pD={type:'open',label:getElValue('#open_value_label'),minimum_value_cents:Math.round(getElFloat('#open_value_min',5)*100),suggested_value_cents:Math.round(getElFloat('#open_value_suggested',50)*100)};}
-                 return{content:{main_title:getElValue('#main_title'),subtitle:getElValue('#subtitle'),media_url:getElValue('#media_url')||null},pricing:pD,order_bump:{enabled:getElChecked('#enable_order_bump'),product_name:getElValue('#order_bump_product_name'),description:getElValue('#order_bump_description'),value_cents:Math.round(getElFloat('#order_bump_value',0)*100)},conversion_elements:{countdown:{enabled:getElChecked('#enable_countdown'),minutes:getElInt('#countdown_minutes',15)},guarantee:{text:getElValue('#guarantee_text',''),seal_url:getElValue('#guarantee_seal_url')||null}},testimonials:Array.from(contentEl.querySelectorAll('#testimonials-container > div')).map(t=>({name:t.querySelector('.testimonial-name')?.value||'',text:t.querySelector('.testimonial-text')?.value||'',photo_url:t.querySelector('.testimonial-photo')?.value||null})),style:{background_color:getElValue('#background_color','#0f172a'),accent_color:getElValue('#accent_color','#38bdf8')},tracking:{pixel_id:getElValue('#pixel_id',''),utmify_integration_id:getElValue('#utmify_integration_id','')||null}};
+                 return{content:{main_title:getElValue('#main_title'),subtitle:getElValue('#subtitle'),media_url:getElValue('#media_url')||null},pricing:pD,order_bump:{enabled:getElChecked('#enable_order_bump'),product_name:getElValue('#order_bump_product_name'),description:getElValue('#order_bump_description'),value_cents:Math.round(getElFloat('#order_bump_value',0)*100)},conversion_elements:{countdown:{enabled:getElChecked('#enable_countdown'),minutes:getElInt('#countdown_minutes',15)},guarantee:{text:getElValue('#guarantee_text',''),seal_url:getElValue('#guarantee_seal_url')||null}},testimonials:Array.from(contentEl.querySelectorAll('#testimonials-container > div')).map(t=>({name:t.querySelector('.testimonial-name')?.value||'',text:t.querySelector('.testimonial-text')?.value||'',photo_url:t.querySelector('.testimonial-photo')?.value||null})),style:{background_color:getElValue('#background_color','#0f172a'),accent_color:getElValue('#accent_color','#38bdf8')},tracking:{pixel_id:getElValue('#pixel_id',''),utmify_integration_id:getElValue('#utmify_integration_id','')||null}, redirects: { success_url: getElValue('#success_redirect_url') || null }}; // Adiciona redirects
             }
             function generatePreviewHTML(data) {
                  const fC=(c)=>(c/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); const cdH=data.conversion_elements.countdown.enabled?`<div style="background-color: var(--preview-accent, #38bdf8); color: white; text-align: center; padding: 0.75rem;"><p style="font-weight: 600; font-size: 0.9rem;">A OFERTA TERMINA EM</p><p style="font-size: 1.5rem; font-weight: 800; letter-spacing: 0.1em;">${String(data.conversion_elements.countdown.minutes).padStart(2,'0')}:00</p></div>`:''; const mH=data.content.media_url?`<img src="${data.content.media_url}" alt="Preview" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 0.5rem; margin-bottom: 1.5rem;">`:''; let pH; if(data.pricing.type==='open'){pH=`<div style="margin-top: 1.5rem;"><label ...>${data.pricing.label||'Escolha o valor'}</label><div ...><span ...>R$</span><input ... placeholder="${(data.pricing.suggested_value_cents/100).toFixed(2).replace('.',',')}" ...></div><p ...>Mínimo: ${fC(data.pricing.minimum_value_cents)}</p></div>`;}else{const p=Array.isArray(data.pricing.packages)?data.pricing.packages:[];pH=(p.length>0?p:[{title:'Configure',description:'',value_cents:0}]).map((pk,i)=>`<div style="border: 1px solid #e5e7eb; padding: 1rem; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;" onclick="this.style.borderColor=getComputedStyle(document.documentElement).getPropertyValue('--preview-accent'); this.style.boxShadow = '0 0 0 2px '+getComputedStyle(document.documentElement).getPropertyValue('--preview-accent');"><h3 style="font-weight: 700; font-size: 1.1rem; color: #111827;">${pk.title||'Pacote'}</h3><p style="font-size: 0.9rem; color: #6b7280; margin-top: 0.25rem;">${pk.description||'Descrição'}</p><p style="font-size: 1.5rem; font-weight: 800; color: var(--preview-accent, #38bdf8); margin-top: 0.75rem;">${fC(pk.value_cents)}</p></div>`).join(''); pH=`<div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">${pH}</div>`;}
@@ -2348,23 +2548,24 @@
             contentEl._clickListener = (e) => {
                  if(e.target.id==='add-package-btn')addPackage(); if(e.target.id==='add-testimonial-btn')addTestimonial(); const rPB=e.target.closest('.remove-package-btn'); if(rPB){contentEl.querySelector(`#package-${rPB.dataset.id}`)?.remove();updatePreview();} const rTB=e.target.closest('.remove-testimonial-btn'); if(rTB){contentEl.querySelector(`#testimonial-${rTB.dataset.id}`)?.remove();updatePreview();}
                  const pW=contentEl.querySelector('#preview-wrapper'); if(e.target.id==='desktop-view-btn'){pW.className='desktop mx-auto'; e.target.classList.add('active'); contentEl.querySelector('#mobile-view-btn').classList.remove('active');} if(e.target.id==='mobile-view-btn'){pW.className='mobile mx-auto'; e.target.classList.add('active'); contentEl.querySelector('#desktop-view-btn').classList.remove('active');}
-                 if(e.target.id==='copy-link-btn'){checkoutLinkOutput.select(); document.execCommand('copy'); e.target.textContent='Copiado!'; setTimeout(()=>{e.target.textContent='Copiar Link'},2000);} if(e.target.id==='create-another-btn'){hideResultScreen(); App.navigateTo('checkouts');}
+                 if(e.target.id==='copy-link-btn'){checkoutLinkOutput.select(); document.execCommand('copy'); e.target.textContent='Copiado!'; setTimeout(()=>{e.target.textContent='Copiar Link'},2000);} if(e.target.id==='create-another-btn'){hideResultScreen(); App.navigateTo('checkouts');} // Ajustado para ir para lista
             };
             contentEl.addEventListener('click', contentEl._clickListener);
 
              checkoutForm.removeEventListener('submit', checkoutForm._submitListener);
              checkoutForm._submitListener = async (e) => {
                  e.preventDefault(); const b=submitBtn; const oT=b.textContent; b.textContent='Salvando...'; b.disabled=true;
-                 try{ const cD=getFormData(); if(cD.pricing.type==='fixed'&&(!cD.pricing.packages||cD.pricing.packages.length===0))throw new Error('Adicione um pacote.'); if(!cD.tracking.pixel_id)throw new Error('Pixel obrigatório.');
-                 if(App.state.editingCheckoutId){await App.apiRequest(`/api/checkouts/${App.state.editingCheckoutId}`,'PUT',cD); App.showToast('Atualizado!', 'success'); App.state.editingCheckoutId=null; App.navigateTo('checkouts');}else{const r=await App.apiRequest('/api/checkouts/create-hosted','POST',cD); if(r&&r.checkoutId){showResultScreen(r.checkoutId);}else{throw new Error('Erro API.');}}}catch(error){App.showToast(error.message||'Erro.','error'); b.disabled=false; b.textContent=oT;}
+                 try{ const cD=getFormData(); if(cD.pricing.type==='fixed'&&(!cD.pricing.packages||cD.pricing.packages.length===0))throw new Error('Adicione pelo menos um pacote de preço.'); if(!cD.tracking.pixel_id)throw new Error('A seleção de um Pixel da Meta é obrigatória.');
+                 if(App.state.editingCheckoutId){await App.apiRequest(`/api/checkouts/${App.state.editingCheckoutId}`,'PUT',cD); App.showToast('Checkout atualizado com sucesso!', 'success'); App.state.editingCheckoutId=null; App.navigateTo('checkouts');}else{const r=await App.apiRequest('/api/checkouts/create-hosted','POST',cD); if(r&&r.checkoutId){showResultScreen(r.checkoutId);}else{throw new Error('Erro ao criar checkout. Resposta da API inválida.');}}}catch(error){App.showToast(error.message||'Erro ao salvar checkout. Verifique os campos.','error');} finally { b.disabled=false; b.textContent=oT;} // Garante restauração do botão
              };
              checkoutForm.addEventListener('submit', checkoutForm._submitListener);
         },
 
+        // *** FUNÇÃO initThankYouCreatorPage ATUALIZADA (refatorada) ***
         async initThankYouCreatorPage() {
             const FRONTEND_URL = window.location.origin;
             const creatorScreen = document.getElementById('creator-screen');
-            if (!creatorScreen) return;
+            if (!creatorScreen) { console.error("Creator screen not found."); return; }
 
             const thankYouForm = document.getElementById('thank-you-form');
             const submitBtn = document.getElementById('submit-btn');
@@ -2374,22 +2575,33 @@
             const createAnotherBtn = document.getElementById('create-another-btn');
             const utmifySelect = document.getElementById('utmify_integration_id');
             const previewContent = document.getElementById('preview-content');
-            const pageTitle = document.getElementById('ty-creator-title'); // ID único para o título
+            const pageTitle = document.getElementById('ty-creator-title');
             const backBtn = document.getElementById('back-to-ty-list-btn');
 
-            if (!document.getElementById('sidebar')) { if(backBtn) backBtn.style.display = 'none'; }
+            if (!thankYouForm || !submitBtn || !resultScreen || !pageLinkOutput || !copyLinkBtn || !createAnotherBtn || !utmifySelect || !previewContent || !pageTitle || !backBtn) {
+                 console.error("Um ou mais elementos do Criador TY não foram encontrados.");
+                 this.showToast("Erro ao carregar o criador de página.", "error");
+                 return;
+            }
 
-            const apiKey = App.state.data.settings.api_key;
+            // Garante que o botão de voltar não apareça se não houver sidebar (página standalone)
+            if (!document.getElementById('sidebar')) {
+                backBtn.style.display = 'none';
+            }
+
+            const apiKey = App.state.data.settings?.api_key;
             if (!apiKey) {
-                App.showToast("Chave de API não encontrada. Salve-a na página 'API PIX'.", "error");
+                App.showToast("Chave de API não encontrada. Salve-a na página 'API PIX' antes de criar páginas.", "error");
                 submitBtn.disabled = true;
+                thankYouForm.querySelectorAll('input, select, button').forEach(el => el.disabled = true); // Desabilita o form
                 return;
             } else {
                  submitBtn.disabled = false;
+                 thankYouForm.querySelectorAll('input, select, button').forEach(el => el.disabled = false); // Habilita o form
             }
 
             utmifySelect.innerHTML = '<option value="">Não enviar</option>';
-            if (App.state.data.utmifyIntegrations) {
+            if (App.state.data.utmifyIntegrations && Array.isArray(App.state.data.utmifyIntegrations)) {
                 App.state.data.utmifyIntegrations.forEach(int => {
                     const option = document.createElement('option'); option.value = int.id; option.textContent = int.account_name; utmifySelect.appendChild(option);
                 });
@@ -2398,42 +2610,64 @@
             function populateForm(config) {
                  document.getElementById('page_name').value = config.page_name || ''; document.getElementById('main_title').value = config.main_title || ''; document.getElementById('subtitle').value = config.subtitle || ''; document.getElementById('button_text').value = config.button_text || ''; document.getElementById('redirect_url').value = config.redirect_url || ''; document.getElementById('purchase_value').value = config.purchase_value || ''; document.getElementById('pixel_id').value = config.pixel_id || ''; document.getElementById('utmify_integration_id').value = config.utmify_integration_id || '';
             }
+            function getFormDataFromTY() {
+                const getV = (id) => document.getElementById(id)?.value || '';
+                return {
+                    page_name: getV('page_name'), main_title: getV('main_title'), subtitle: getV('subtitle'), button_text: getV('button_text'), redirect_url: getV('redirect_url'), purchase_value: parseFloat(getV('purchase_value')) || 0, pixel_id: getV('pixel_id'), utmify_integration_id: getV('utmify_integration_id') || null
+                };
+            }
+            function updatePreviewTY() {
+                 if (!previewContent) return;
+                 const data = getFormDataFromTY();
+                 previewContent.innerHTML = `
+                    <div style="background-color: var(--bg-secondary); color: var(--text-primary); font-family: 'Inter', sans-serif; min-height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem;">
+                        <div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-400 mx-auto mb-4" viewBox="0 0 20 20" fill="currentColor"> <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /> </svg>
+                            <h1 style="font-size: 2.25rem; font-weight: 800; color: white;">${data.main_title || 'Obrigado!'}</h1>
+                            <p style="color: var(--text-secondary); margin-top: 0.5rem; max-width: 450px; margin-left: auto; margin-right: auto;">${data.subtitle || 'Subtítulo...'}</p>
+                            <a href="${data.redirect_url || '#'}" target="_blank" style="display: inline-block; background-color: var(--accent-secondary); color: white; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.375rem; margin-top: 1.5rem; text-decoration: none;">
+                                ${data.button_text || 'Botão'}
+                            </a>
+                        </div>
+                    </div>`;
+            }
+            function showResultScreenTY(pageId) { const link = `${FRONTEND_URL}/obrigado/${pageId}`; pageLinkOutput.value = link; resultScreen.classList.remove('hidden'); }
+            function hideResultScreenTY() { resultScreen.classList.add('hidden'); thankYouForm.reset(); updatePreviewTY(); }
 
+            // Lógica de Edição ou Criação
             if (App.state.editingThankYouPageId) {
-                pageTitle.textContent = 'Editar Página de Obrigado'; submitBtn.textContent = 'Carregando...'; submitBtn.disabled = true; if(backBtn) backBtn.textContent = 'Cancelar Edição';
+                pageTitle.textContent = 'Editar Página de Obrigado'; submitBtn.textContent = 'Carregando...'; submitBtn.disabled = true; backBtn.textContent = 'Cancelar Edição';
                 try {
                     const pageData = await App.apiRequest(`/api/thank-you-pages/${App.state.editingThankYouPageId}`);
                     if (pageData && pageData.config) { populateForm(pageData.config); submitBtn.textContent = 'Salvar Alterações'; } else { throw new Error('Configuração não encontrada.'); }
-                } catch (e) { App.showToast('Erro ao carregar.', 'error'); App.state.editingThankYouPageId = null; pageTitle.textContent = 'Criador de Página de Obrigado'; submitBtn.textContent = 'Gerar Página'; if(backBtn) backBtn.textContent = 'Voltar para Lista'; thankYouForm.reset(); }
-                finally { submitBtn.disabled = false; updatePreview(); }
+                } catch (e) { App.showToast('Erro ao carregar dados da página.', 'error'); App.state.editingThankYouPageId = null; pageTitle.textContent = 'Criador de Página de Obrigado'; submitBtn.textContent = 'Gerar Página'; backBtn.textContent = 'Voltar para Lista'; thankYouForm.reset(); }
+                finally { submitBtn.disabled = false; updatePreviewTY(); }
             } else {
-                pageTitle.textContent = 'Criador de Página de Obrigado'; submitBtn.textContent = 'Gerar Página'; if(backBtn) backBtn.textContent = 'Voltar para Lista'; thankYouForm.reset(); updatePreview();
+                pageTitle.textContent = 'Criador de Página de Obrigado'; submitBtn.textContent = 'Gerar Página'; backBtn.textContent = 'Voltar para Lista'; thankYouForm.reset(); updatePreviewTY();
             }
 
-             function updatePreview() {
-                 if (!previewContent) return; const data = { main_title: document.getElementById('main_title').value, subtitle: document.getElementById('subtitle').value, button_text: document.getElementById('button_text').value, redirect_url: document.getElementById('redirect_url').value, };
-                 previewContent.innerHTML = `<div style="background-color: var(--bg-secondary); color: var(--text-primary); font-family: 'Inter', sans-serif; min-height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem;"> <div> <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-400 mx-auto mb-4" viewBox="0 0 20 20" fill="currentColor"> <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /> </svg> <h1 style="font-size: 2.25rem; font-weight: 800; color: white;">${data.main_title || 'Obrigado!'}</h1> <p style="color: var(--text-secondary); margin-top: 0.5rem; max-width: 450px; margin-left: auto; margin-right: auto;">${data.subtitle || 'Subtítulo...'}</p> <a href="${data.redirect_url || '#'}" target="_blank" style="display: inline-block; background-color: var(--accent-secondary); color: white; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.375rem; margin-top: 1.5rem; text-decoration: none;"> ${data.button_text || 'Botão'} </a> </div> </div>`;
-             }
-             function showResultScreen(pageId) { const link = `${FRONTEND_URL}/obrigado/${pageId}`; pageLinkOutput.value = link; resultScreen.classList.remove('hidden'); }
-             function hideResultScreen() { resultScreen.classList.add('hidden'); thankYouForm.reset(); updatePreview(); }
-
             // Listeners
-            thankYouForm.removeEventListener('input', updatePreview);
-            thankYouForm.addEventListener('input', updatePreview);
+            thankYouForm.removeEventListener('input', updatePreviewTY);
+            thankYouForm.addEventListener('input', updatePreviewTY);
 
             thankYouForm.removeEventListener('submit', thankYouForm._submitListener);
             thankYouForm._submitListener = async (e) => {
                 e.preventDefault(); const button = submitBtn; const originalText = button.textContent; button.textContent = 'Salvando...'; button.disabled = true;
-                const payload = { page_name: document.getElementById('page_name').value, main_title: document.getElementById('main_title').value, subtitle: document.getElementById('subtitle').value, button_text: document.getElementById('button_text').value, redirect_url: document.getElementById('redirect_url').value, purchase_value: parseFloat(document.getElementById('purchase_value').value), pixel_id: document.getElementById('pixel_id').value, utmify_integration_id: document.getElementById('utmify_integration_id').value || null };
+                const payload = getFormDataFromTY();
+                 // Validação básica no frontend
+                if (!payload.page_name || !payload.purchase_value || !payload.pixel_id || !payload.redirect_url) {
+                    App.showToast('Preencha todos os campos obrigatórios.', 'error'); button.disabled = false; button.textContent = originalText; return;
+                }
                 try {
                     if (App.state.editingThankYouPageId) {
                          await App.apiRequest(`/api/thank-you-pages/${App.state.editingThankYouPageId}`, 'PUT', payload);
-                         App.showToast('Página atualizada!', 'success'); App.state.editingThankYouPageId = null; App.navigateTo('thankYouPages');
+                         App.showToast('Página atualizada com sucesso!', 'success'); App.state.editingThankYouPageId = null; App.navigateTo('thankYouPages');
                     } else {
                         const result = await App.apiRequest(`/api/thank-you-pages/create`, 'POST', payload);
-                        showResultScreen(result.pageId);
+                        showResultScreenTY(result.pageId);
                     }
-                } catch (error) { button.disabled = false; button.textContent = originalText; }
+                } catch (error) { /* Erro já tratado no apiRequest */ }
+                finally { button.disabled = false; button.textContent = originalText; }
             };
             thankYouForm.addEventListener('submit', thankYouForm._submitListener);
 
@@ -2442,15 +2676,14 @@
             copyLinkBtn.addEventListener('click', copyLinkBtn._clickListener);
 
             createAnotherBtn.removeEventListener('click', createAnotherBtn._clickListener);
-            createAnotherBtn._clickListener = () => { hideResultScreen(); App.state.editingThankYouPageId = null; pageTitle.textContent = 'Criador de Página de Obrigado'; submitBtn.textContent = 'Gerar Página'; };
+            createAnotherBtn._clickListener = () => { hideResultScreenTY(); App.state.editingThankYouPageId = null; pageTitle.textContent = 'Criador de Página de Obrigado'; submitBtn.textContent = 'Gerar Página'; };
             createAnotherBtn.addEventListener('click', createAnotherBtn._clickListener);
 
-             if(backBtn) {
-                 backBtn.removeEventListener('click', backBtn._clickListener);
-                 backBtn._clickListener = () => { App.state.editingThankYouPageId = null; App.navigateTo('thankYouPages'); };
-                 backBtn.addEventListener('click', backBtn._clickListener);
-             }
+            backBtn.removeEventListener('click', backBtn._clickListener);
+            backBtn._clickListener = () => { App.state.editingThankYouPageId = null; App.navigateTo('thankYouPages'); };
+            backBtn.addEventListener('click', backBtn._clickListener);
         },
+
     };
 
     App.init();
