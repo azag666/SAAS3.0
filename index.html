@@ -39,7 +39,7 @@
                 radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.2), transparent 40%);
             background-size: 20px 20px, 100% 100%, 100% 100%;
         }
-        
+
         html, body, #app, .md\:flex {
             height: 100%;
             overflow: hidden; /* Impede scroll no body */
@@ -245,7 +245,7 @@
         #preview-content::-webkit-scrollbar-track { background: #f1f1f1; }
         #preview-content::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
         #preview-content::-webkit-scrollbar-thumb:hover { background: #555; }
-        
+
         #thankYouCreator #preview-wrapper {
             background-color: var(--bg-secondary);
             border-radius: 0.75rem;
@@ -305,10 +305,10 @@
                 const checkoutId = path.split('/')[2];
                 this.renderCheckoutPage(checkoutId);
                 return;
-            } 
-            else if (path.startsWith('/obrigado/')) { 
+            }
+            else if (path.startsWith('/obrigado/')) {
                 const pageId = path.split('/')[2];
-                this.renderStandaloneThankYouPage(pageId, origin); 
+                this.renderStandaloneThankYouPage(pageId, origin);
                 return;
             }
 
@@ -322,7 +322,7 @@
                     this.renderLayout();
                     this.navigateTo('dashboard');
                 } catch (e) {
-                    console.error("Erro ao inicializar:", e); 
+                    console.error("Erro ao inicializar:", e);
                     this.logout();
                 }
             } else {
@@ -330,7 +330,7 @@
                 this.addAuthEventListeners();
             }
         },
-        
+
         async renderCheckoutPage(checkoutId) {
             const appContainer = document.getElementById('app');
             appContainer.innerHTML = `<div id="app-loader" style="height: 100vh; display: flex; align-items: center; justify-content: center;"><svg class="animate-spin h-8 w-8 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span class="ml-3">Carregando...</span></div>`;
@@ -353,7 +353,7 @@
                 const mediaHTML = config.content.media_url
                     ? `<img src="${config.content.media_url}" alt="Preview da Oferta" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 0.5rem; margin-bottom: 1.5rem;">`
                     : '';
-                
+
                 let pricingHTML = '';
                 if (config.pricing.type === 'fixed' && Array.isArray(config.pricing.packages)) {
                     pricingHTML = config.pricing.packages.map((pkg, index) => `
@@ -389,7 +389,7 @@
                             </div>
                         </div>`
                     : '';
-                
+
                 const testimonials = Array.isArray(config.testimonials) ? config.testimonials : [];
                 const testimonialsHTML = testimonials.filter(t => t.name && t.text).length > 0
                     ? `<div style="margin-top: 2.5rem;">
@@ -422,8 +422,8 @@
                             --checkout-text-primary: ${primaryTextColor};
                             --checkout-text-secondary: ${secondaryTextColor};
                         }
-                        body, #app { 
-                            background-color: var(--checkout-bg) !important; 
+                        body, #app {
+                            background-color: var(--checkout-bg) !important;
                             font-family: 'Inter', sans-serif;
                             color: var(--checkout-text-primary);
                             height: auto;
@@ -464,14 +464,14 @@
                         .final-pay-btn:hover { filter: brightness(1.1); }
                         .final-pay-btn:disabled { background-color: #334155; color: #64748b; cursor: not-allowed; filter: none; }
                     </style>
-                    
+
                     ${countdownHTML}
                     <div id="checkout-body-wrapper" class="min-h-screen flex items-center justify-center p-4 animate-fade-in">
                         <div class="checkout-card w-full max-w-lg p-6 md:p-8 rounded-2xl shadow-lg">
                             ${mediaHTML}
                             <h1 class="text-2xl font-bold text-center" style="color: var(--checkout-text-primary);">${config.content.main_title || 'Oferta Especial'}</h1>
                             <p style="color: var(--checkout-text-secondary);" class="text-center mb-6">${config.content.subtitle || ''}</p>
-                            
+
                             ${pricingHTML}
                             ${orderBumpHTML}
 
@@ -493,15 +493,15 @@
 
                     function updatePayButtonText() {
                         if (!selectedPackage) return;
-                        
+
                         let totalValue = selectedPackage.value_cents;
                         let buttonText = `Pagar Agora (${formatCurrency(totalValue)})`;
-                        
+
                         if (orderBumpCheckbox && orderBumpCheckbox.checked && config.order_bump && config.order_bump.value_cents > 0) {
                             totalValue += config.order_bump.value_cents;
                             buttonText = `Pagar Agora (${formatCurrency(totalValue)})`;
                         }
-                        
+
                         payButton.textContent = buttonText;
                     }
 
@@ -514,18 +514,19 @@
 
                         const packageIndex = clickedPackage.dataset.packageIndex;
                         selectedPackage = config.pricing.packages[packageIndex];
-                        
+
                         updatePayButtonText();
                         payButton.disabled = false;
                     });
-                    
+
                     if (orderBumpCheckbox) {
                         orderBumpCheckbox.addEventListener('change', updatePayButtonText);
                     }
 
+                    // ******** ALTERAÇÃO AQUI ********
                     payButton.addEventListener('click', async () => {
                         if (!selectedPackage) { alert('Por favor, selecione um pacote válido.'); return; }
-                        
+
                         let totalValueCents = selectedPackage.value_cents;
                         if (orderBumpCheckbox && orderBumpCheckbox.checked && config.order_bump && config.order_bump.value_cents > 0) {
                             totalValueCents += config.order_bump.value_cents;
@@ -533,11 +534,18 @@
 
                         payButton.textContent = 'Gerando PIX...';
                         payButton.disabled = true;
-                        
+
+                        // 1. Captura o click_id da URL
+                        const urlParams = new URLSearchParams(window.location.search);
+                        // Aceita 'click_id' ou 'cid' como parâmetro
+                        const clickIdFromUrl = urlParams.get('click_id') || urlParams.get('cid') || null;
+
                         try {
+                            // 2. Envia o click_id (se existir) no corpo da requisição
                             const pixData = await this.apiRequest('/api/oferta/generate-pix', 'POST', {
                                 checkoutId: checkoutId,
-                                value_cents: totalValueCents
+                                value_cents: totalValueCents,
+                                click_id: clickIdFromUrl // Envia null ou o valor
                             });
                             this.showPixModal(pixData);
                         } catch (error) {
@@ -547,8 +555,9 @@
                             payButton.disabled = !selectedPackage;
                         }
                     });
+                    // ******** FIM DA ALTERAÇÃO ********
                 }
-                
+
                 if (config.conversion_elements.countdown.enabled) {
                     const timerEl = document.getElementById('countdown-timer');
                     if (timerEl) {
@@ -607,10 +616,40 @@
                     window.fbq('init', config.pixel_id); window.fbq('track', 'Purchase', { value: config.purchase_value, currency: 'BRL' }); console.log(`Pixel ${config.pixel_id} init and Purchase fired.`);
                 }
 
+                // ******** ALTERAÇÃO AQUI ********
                 if (config.utmify_integration_id) {
-                    const urlParams = new URLSearchParams(window.location.search); const trackingParameters = {}; ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'src', 'sck'].forEach(param => { if (urlParams.has(param)) { trackingParameters[param] = urlParams.get(param); } }); const customerData = { name: urlParams.get('name') || null, email: urlParams.get('email') || null, phone: urlParams.get('phone') || null };
-                    try { await this.apiRequest('/api/thank-you-pages/fire-utmify', 'POST', { pageId: pageId, trackingParameters: trackingParameters, customerData: customerData }); console.log("Utmify event fired (via backend)."); } catch (utmifyError) { console.error("Error firing Utmify event via backend:", utmifyError); }
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const trackingParameters = {};
+                    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'src', 'sck'].forEach(param => {
+                        if (urlParams.has(param)) {
+                            trackingParameters[param] = urlParams.get(param);
+                        }
+                    });
+
+                    // Captura o click_id e adiciona aos parâmetros de rastreamento
+                    const clickIdFromUrl = urlParams.get('click_id') || urlParams.get('cid');
+                    if (clickIdFromUrl) {
+                        trackingParameters.click_id = clickIdFromUrl; // Adiciona o click_id
+                    }
+
+                    const customerData = {
+                        name: urlParams.get('name') || null,
+                        email: urlParams.get('email') || null,
+                        phone: urlParams.get('phone') || null
+                    };
+
+                    try {
+                        await this.apiRequest('/api/thank-you-pages/fire-utmify', 'POST', {
+                            pageId: pageId,
+                            trackingParameters: trackingParameters, // Agora inclui o click_id, se existir
+                            customerData: customerData
+                        });
+                        console.log("Utmify event fired (via backend).");
+                    } catch (utmifyError) {
+                        console.error("Error firing Utmify event via backend:", utmifyError);
+                    }
                 }
+                // ******** FIM DA ALTERAÇÃO ********
 
             } catch (error) {
                 console.error("Erro ao renderizar página de obrigado:", error);
@@ -726,8 +765,8 @@
                             </a>
                             <div data-target="bots" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V5a1 1 0 00-1.447-.894l-4 2A1 1 0 0011 7v10zM4 17a1 1 0 001.447.894l4-2A1 1 0 0010 15V5a1 1 0 00-1.447-.894l-4 2A1 1 0 004 7v10z" /></svg>Gerenciar Bots</div>
                             <div data-target="pressels" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>Criador de Pressel</div>
-                            
-                            
+
+
                             <div data-target="checkouts" class="nav-link">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1H2V6z" clip-rule="evenodd" /><path d="M2 12a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2z" /></svg>
                                 <span>Checkouts</span>
@@ -738,8 +777,8 @@
                                 </svg>
                                 <span>Págs. de Obrigado</span>
                             </div>
-                            
-                            
+
+
                             <div data-target="pixels" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h10a3 3 0 013 3v5a.997.997 0 01-.293-.707zM5 4a1 1 0 00-1 1v.01L8 9.01l4-4.002V5a1 1 0 00-1-1H5z" clip-rule="evenodd" /></svg>Gerenciar Pixels</div>
                             <div data-target="transactions" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.158-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-.165 0-.33.018-.488.054a1 1 0 01-.502 1.765l.986.328c.73.243 1.196.96 1.196 1.765 0 1.132-.98 1.99-2.206 1.99-1.225 0-2.205-.858-2.205-1.99 0-.962.63-1.698 1.447-1.938l.986-.329a1 1 0 01.502-1.765z" /><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.838.385l-.234-.14a1 1 0 00-1.18.157l-1 1.732a1 1 0 00.157 1.18l.234.14A4.5 4.5 0 005.5 8.5v.092l-1.07.356a1 1 0 00-.503 1.765l.986.329a2.5 2.5 0 001.09.243v.092a4.5 4.5 0 001.838-.385l.234.14a1 1 0 001.18-.157l1-1.732a1 1 0 00-.157-1.18l-.234-.14a4.5 4.5 0 001.03-2.062V5z" clip-rule="evenodd" /></svg>Transações</div>
                             <div class="h-px bg-slate-700 my-2"></div>
@@ -1391,11 +1430,11 @@
                     // Limpa estados de edição ao navegar pelo menu
                     if (sidebarLink.dataset.target === 'checkouts') { this.state.editingCheckoutId = null; }
                     if (sidebarLink.dataset.target === 'thankYouPages') { this.state.editingThankYouPageId = null; }
-                    
+
                     // (Mantém a lógica antiga de 'pageCreator' por segurança, embora o link tenha sido removido)
-                    if (sidebarLink.dataset.target === 'pageCreator') { this.state.editingCheckoutId = null; } 
+                    if (sidebarLink.dataset.target === 'pageCreator') { this.state.editingCheckoutId = null; }
                     if (sidebarLink.dataset.target === 'thankYouCreator') { this.state.editingThankYouPageId = null; }
-                    
+
                     this.navigateTo(sidebarLink.dataset.target);
                 }
 
@@ -1428,7 +1467,7 @@
                 if (e.target.id === 'create-another-btn') { // Botão "Criar Outra" no modal de sucesso
                      const resultScreen = e.target.closest('#result-screen');
                      if(resultScreen) resultScreen.classList.add('hidden');
-                     
+
                      if (document.getElementById('thankYouCreator')) {
                          this.state.editingThankYouPageId = null;
                          this.initThankYouCreatorPage(); // Reinicializa o criador
@@ -1647,7 +1686,7 @@
             }
 
             contentContainer.innerHTML = `<div class="flex items-center justify-center h-full"><svg class="animate-spin h-6 w-6 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>`;
-            
+
             if (page === 'pageCreator' || page === 'thankYouCreator') {
                 contentContainer.classList.remove('overflow-y-auto', 'p-4', 'md:p-8');
                 contentContainer.classList.add('overflow-hidden');
@@ -1688,7 +1727,7 @@
                 const query = new URLSearchParams({ startDate: startDate || '', endDate: endDate || '' }).toString();
 
                 const metrics = await this.apiRequest(`/api/dashboard/metrics?${query}`);
-                this.state.data.dashboard = metrics; 
+                this.state.data.dashboard = metrics;
 
                 const updateElement = (id, value, isCurrency = false) => {
                     const el = document.getElementById(id);
@@ -1705,14 +1744,14 @@
                 updateElement('metric-paid-revenue', metrics.paid_revenue, true); // Passa Reais
 
                 const botsTableBody = document.getElementById('bots-performance-table');
-                if (botsTableBody && metrics.bots_performance) { 
+                if (botsTableBody && metrics.bots_performance) {
                     if (metrics.bots_performance.length > 0) {
                         botsTableBody.innerHTML = metrics.bots_performance.map(b => `
                             <tr class="hover:bg-slate-800/50">
                                 <td>${b.bot_name || 'N/A'}</td>
                                 <td>${this.formatNumber(b.total_clicks)}</td>
                                 <td>${this.formatNumber(b.total_pix_paid)}</td>
-                                <td>${this.formatNumber(b.paid_revenue, true)}</td> 
+                                <td>${this.formatNumber(b.paid_revenue, true)}</td>
                             </tr>`).join('');
                     } else {
                         botsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500 py-8">Nenhum dado de bot.</td></tr>';
@@ -1720,7 +1759,7 @@
                 }
 
                 const trafficTableBody = document.getElementById('traffic-by-state-table');
-                 if (trafficTableBody && metrics.clicks_by_state) { 
+                 if (trafficTableBody && metrics.clicks_by_state) {
                     if (metrics.clicks_by_state.length > 0) {
                         trafficTableBody.innerHTML = metrics.clicks_by_state.map(s => `<tr class="hover:bg-slate-800/50"><td>${s.state || 'N/A'}</td><td>${this.formatNumber(s.total_clicks)}</td></tr>`).join('');
                     } else {
@@ -1728,8 +1767,8 @@
                     }
                  }
 
-                this.renderRevenueChart(); 
-                this.fetchAchievementsAndRanking(); 
+                this.renderRevenueChart();
+                this.fetchAchievementsAndRanking();
             } catch (e) { console.error("Erro ao carregar métricas do painel:", e); }
         },
 
@@ -1743,7 +1782,7 @@
 
             try {
                 const data = await this.apiRequest('/api/dashboard/achievements-and-ranking');
-                
+
                 // Pega o faturamento pago (em Reais) do dashboard
                 const paidRevenueReais = parseFloat(this.state.data.dashboard.paid_revenue || 0);
 
@@ -1751,11 +1790,11 @@
                     achievementsList.innerHTML = data.userAchievements.map(ach => {
                         const icon = ach.is_completed ? '✅' : '🔒';
                         const textColor = ach.is_completed ? 'text-green-400' : 'text-gray-400';
-                        
+
                         // Assumindo que sales_goal vem em REAIS (ex: 1000.00)
                         const salesGoalReais = parseFloat(ach.sales_goal || 0);
                         const missingAmountReais = Math.max(0, salesGoalReais - paidRevenueReais);
-                        
+
                         const formattedMissing = missingAmountReais > 0
                             ? `Falta ${this.formatNumber(missingAmountReais, true)}` // Passa Reais
                             : 'Concluída!';
@@ -1799,11 +1838,11 @@
             const tableBody = document.getElementById('transactions-table-body');
             if (!tableBody) return;
             tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">Carregando transações...</td></tr>';
-            
+
             try {
                 const { startDate, endDate } = this.state.dateFilter;
                 const query = new URLSearchParams({ startDate: startDate || '', endDate: endDate || '' }).toString();
-                const transactions = await this.apiRequest(`/api/transactions?${query}`); 
+                const transactions = await this.apiRequest(`/api/transactions?${query}`);
                 this.state.data.transactions = transactions;
                 this.renderTransactionsTable();
             } catch (e) {
@@ -1838,7 +1877,7 @@
        handleFilterChange(page, period, customStartDate, customEndDate) {
             const now = new Date();
             let startDate, endDate;
-            
+
             const setTimeToStartOfDayUTC = (date) => { date.setUTCHours(0, 0, 0, 0); return date; }
             const setTimeToEndOfDay = (date) => { date.setUTCHours(23, 59, 59, 999); return date; };
 
@@ -2000,7 +2039,7 @@
                 });
                 if (!response.ok) throw new Error('Falha ao registrar clique.');
                 const { click_id } = await response.json();
-                
+
                 // Dispara ViewContent no Pixel da Meta
                 fbq('track', 'ViewContent', {}, { eventID: click_id });
 
@@ -2024,7 +2063,7 @@
             `;
             document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
         },
-        
+
         async testIndividualPixConnection(provider, button) {
              if(!provider) { this.showToast('Selecione um provedor para testar.', 'warning'); return; }
             const originalText = button.textContent;
@@ -2167,7 +2206,7 @@
                 });
             }, 5000);
         },
-        
+
         async fetchAndRenderCheckouts() {
             const tableBody = document.getElementById('checkouts-table-body');
             if (!tableBody) return;
@@ -2320,8 +2359,8 @@
                  if(App.state.editingCheckoutId){await App.apiRequest(`/api/checkouts/${App.state.editingCheckoutId}`,'PUT',cD); App.showToast('Atualizado!', 'success'); App.state.editingCheckoutId=null; App.navigateTo('checkouts');}else{const r=await App.apiRequest('/api/checkouts/create-hosted','POST',cD); if(r&&r.checkoutId){showResultScreen(r.checkoutId);}else{throw new Error('Erro API.');}}}catch(error){App.showToast(error.message||'Erro.','error'); b.disabled=false; b.textContent=oT;}
              };
              checkoutForm.addEventListener('submit', checkoutForm._submitListener);
-        }, 
-        
+        },
+
         async initThankYouCreatorPage() {
             const FRONTEND_URL = window.location.origin;
             const creatorScreen = document.getElementById('creator-screen');
