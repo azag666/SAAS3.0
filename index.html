@@ -710,7 +710,12 @@
                             <div class="card p-6 rounded-xl">
                                 <h2 class="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">6. Rastreamento e Estilo</h2>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div><label for="pixel_id" class="text-sm font-medium text-gray-400 mb-1 block">ID do Pixel da Meta</label><input id="pixel_id" type="text" class="form-input w-full p-2" placeholder="Cole o ID do seu Pixel" required></div>
+                                    <div>
+                                        <label for="pixel_id" class="text-sm font-medium text-gray-400 mb-1 block">Pixel da Meta</label>
+                                        <select id="pixel_id" class="form-select w-full p-2" required>
+                                            <option value="">-- Selecione um Pixel --</option>
+                                            </select>
+                                    </div>
                                     <div class="flex items-center gap-4">
                                         <div><label for="background_color" class="text-sm font-medium text-gray-400 mb-1 block">Fundo</label><input id="background_color" type="color" value="#0f172a" class="form-input h-10 w-16 p-1"></div>
                                         <div><label for="accent_color" class="text-sm font-medium text-gray-400 mb-1 block">Destaque</label><input id="accent_color" type="color" value="#38bdf8" class="form-input h-10 w-16 p-1"></div>
@@ -2039,6 +2044,7 @@
         },
 
         initCreatorPage() {
+            // *** CORREÇÃO: Bloco de código movido para DENTRO da função ***
             const FRONTEND_URL = 'https://hottrack.site'; // Ou o URL correto do seu frontend
 
             // Seleciona os elementos da página que acabamos de renderizar DENTRO DE #content
@@ -2081,6 +2087,23 @@
                 // Poderia mostrar um erro para o usuário aqui
                 return;
              }
+
+             // *** ADIÇÃO: Popula o select de Pixels ***
+             const pixelSelect = contentEl.querySelector('#pixel_id');
+             if (pixelSelect) {
+                 const pixelOptions = App.state.data.pixels.map(p =>
+                     `<option value="${p.pixel_id}">${p.account_name} (${p.pixel_id})</option>`
+                 ).join('');
+
+                 if (pixelOptions) {
+                     pixelSelect.innerHTML += pixelOptions; // Adiciona as opções carregadas
+                 } else {
+                     pixelSelect.innerHTML += '<option value="" disabled>Nenhum pixel cadastrado em "Gerenciar Pixels"</option>';
+                     if(submitBtn) submitBtn.disabled = true; // Desabilita criar checkout se não houver pixel
+                     App.showToast("Cadastre um pixel antes de criar uma página.", "warning");
+                 }
+             }
+             // *** FIM DA ADIÇÃO ***
 
             function showResultScreen(checkoutId) {
                 if (!checkoutLinkOutput || !resultScreen) return;
@@ -2224,7 +2247,7 @@
                         accent_color: getElValue('#accent_color', '#38bdf8')
                     },
                     tracking: {
-                        pixel_id: getElValue('#pixel_id', '')
+                        pixel_id: getElValue('#pixel_id', '') // Pega o valor do select
                     }
                 };
             }
@@ -2362,7 +2385,7 @@
             contentEl.addEventListener('click', (e) => {
                  if (e.target.id === 'add-package-btn') addPackage();
                  if (e.target.id === 'add-testimonial-btn') addTestimonial();
-                 
+
                  const removePackageBtn = e.target.closest('.remove-package-btn');
                  if (removePackageBtn) {
                      const packageId = removePackageBtn.dataset.id;
@@ -2389,7 +2412,7 @@
                      mobileViewBtn.classList.add('active');
                      desktopViewBtn.classList.remove('active');
                  }
-                 
+
                  // Listener do botão de copiar link
                  if (e.target.id === 'copy-link-btn') {
                      checkoutLinkOutput.select();
@@ -2399,7 +2422,7 @@
                          setTimeout(() => { e.target.textContent = 'Copiar Link'; }, 2000);
                      } catch(err) { App.showToast('Erro ao copiar', 'error'); }
                  }
-                 
+
                  // Listener do botão de fechar/criar outro
                  if (e.target.id === 'create-another-btn') {
                      hideResultScreen();
@@ -2423,10 +2446,10 @@
                      if (!configData.tracking.pixel_id) {
                          throw new Error('O ID do Pixel da Meta é obrigatório.');
                      }
-                     
+
                      // Envia os dados para a API
                      const response = await App.apiRequest('/api/checkouts/create-hosted', 'POST', { config: configData });
-                     
+
                      if (response && response.checkoutId) {
                          showResultScreen(response.checkoutId);
                      } else {
