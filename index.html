@@ -13,7 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-primary: #0f172a; /* slate-900 */
@@ -96,14 +96,14 @@
             box-shadow: 0 0 25px rgba(56, 189, 248, 0.5);
             transform: translateY(-2px);
         }
-        .btn:disabled { background-color: #334155; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn:disabled { background-color: #334155; cursor: not-allowed; transform: none; box-shadow: none; color: #64748b; }
 
         .btn-red { background-color: #991b1b; border-color: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.2); }
         .btn-red:hover { background-color: #b91c1c; box-shadow: 0 0 25px rgba(239, 68, 68, 0.5); }
         .btn-green { background-color: #047857; border-color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
         .btn-green:hover { background-color: #059669; box-shadow: 0 0 25px rgba(16, 185, 129, 0.5); }
         .btn-secondary { background-color: var(--border-color); border-color: #475569; box-shadow: none; }
-        .btn-secondary:hover { background-color: #475569; transform: translateY(-2px); }
+        .btn-secondary:hover { background-color: #475569; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }
         
         .nav-link {
             color: var(--text-secondary);
@@ -200,6 +200,50 @@
         }
 
         #app-loader { display: flex; align-items: center; justify-content: center; height: 100vh; font-size: 1.25rem; }
+
+        /* --- CSS ADICIONADO DO CRIADOR DE OFERTAS --- */
+        .form-textarea {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            border-radius: 0.375rem;
+        }
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        }
+        .form-checkbox { accent-color: var(--accent-primary); }
+        .btn-danger { background-color: #991b1b; }
+        .btn-danger:hover { background-color: #b91c1c; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); }
+        .btn-view { color: var(--text-secondary); }
+        .btn-view.active { background-color: var(--accent-secondary); color: white; }
+        
+        #preview-wrapper {
+            background-color: #fff;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            transition: all 0.3s ease-in-out;
+            overflow: hidden;
+        }
+        #preview-wrapper.mobile { max-width: 375px; height: 667px; border: 8px solid #1e293b; }
+        #preview-wrapper.desktop { width: 100%; height: 700px; }
+        #preview-content {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #888 #f1f1f1;
+        }
+        #preview-content::-webkit-scrollbar { width: 6px; }
+        #preview-content::-webkit-scrollbar-track { background: #f1f1f1; }
+        #preview-content::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+        #preview-content::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        /* --- FIM DO CSS ADICIONADO --- */
     </style>
 </head>
 <body>
@@ -544,23 +588,116 @@
                 </div>`;
             },
             pageCreator() {
-                return `
-                    <div class="animate-fade-in">
-                        <div class="mb-6">
-                            <h1 class="text-3xl font-bold text-white">Criador de Páginas</h1>
-                            <p class="text-slate-400">Crie páginas de checkout e de obrigado para suas campanhas.</p>
+                // return `
+                <div id="creator-screen" class="animate-fade-in">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <div>
+                            <h1 class="text-3xl font-bold text-white">Criador de Ofertas de Alta Conversão</h1>
+                            <p class="text-slate-400 mt-1">Configure à esquerda e veja o resultado à direita em tempo real.</p>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
-                            <a id="link-criador-ofertas" href="#" target="_blank" class="card p-8 rounded-lg text-center transition-all duration-300 hover:border-sky-400 hover:-translate-y-2">
-                                <h2 class="text-2xl font-bold text-white">Checkout de Alta Conversão</h2>
-                                <p class="text-slate-400 mt-2">Crie páginas de venda completas com order bump, escassez e prova social.</p>
-                            </a>
-                            <a id="link-criador-obrigado" href="#" target="_blank" class="card p-8 rounded-lg text-center transition-all duration-300 hover:border-sky-400 hover:-translate-y-2">
-                                <h2 class="text-2xl font-bold text-white">Página de Obrigado</h2>
-                                <p class="text-slate-400 mt-2">Gere páginas para disparar eventos de compra no navegador com valores definidos.</p>
-                            </a>
+                        <div class="flex items-center gap-4">
+                            <button type="submit" form="checkout-form" id="submit-btn" class="btn font-bold text-lg py-2 px-6">Criar Checkout</button>
                         </div>
                     </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <form id="checkout-form" class="space-y-6 h-[700px] overflow-y-auto pr-4">
+                            <div class="card p-6 rounded-xl">
+                                <h2 class="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">1. Conteúdo da Página</h2>
+                                <div class="space-y-4">
+                                    <div><label for="main_title" class="text-sm font-medium text-gray-400 mb-1 block">Título Principal</label><input id="main_title" type="text" class="form-input w-full p-2" value="Desbloqueie o Segredo Para um Corpo Definido" required></div>
+                                    <div><label for="subtitle" class="text-sm font-medium text-gray-400 mb-1 block">Subtítulo</label><input id="subtitle" type="text" class="form-input w-full p-2" value="Acesso exclusivo por tempo limitado à metodologia que já transformou 5.000+ vidas." required></div>
+                                    <div><label for="media_url" class="text-sm font-medium text-gray-400 mb-1 block">URL da Imagem/Vídeo (Opcional)</label><input id="media_url" type="url" class="form-input w-full p-2" placeholder="https://exemplo.com/imagem.png"></div>
+                                </div>
+                            </div>
+                            <div class="card p-6 rounded-xl">
+                                <h2 class="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">2. Preços</h2>
+                                <div class="mb-4">
+                                    <label for="pricing-type-select" class="text-sm font-medium text-gray-400 mb-1 block">Modelo de Preço</label>
+                                    <select id="pricing-type-select" class="form-select w-full p-2">
+                                        <option value="fixed">Pacotes com Preço Fixo</option>
+                                        <option value="open">Valor Aberto (Usuário Define o Preço)</option>
+                                    </select>
+                                </div>
+                                <div id="fixed-pricing-container">
+                                    <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-medium">Pacotes de Preços</h3><button type="button" id="add-package-btn" class="btn btn-secondary text-sm py-1 px-3">+ Pacote</button></div>
+                                    <div id="packages-container" class="space-y-4"></div>
+                                </div>
+                                <div id="open-pricing-container" class="hidden space-y-4">
+                                    <h3 class="text-lg font-medium">Configuração de Valor Aberto</h3>
+                                    <div><label for="open_value_label" class="text-sm font-medium text-gray-400 mb-1 block">Texto do Campo</label><input id="open_value_label" type="text" class="form-input w-full p-2" value="Escolha o valor que deseja pagar"></div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div><label for="open_value_min" class="text-sm font-medium text-gray-400 mb-1 block">Valor Mínimo (R$)</label><input id="open_value_min" type="number" step="0.01" min="0" class="form-input w-full p-2" value="5.00"></div>
+                                        <div><label for="open_value_suggested" class="text-sm font-medium text-gray-400 mb-1 block">Valor Sugerido (R$)</label><input id="open_value_suggested" type="number" step="0.01" min="0" class="form-input w-full p-2" value="50.00"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card p-6 rounded-xl">
+                                <h2 class="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">3. Order Bump (Opcional)</h2>
+                                <div class="flex items-center space-x-3 mb-4"><input id="enable_order_bump" type="checkbox" class="form-checkbox h-5 w-5 rounded"><label for="enable_order_bump" class="font-medium">Ativar Order Bump</label></div>
+                                <div id="order-bump-fields" class="hidden space-y-4">
+                                    <div><label for="order_bump_product_name" class="text-sm font-medium text-gray-400 mb-1 block">Nome do Produto</label><input id="order_bump_product_name" type="text" class="form-input w-full p-2" value="Ebook de Receitas Fit"></div>
+                                    <div><label for="order_bump_description" class="text-sm font-medium text-gray-400 mb-1 block">Descrição da Oferta</label><input id="order_bump_description" type="text" class="form-input w-full p-2" value="SIM! Quero adicionar o guia completo por apenas R$9,90!"></div>
+                                    <div><label for="order_bump_value" class="text-sm font-medium text-gray-400 mb-1 block">Valor (R$)</label><input id="order_bump_value" type="number" step="0.01" min="0" class="form-input w-full p-2" value="9.90"></div>
+                                </div>
+                            </div>
+                            <div class="card p-6 rounded-xl">
+                                <h2 class="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">4. Elementos de Conversão</h2>
+                                <div class="space-y-6">
+                                    <div>
+                                        <div class="flex items-center space-x-3 mb-2"><input id="enable_countdown" type="checkbox" class="form-checkbox h-5 w-5 rounded"><label for="enable_countdown" class="font-medium">Ativar Contador Regressivo</label></div>
+                                        <div id="countdown-fields" class="hidden"><label for="countdown_minutes" class="text-sm font-medium text-gray-400 mb-1 block">Duração em Minutos</label><input id="countdown_minutes" type="number" min="1" class="form-input w-full max-w-xs p-2" value="15"></div>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-medium mb-2">Selo de Garantia</h3>
+                                        <div class="space-y-4">
+                                            <div><label for="guarantee_text" class="text-sm font-medium text-gray-400 mb-1 block">Texto da Garantia</label><textarea id="guarantee_text" class="form-textarea w-full p-2" rows="3">Sua satisfação garantida ou seu dinheiro de volta em 7 dias. Risco zero!</textarea></div>
+                                            <div><label for="guarantee_seal_url" class="text-sm font-medium text-gray-400 mb-1 block">URL da Imagem do Selo (Opcional)</label><input id="guarantee_seal_url" type="url" class="form-input w-full p-2" placeholder="https://exemplo.com/selo.png"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card p-6 rounded-xl">
+                                <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2"><h2 class="text-xl font-semibold">5. Prova Social</h2><button type="button" id="add-testimonial-btn" class="btn btn-secondary text-sm py-1 px-3">+ Depoimento</button></div>
+                                <div id="testimonials-container" class="space-y-4"></div>
+                            </div>
+                            <div class="card p-6 rounded-xl">
+                                <h2 class="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">6. Rastreamento e Estilo</h2>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div><label for="pixel_id" class="text-sm font-medium text-gray-400 mb-1 block">ID do Pixel da Meta</label><input id="pixel_id" type="text" class="form-input w-full p-2" placeholder="Cole o ID do seu Pixel" required></div>
+                                    <div class="flex items-center gap-4">
+                                        <div><label for="background_color" class="text-sm font-medium text-gray-400 mb-1 block">Fundo</label><input id="background_color" type="color" value="#0f172a" class="form-input h-10 w-16 p-1"></div>
+                                        <div><label for="accent_color" class="text-sm font-medium text-gray-400 mb-1 block">Destaque</label><input id="accent_color" type="color" value="#38bdf8" class="form-input h-10 w-16 p-1"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        <div class="sticky top-8">
+                            <div class="flex justify-center items-center gap-2 mb-4">
+                                <div class="flex rounded-lg bg-slate-700 p-1">
+                                    <button id="desktop-view-btn" class="btn-view active px-3 py-1 text-xs rounded-md">Desktop</button>
+                                    <button id="mobile-view-btn" class="btn-view px-3 py-1 text-xs rounded-md">Mobile</button>
+                                </div>
+                            </div>
+                            <div id="preview-wrapper" class="desktop mx-auto">
+                                <div id="preview-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="result-screen" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center animate-fade-in z-50 p-4">
+                        <div class="card p-8 rounded-2xl w-full max-w-2xl mx-auto">
+                            <h2 class="text-2xl font-bold text-center text-green-400">Checkout Criado com Sucesso!</h2>
+                            <p class="text-slate-400 text-center mt-2 mb-6">Este é o link <span class="font-bold text-white">único e exclusivo</span> da sua nova página de oferta. Guarde-o e use-o em suas campanhas.</p>
+                            <div class="bg-slate-900 p-4 rounded-lg flex items-center gap-4">
+                                <input id="checkout-link-output" type="text" class="form-input flex-grow bg-transparent border-0" readonly>
+                                <button id="copy-link-btn" class="btn btn-secondary text-sm py-2 px-4 whitespace-nowrap">Copiar Link</button>
+                            </div>
+                            <div class="text-center mt-6">
+                                <button id="create-another-btn" class="btn text-sm py-2 px-5">Fechar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 `;
             },
             pixels() {
@@ -916,6 +1053,10 @@
                 const form = e.target.closest('form');
                 if (!form || form.id === 'loginForm' || form.id === 'registerForm' || form.id === 'verificationForm') return;
                 e.preventDefault();
+                
+                // Impede que o submit do checkoutForm (agora integrado) seja capturado aqui
+                if (form.id === 'checkout-form') return;
+
                 const button = form.querySelector('button[type="submit"]');
                 const originalButtonText = button.innerHTML;
                 button.innerHTML = 'Salvando...';
@@ -1118,16 +1259,8 @@
                 } else if (page === 'bots') {
                     this.updateAllBotStatusIndicators();
                 } else if (page === 'pageCreator') {
-                    const apiKey = this.state.data.settings.api_key;
-                    const token = this.state.token;
-                    const ofertaLink = document.getElementById('link-criador-ofertas');
-                    const obrigadoLink = document.getElementById('link-criador-obrigado');
-                    if(ofertaLink) {
-                        ofertaLink.href = `criador-de-ofertas.html?apiKey=${encodeURIComponent(apiKey)}&token=${encodeURIComponent(token)}`;
-                    }
-                    if(obrigadoLink) {
-                        obrigadoLink.href = `criador-pagina-obrigado.html?apiKey=${encodeURIComponent(apiKey)}&token=${encodeURIComponent(token)}`;
-                    }
+                    // O HTML foi renderizado, agora inicializa o JS do criador
+                    this.initCreatorPage();
                 }
             }, 50);
         },
@@ -1596,6 +1729,398 @@
                 toast.style.opacity = '0';
                 toast.addEventListener('transitionend', () => toast.remove());
             }, 5000);
+        },
+
+        // initCreatorPage() {
+            const FRONTEND_URL = 'https://hottrack.site';
+
+            // Seleciona os elementos da página que acabamos de renderizar
+            const creatorScreen = document.getElementById('creator-screen');
+            const resultScreen = document.getElementById('result-screen');
+            const checkoutForm = document.getElementById('checkout-form');
+            
+            const pricingTypeSelect = document.getElementById('pricing-type-select');
+            const fixedPricingContainer = document.getElementById('fixed-pricing-container');
+            const openPricingContainer = document.getElementById('open-pricing-container');
+
+            const packagesContainer = document.getElementById('packages-container');
+            const addPackageBtn = document.getElementById('add-package-btn');
+            const enableOrderBump = document.getElementById('enable_order_bump');
+            const orderBumpFields = document.getElementById('order-bump-fields');
+            const enableCountdown = document.getElementById('enable_countdown');
+            const countdownFields = document.getElementById('countdown-fields');
+            const testimonialsContainer = document.getElementById('testimonials-container');
+            const addTestimonialBtn = document.getElementById('add-testimonial-btn');
+            
+            const submitBtn = document.getElementById('submit-btn');
+            const checkoutLinkOutput = document.getElementById('checkout-link-output');
+            const copyLinkBtn = document.getElementById('copy-link-btn');
+            const createAnotherBtn = document.getElementById('create-another-btn');
+            
+            const previewContent = document.getElementById('preview-content');
+            const previewWrapper = document.getElementById('preview-wrapper');
+            const desktopViewBtn = document.getElementById('desktop-view-btn');
+            const mobileViewBtn = document.getElementById('mobile-view-btn');
+            
+            function showResultScreen(checkoutId) {
+                const link = `${FRONTEND_URL}/oferta/${checkoutId}`;
+                checkoutLinkOutput.value = link;
+                resultScreen.classList.remove('hidden');
+            }
+            
+            function hideResultScreen() {
+                resultScreen.classList.add('hidden');
+                checkoutForm.reset();
+                
+                pricingTypeSelect.value = 'fixed';
+                fixedPricingContainer.classList.remove('hidden');
+                openPricingContainer.classList.add('hidden');
+
+                packagesContainer.innerHTML = '';
+                testimonialsContainer.innerHTML = '';
+                orderBumpFields.classList.add('hidden');
+                countdownFields.classList.add('hidden');
+                
+                addPackage();
+                updatePreview();
+            }
+
+            let packageCount = 0;
+            function addPackage(title = 'Acesso Completo', desc = 'Todo o conteúdo liberado.', val = '29.90') {
+                packageCount++;
+                const el = document.createElement('div');
+                el.id = `package-${packageCount}`;
+                el.className = 'grid grid-cols-1 md:grid-cols-7 gap-4 border border-slate-700 p-4 rounded-lg';
+                el.innerHTML = `
+                    <div class="md:col-span-2"><label class="text-xs text-gray-400 mb-1 block">Nome do Pacote</label><input type="text" class="form-input w-full p-2 package-title" value="${title}" required></div>
+                    <div class="md:col-span-3"><label class="text-xs text-gray-400 mb-1 block">Descrição</label><input type="text" class="form-input w-full p-2 package-description" value="${desc}" required></div>
+                    <div class="md:col-span-1"><label class="text-xs text-gray-400 mb-1 block">Valor (R$)</label><input type="number" step="0.01" min="0" class="form-input w-full p-2 package-value" value="${val}" required></div>
+                    <div class="flex items-end"><button type="button" class="btn btn-danger w-full h-10 remove-package-btn" data-id="${packageCount}">X</button></div>
+                `;
+                packagesContainer.appendChild(el);
+            }
+            
+            let testimonialCount = 0;
+            function addTestimonial() {
+                testimonialCount++;
+                const el = document.createElement('div');
+                el.id = `testimonial-${testimonialCount}`;
+                el.className = 'border border-slate-700 p-4 rounded-lg space-y-3';
+                el.innerHTML = `
+                    <div class="flex justify-end"><button type="button" class="btn btn-danger text-xs py-1 px-2 remove-testimonial-btn" data-id="${testimonialCount}">Remover</button></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label class="text-xs text-gray-400 mb-1 block">Nome do Cliente</label><input type="text" class="form-input w-full p-2 testimonial-name" placeholder="Ex: João da Silva"></div>
+                        <div><label class="text-xs text-gray-400 mb-1 block">URL da Foto (Opcional)</label><input type="url" class="form-input w-full p-2 testimonial-photo" placeholder="https://..."></div>
+                    </div>
+                    <div><label class="text-xs text-gray-400 mb-1 block">Texto do Depoimento</label><textarea class="form-textarea w-full p-2 testimonial-text" rows="3" placeholder="Excelente produto..."></textarea></div>
+                `;
+                testimonialsContainer.appendChild(el);
+            }
+
+            function updatePreview() {
+                if (creatorScreen) {
+                    const data = getFormData();
+                    previewContent.innerHTML = generatePreviewHTML(data);
+                    
+                    const previewBody = previewContent.querySelector('#preview-body');
+                    if (previewBody) {
+                        previewBody.style.setProperty('--preview-bg', data.style.background_color);
+                        previewBody.style.setProperty('--preview-accent', data.style.accent_color);
+                    }
+                }
+            }
+
+            function getFormData() {
+                const pricingType = document.getElementById('pricing-type-select').value;
+                let pricingData;
+
+                if (pricingType === 'fixed') {
+                    pricingData = {
+                        type: 'fixed',
+                        packages: Array.from(document.querySelectorAll('#packages-container > div')).map(p => ({
+                            title: p.querySelector('.package-title').value,
+                            description: p.querySelector('.package-description').value,
+                            value_cents: Math.round(parseFloat(p.querySelector('.package-value').value || 0) * 100)
+                        }))
+                    };
+                } else { // 'open'
+                    pricingData = {
+                        type: 'open',
+                        label: document.getElementById('open_value_label').value,
+                        minimum_value_cents: Math.round(parseFloat(document.getElementById('open_value_min').value || 0) * 100),
+                        suggested_value_cents: Math.round(parseFloat(document.getElementById('open_value_suggested').value || 0) * 100)
+                    };
+                }
+                
+                return {
+                    content: {
+                        main_title: document.getElementById('main_title').value,
+                        subtitle: document.getElementById('subtitle').value,
+                        media_url: document.getElementById('media_url').value || null
+                    },
+                    pricing: pricingData,
+                    order_bump: {
+                        enabled: document.getElementById('enable_order_bump').checked,
+                        product_name: document.getElementById('order_bump_product_name').value,
+                        description: document.getElementById('order_bump_description').value,
+                        value_cents: Math.round(parseFloat(document.getElementById('order_bump_value').value || 0) * 100)
+                    },
+                    conversion_elements: {
+                        countdown: {
+                            enabled: document.getElementById('enable_countdown').checked,
+                            minutes: parseInt(document.getElementById('countdown_minutes').value) || 15
+                        },
+                        guarantee: {
+                            text: document.getElementById('guarantee_text').value,
+                            seal_url: document.getElementById('guarantee_seal_url').value || null
+                        }
+                    },
+                    testimonials: Array.from(document.querySelectorAll('#testimonials-container > div')).map(t => ({
+                        name: t.querySelector('.testimonial-name').value,
+                        text: t.querySelector('.testimonial-text').value,
+                        photo_url: t.querySelector('.testimonial-photo').value || null
+                    })),
+                    style: {
+                        background_color: document.getElementById('background_color').value,
+                        accent_color: document.getElementById('accent_color').value
+                    },
+                    tracking: {
+                        pixel_id: document.getElementById('pixel_id').value
+                    }
+                };
+            }
+
+            function generatePreviewHTML(data) {
+                const formatCurrency = (cents) => (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                const countdownHTML = data.conversion_elements.countdown.enabled 
+                    ? `<div style="background-color: var(--preview-accent); color: white; text-align: center; padding: 0.75rem;">
+                           <p style="font-weight: 600; font-size: 0.9rem;">A OFERTA TERMINA EM</p>
+                           <p style="font-size: 1.5rem; font-weight: 800; letter-spacing: 0.1em;">${String(data.conversion_elements.countdown.minutes).padStart(2, '0')}:00</p>
+                       </div>`
+                    : '';
+                    
+                const mediaHTML = data.content.media_url 
+                    ? `<img src="${data.content.media_url}" alt="Preview da Oferta" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 0.5rem; margin-bottom: 1.5rem;">`
+                    : '';
+                    
+                let pricingHTML;
+                if (data.pricing.type === 'open') {
+                    pricingHTML = `
+                        <div style="margin-top: 1.5rem;">
+                            <label for="preview-open-value" style="font-weight: 600; font-size: 1.1rem; color: #111827; display: block; text-align: center; margin-bottom: 0.75rem;">
+                                ${data.pricing.label || 'Escolha o valor que deseja pagar'}
+                            </label>
+                            <div style="position: relative; max-width: 250px; margin: 0 auto;">
+                                 <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #6b7280; font-weight: 600;">R$</span>
+                                 <input id="preview-open-value" type="number" step="0.01" 
+                                        placeholder="${(data.pricing.suggested_value_cents / 100).toFixed(2).replace('.', ',')}" 
+                                        style="width: 100%; border: 1px solid #d1d5db; padding: 1rem 1rem 1rem 3rem; border-radius: 0.5rem; text-align: center; font-size: 1.5rem; font-weight: 700;">
+                            </div>
+                            <p style="font-size: 0.8rem; text-align: center; color: #6b7280; margin-top: 0.5rem;">Valor mínimo: ${formatCurrency(data.pricing.minimum_value_cents)}</p>
+                        </div>
+                    `;
+                } else {
+                    pricingHTML = (data.pricing.packages.length > 0 ? data.pricing.packages : [{title: '', description: '', value_cents: 0}]).map((pkg, index) => `
+                        <div style="border: 1px solid #e5e7eb; padding: 1rem; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;"
+                             onclick="this.style.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--preview-accent'); this.style.boxShadow = '0 0 0 2px ' + getComputedStyle(document.documentElement).getPropertyValue('--preview-accent');">
+                            <h3 style="font-weight: 700; font-size: 1.1rem; color: #111827;">${pkg.title || 'Nome do Pacote'}</h3>
+                            <p style="font-size: 0.9rem; color: #6b7280; margin-top: 0.25rem;">${pkg.description || 'Descrição do pacote'}</p>
+                            <p style="font-size: 1.5rem; font-weight: 800; color: var(--preview-accent); margin-top: 0.75rem;">${formatCurrency(pkg.value_cents)}</p>
+                        </div>
+                    `).join('');
+                    pricingHTML = `<div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">${pricingHTML}</div>`;
+                }
+
+                const orderBumpHTML = data.order_bump.enabled && data.order_bump.product_name
+                    ? `<div style="background-color: #fefce8; border: 2px dashed #facc15; padding: 1rem; border-radius: 0.5rem; margin-top: 1.5rem;">
+                           <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                               <input type="checkbox" style="width: 1.5rem; height: 1.5rem; margin-top: 0.25rem; accent-color: #ca8a04;">
+                               <div>
+                                   <h4 style="font-weight: 700; color: #ca8a04;">${data.order_bump.product_name}</h4>
+                                   <p style="font-size: 0.9rem; color: #4b5563;">${data.order_bump.description}</p>
+                               </div>
+                           </div>
+                       </div>`
+                    : '';
+                    
+                const guaranteeHTML = data.conversion_elements.guarantee.text
+                    ? `<div style="margin-top: 2rem; display: flex; align-items: center; gap: 1rem; background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
+                            ${data.conversion_elements.guarantee.seal_url ? `<img src="${data.conversion_elements.guarantee.seal_url}" alt="Selo de Garantia" style="width: 60px; height: 60px;">` : ''}
+                            <div>
+                                <h4 style="font-weight: 700; color: #374151;">Garantia Total</h4>
+                                <p style="font-size: 0.9rem; color: #6b7280;">${data.conversion_elements.guarantee.text}</p>
+                            </div>
+                        </div>`
+                    : '';
+
+                const testimonialsHTML = data.testimonials.filter(t => t.name && t.text).length > 0
+                    ? `<div style="margin-top: 2.5rem;">
+                           <h3 style="font-size: 1.5rem; font-weight: 800; text-align: center; color: ${data.style.background_color === '#0f172a' ? '#f1f5f9' : '#111827'}; margin-bottom: 1.5rem;">O Que Nossos Clientes Dizem</h3>
+                           <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                               ${data.testimonials.map(t => `
+                                   <div style="background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb; color: #1f2937;">
+                                       <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                                           ${t.photo_url ? `<img src="${t.photo_url}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">` : ''}
+                                           <p style="font-weight: 600; color: #111827;">${t.name}</p>
+                                       </div>
+                                       <p style="font-size: 0.9rem; color: #4b5563; font-style: italic;">"${t.text}"</p>
+                                   </div>
+                               `).join('')}
+                           </div>
+                       </div>`
+                    : '';
+
+                return `
+                    <div id="preview-body" style="background-color: var(--preview-bg); color: #1f2937; min-height: 100%; font-family: 'Inter', sans-serif;">
+                        ${countdownHTML}
+                        <div style="padding: 1.5rem 2rem;">
+                            <h1 style="font-size: 1.8rem; font-weight: 800; text-align: center; color: ${data.style.background_color === '#0f172a' ? '#f1f5f9' : '#111827'};">${data.content.main_title || 'Título da Oferta'}</h1>
+                            <p style="text-align: center; color: ${data.style.background_color === '#0f172a' ? '#94a3b8' : '#6b7280'}; margin-top: 0.5rem; margin-bottom: 2rem;">${data.content.subtitle || 'Subtítulo da oferta'}</p>
+                            ${mediaHTML}
+                            ${pricingHTML}
+                            ${orderBumpHTML}
+                            <button disabled style="width: 100%; background-color: var(--preview-accent); color: white; font-weight: 700; padding: 1rem; border-radius: 0.5rem; margin-top: 1.5rem; font-size: 1.1rem; text-transform: uppercase; border: none; cursor: not-allowed;">Comprar Agora</button>
+                            ${guaranteeHTML}
+                            ${testimonialsHTML}
+                        </div>
+                    </div>`;
+            }
+
+            // --- INÍCIO DA LÓGICA DE INICIALIZAÇÃO ---
+            addPackage();
+            updatePreview();
+
+            // Anexa listeners ao container de conteúdo para esta página
+            const contentEl = document.getElementById('content');
+            if (!contentEl) return;
+
+            // Limpa listeners antigos (importante para SPAs)
+            // Abordagem simples: clonar e substituir o nó remove todos os listeners.
+            // Mas isso pode ser destrutivo. Vamos usar listeners específicos.
+            // Para este caso, como os elementos são recriados, podemos apenas
+            // anexar os novos listeners aos IDs que sabemos que existem.
+            
+            // Usamos 'contentEl.querySelector' para garantir que pegamos os elementos
+            // da página recém-renderizada.
+
+            contentEl.addEventListener('click', (e) => {
+                // Esses listeners precisam ser específicos para esta página
+                if (App.state.currentPage !== 'pageCreator') return;
+
+                if (e.target.classList.contains('remove-package-btn')) {
+                    const pkg = document.getElementById(`package-${e.target.dataset.id}`);
+                    if(pkg) pkg.remove();
+                    updatePreview();
+                }
+                if (e.target.classList.contains('remove-testimonial-btn')) {
+                    const tst = document.getElementById(`testimonial-${e.target.dataset.id}`);
+                    if(tst) tst.remove();
+                    updatePreview();
+                }
+                if(e.target.id === 'add-package-btn') {
+                     addPackage('', '', ''); 
+                     updatePreview();
+                }
+                if(e.target.id === 'add-testimonial-btn') {
+                    addTestimonial(); 
+                    updatePreview();
+                }
+                if(e.target.id === 'copy-link-btn') {
+                    const btn = e.target;
+                    const output = document.getElementById('checkout-link-output');
+                    if(output) {
+                        output.select();
+                        document.execCommand('copy');
+                        btn.textContent = 'Copiado!';
+                        setTimeout(() => { btn.textContent = 'Copiar Link'; }, 2000);
+                    }
+                }
+                if(e.target.id === 'create-another-btn') {
+                    hideResultScreen();
+                }
+                if(e.target.id === 'desktop-view-btn') {
+                    const wrapper = document.getElementById('preview-wrapper');
+                    if(wrapper) {
+                        wrapper.classList.add('desktop');
+                        wrapper.classList.remove('mobile');
+                        e.target.classList.add('active');
+                        document.getElementById('mobile-view-btn').classList.remove('active');
+                    }
+                }
+                if(e.target.id === 'mobile-view-btn') {
+                    const wrapper = document.getElementById('preview-wrapper');
+                    if(wrapper) {
+                        wrapper.classList.remove('desktop');
+                        wrapper.classList.add('mobile');
+                        e.target.classList.add('active');
+                        document.getElementById('desktop-view-btn').classList.remove('active');
+                    }
+                }
+            });
+
+            contentEl.addEventListener('change', (e) => {
+                if (App.state.currentPage !== 'pageCreator') return;
+
+                if(e.target.id === 'enable_order_bump') {
+                    document.getElementById('order-bump-fields').classList.toggle('hidden', !e.target.checked);
+                    updatePreview();
+                }
+                if(e.target.id === 'enable_countdown') {
+                    document.getElementById('countdown-fields').classList.toggle('hidden', !e.target.checked);
+                    updatePreview();
+                }
+                if(e.target.id === 'pricing-type-select') {
+                    const isFixed = e.target.value === 'fixed';
+                    document.getElementById('fixed-pricing-container').classList.toggle('hidden', !isFixed);
+                    document.getElementById('open-pricing-container').classList.toggle('hidden', isFixed);
+                    updatePreview();
+                }
+            });
+
+            const creatorForm = contentEl.querySelector('#checkout-form');
+            if(creatorForm) {
+                creatorForm.addEventListener('input', updatePreview);
+                
+                // Anexa o listener de submit específico
+                creatorForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const btn = document.getElementById('submit-btn');
+                    btn.textContent = 'Criando...';
+                    btn.disabled = true;
+
+                    const payload = getFormData();
+
+                    if(payload.pricing.type === 'fixed' && (payload.pricing.packages.length === 0 || !payload.pricing.packages[0].title)) {
+                        alert('Adicione e preencha pelo menos um pacote de preço.');
+                        btn.textContent = 'Criar Checkout';
+                        btn.disabled = false;
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch(`${App.state.API_BASE_URL}/api/checkouts/create-hosted`, {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json', 
+                                'x-api-key': App.state.data.settings.api_key 
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                        
+                        const result = await response.json();
+                        if (!response.ok) throw new Error(result.message || 'Ocorreu um erro.');
+                        
+                        showResultScreen(result.checkoutId);
+
+                    } catch (error) {
+                        App.showToast(`Erro ao criar checkout: ${error.message}`, 'error');
+                    } finally {
+                        btn.textContent = 'Criar Checkout';
+                        btn.disabled = false;
+                    }
+                });
+            }
         }
     };
 
