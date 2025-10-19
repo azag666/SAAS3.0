@@ -1712,7 +1712,7 @@
                                 <td>${b.bot_name || 'N/A'}</td>
                                 <td>${this.formatNumber(b.total_clicks)}</td>
                                 <td>${this.formatNumber(b.total_pix_paid)}</td>
-                                <td>${this.formatNumber(b.paid_revenue, true)}</td> {/* Passa Reais */}
+                                <td>${this.formatNumber(b.paid_revenue, true)}</td> 
                             </tr>`).join('');
                     } else {
                         botsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500 py-8">Nenhum dado de bot.</td></tr>';
