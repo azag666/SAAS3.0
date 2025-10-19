@@ -613,7 +613,7 @@
                     </div>
                     <div class="card p-6 rounded-lg mb-8">
                         <h2 class="text-xl font-semibold text-white mb-4">Desempenho de Faturamento</h2>
-                        <canvas id="revenueChart" height="100"></canvas>
+                        <div class="relative h-96"> <canvas id="revenueChart"></canvas> </div>
                     </div>
                     <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
                         <div class="card p-6 rounded-lg lg:col-span-2"><h2 class="text-xl font-semibold text-white mb-4">Desempenho por Bot</h2><div id="bots-performance-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Bot</th><th>Cliques</th><th>Vendas</th><th>Faturamento</th></tr></thead><tbody id="bots-performance-table"><tr><td colspan="4">Carregando...</td></tr></tbody></table></div></div>
@@ -1444,8 +1444,12 @@
                 updateElement('metric-clicks', metrics.total_clicks);
                 updateElement('metric-generated', metrics.total_pix_generated);
                 updateElement('metric-paid', metrics.total_pix_paid);
-                updateElement('metric-total-revenue', metrics.total_revenue, true);
-                updateElement('metric-paid-revenue', metrics.paid_revenue, true);
+                
+                // **** CORREÇÃO DO BUG DE FATURAMENTO ****
+                // Converte Reais (assumido da API) para centavos, que é o que formatNumber espera
+                updateElement('metric-total-revenue', Math.round(parseFloat(metrics.total_revenue || 0) * 100), true);
+                updateElement('metric-paid-revenue', Math.round(parseFloat(metrics.paid_revenue || 0) * 100), true);
+                // **** FIM DA CORREÇÃO ****
 
                 const botsTableBody = document.getElementById('bots-performance-table');
                 if (botsTableBody && metrics.bots_performance) { // Verifica se 'bots_performance' existe
@@ -1487,8 +1491,10 @@
             try {
                 const data = await this.apiRequest('/api/dashboard/achievements-and-ranking');
 
-                // Pega o faturamento PAGO atual do estado (já formatado em centavos pela API)
-                const paidRevenueCents = this.state.data.dashboard.paid_revenue || 0;
+                // **** CORREÇÃO DO BUG DE FATURAMENTO ****
+                // Converte o faturamento pago (que vem em REAIS do API) para centavos
+                const paidRevenueCents = Math.round(parseFloat(this.state.data.dashboard.paid_revenue || 0) * 100);
+                // **** FIM DA CORREÇÃO ****
 
                 if (data.userAchievements && data.userAchievements.length > 0) {
                     achievementsList.innerHTML = data.userAchievements.map(ach => {
@@ -1517,8 +1523,13 @@
                     rankingList.innerHTML = data.topSellersRanking.map((seller, index) => {
                         const rank = index + 1;
                         const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
-                        // total_revenue vem em centavos da API
-                        const revenue = this.formatNumber(seller.total_revenue || 0, true);
+                        
+                        // **** CORREÇÃO DO BUG DE FATURAMENTO ****
+                        // total_revenue (ranking) vem em REAIS da API, multiplica por 100 para formatNumber
+                        const revenueInCents = Math.round(parseFloat(seller.total_revenue || 0) * 100);
+                        const revenue = this.formatNumber(revenueInCents, true);
+                        // **** FIM DA CORREÇÃO ****
+                        
                         return `<div class="p-2 bg-slate-900/50 rounded-lg flex justify-between items-center"><span class="font-bold text-lg w-8 text-center">${medal}</span><span class="text-sm flex-1">${seller.name || 'Vendedor'}</span><span class="text-xs text-gray-400">${revenue}</span></div>`;
                     }).join('');
                 } else {
@@ -1536,7 +1547,7 @@
             }
         },
 
-        // *** FUNÇÃO ADICIONADA ***
+        // *** FUNÇÃO ADICIONADA NA CORREÇÃO ANTERIOR ***
         async fetchTransactions() {
             const tableBody = document.getElementById('transactions-table-body');
             if (!tableBody) return; // Sai se a tabela não estiver na página
@@ -1563,18 +1574,15 @@
             }
         },
 
+        // *** FUNÇÃO MODIFICADA NA CORREÇÃO ANTERIOR ***
         renderTransactionsTable() {
             const tableBody = document.getElementById('transactions-table-body');
             if (!tableBody) return;
 
-            // *** BLOCO DE FILTRO REMOVIDO DAQUI ***
-
-            // *** CÓDIGO MODIFICADO ***
             const transactionsToRender = this.state.data.transactions || [];
 
             if (transactionsToRender.length > 0) {
                 tableBody.innerHTML = transactionsToRender.map(t => {
-            // *** FIM DA MODIFICAÇÃO ***
                     const statusClass = t.status === 'paid' ? 'text-green-400 bg-green-500/10' : 'text-yellow-400 bg-yellow-500/10';
                     const statusText = t.status === 'paid' ? 'Pago' : 'Pendente';
                     // pix_value vem em REAIS do backend, convertemos para centavos para formatNumber
@@ -1680,7 +1688,7 @@
 
             // Chama a função apropriada para atualizar os dados da página
             if (page === 'dashboard') this.fetchDashboardMetrics();
-            // *** LINHA MODIFICADA ***
+            // *** LINHA MODIFICADA NA CORREÇÃO ANTERIOR ***
             else if (page === 'transactions') this.fetchTransactions();
         },
 
@@ -2482,9 +2490,7 @@
                      button.disabled = false;
                  }
              });
-        }, // *** FIM DA FUNÇÃO initCreatorPage ***
-        
-        // *** BLOCO DE CÓDIGO DUPLICADO FOI REMOVIDO DESTA ÁREA ***
+        }, 
     };
 
     App.init();
