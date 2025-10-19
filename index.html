@@ -39,8 +39,7 @@
                 radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.2), transparent 40%);
             background-size: 20px 20px, 100% 100%, 100% 100%;
         }
-
-        /* Correção para scroll de main#content */
+        
         html, body, #app, .md\:flex {
             height: 100%;
             overflow: hidden; /* Impede scroll no body */
@@ -56,8 +55,6 @@
                 height: 100%; /* Em desktop, o header não afeta */
             }
         }
-        /* Fim da correção */
-
 
         .card {
             background-color: var(--bg-card);
@@ -94,8 +91,8 @@
             box-shadow: 0 0 15px rgba(14, 165, 233, 0.2), inset 0 0 8px rgba(255, 255, 255, 0.1);
             position: relative;
             overflow: hidden;
-            border-radius: 0.375rem; /* Adicionado raio de borda padrão */
-            font-weight: 600; /* Adicionado peso da fonte padrão */
+            border-radius: 0.375rem;
+            font-weight: 600;
         }
         .btn:before {
             content: '';
@@ -222,7 +219,6 @@
 
         #app-loader { display: flex; align-items: center; justify-content: center; height: 100vh; font-size: 1.25rem; }
 
-        /* --- CSS ADICIONADO DO CRIADOR DE OFERTAS --- */
         .form-checkbox { accent-color: var(--accent-primary); }
         .btn-danger { background-color: #991b1b; }
         .btn-danger:hover { background-color: #b91c1c; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); }
@@ -249,9 +245,8 @@
         #preview-content::-webkit-scrollbar-track { background: #f1f1f1; }
         #preview-content::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
         #preview-content::-webkit-scrollbar-thumb:hover { background: #555; }
-
-        /* Estilos para a preview da Página de Obrigado */
-        #thankYouCreator #preview-wrapper { /* Seletor mais específico para a preview da TY page */
+        
+        #thankYouCreator #preview-wrapper {
             background-color: var(--bg-secondary);
             border-radius: 0.75rem;
             box-shadow: 0 10px 40px rgba(0,0,0,0.4);
@@ -275,7 +270,7 @@
     <script>
     const App = {
         state: {
-            API_BASE_URL: 'https://novaapi-one.vercel.app', // Ou seu URL local para testes
+            API_BASE_URL: 'https://novaapi-one.vercel.app',
             token: null,
             data: {
                 pixels: [],
@@ -286,11 +281,10 @@
                 dashboard: {},
                 utmifyIntegrations: [],
                 checkouts: []
-                // thankYouPages: [], // Poderia adicionar aqui se precisar dos dados em cache
             },
             currentPage: 'dashboard',
             editingCheckoutId: null,
-            editingThankYouPageId: null, // Estado para controlar edição da página de obrigado
+            editingThankYouPageId: null,
             dateFilter: {
                 period: 'all',
                 startDate: null,
@@ -307,19 +301,17 @@
             const path = window.location.pathname;
             const origin = window.location.origin;
 
-            // Roteamento do lado do cliente para páginas públicas
             if (path.startsWith('/oferta/')) {
                 const checkoutId = path.split('/')[2];
                 this.renderCheckoutPage(checkoutId);
-                return; // Interrompe a inicialização normal do painel
-            }
-            else if (path.startsWith('/obrigado/')) {
+                return;
+            } 
+            else if (path.startsWith('/obrigado/')) { 
                 const pageId = path.split('/')[2];
-                this.renderStandaloneThankYouPage(pageId, origin);
-                return; // Interrompe a inicialização normal do painel
+                this.renderStandaloneThankYouPage(pageId, origin); 
+                return;
             }
 
-            // Lógica do painel principal (protegido)
             this.state.token = localStorage.getItem('hottrack_token');
             if (this.state.token) {
                 try {
@@ -330,7 +322,7 @@
                     this.renderLayout();
                     this.navigateTo('dashboard');
                 } catch (e) {
-                    console.error("Erro ao inicializar:", e);
+                    console.error("Erro ao inicializar:", e); 
                     this.logout();
                 }
             } else {
@@ -338,7 +330,7 @@
                 this.addAuthEventListeners();
             }
         },
-
+        
         async renderCheckoutPage(checkoutId) {
             const appContainer = document.getElementById('app');
             appContainer.innerHTML = `<div id="app-loader" style="height: 100vh; display: flex; align-items: center; justify-content: center;"><svg class="animate-spin h-8 w-8 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span class="ml-3">Carregando...</span></div>`;
@@ -351,8 +343,17 @@
 
                 const formatCurrency = (cents) => (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-                const countdownHTML = config.conversion_elements.countdown.enabled ? `<div style="background-color: var(--checkout-accent, #38bdf8); color: white; text-align: center; padding: 0.75rem; position: sticky; top: 0; z-index: 10;"><p style="font-weight: 600; font-size: 0.9rem;">A OFERTA TERMINA EM</p><p id="countdown-timer" style="font-size: 1.5rem; font-weight: 800; letter-spacing: 0.1em;">--:--</p></div>` : '';
-                const mediaHTML = config.content.media_url ? `<img src="${config.content.media_url}" alt="Preview da Oferta" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 0.5rem; margin-bottom: 1.5rem;">` : '';
+                const countdownHTML = config.conversion_elements.countdown.enabled
+                    ? `<div style="background-color: var(--checkout-accent, #38bdf8); color: white; text-align: center; padding: 0.75rem; position: sticky; top: 0; z-index: 10;">
+                           <p style="font-weight: 600; font-size: 0.9rem;">A OFERTA TERMINA EM</p>
+                           <p id="countdown-timer" style="font-size: 1.5rem; font-weight: 800; letter-spacing: 0.1em;">--:--</p>
+                       </div>`
+                    : '';
+
+                const mediaHTML = config.content.media_url
+                    ? `<img src="${config.content.media_url}" alt="Preview da Oferta" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 0.5rem; margin-bottom: 1.5rem;">`
+                    : '';
+                
                 let pricingHTML = '';
                 if (config.pricing.type === 'fixed' && Array.isArray(config.pricing.packages)) {
                     pricingHTML = config.pricing.packages.map((pkg, index) => `
@@ -366,14 +367,205 @@
                 } else {
                      pricingHTML = '<p class="text-center text-red-400">Erro na configuração de preços.</p>';
                 }
-                const orderBumpHTML = config.order_bump.enabled && config.order_bump.product_name ? `<div style="background-color: #fefce8; border: 2px dashed #facc15; padding: 1rem; border-radius: 0.5rem; margin-top: 1.5rem;"><div style="display: flex; align-items: flex-start; gap: 0.75rem;"><input id="order-bump-checkbox" type="checkbox" style="width: 1.5rem; height: 1.5rem; margin-top: 0.25rem; accent-color: #ca8a04;"><div><h4 style="font-weight: 700; color: #ca8a04;">${config.order_bump.product_name}</h4><p style="font-size: 0.9rem; color: #4b5563;">${config.order_bump.description}</p></div></div></div>` : '';
-                const guaranteeHTML = config.conversion_elements.guarantee.text ? `<div style="margin-top: 2rem; display: flex; align-items: center; gap: 1rem; background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb;">${config.conversion_elements.guarantee.seal_url ? `<img src="${config.conversion_elements.guarantee.seal_url}" alt="Selo de Garantia" style="width: 60px; height: 60px;">` : ''}<div><h4 style="font-weight: 700; color: #374151;">Garantia Total</h4><p style="font-size: 0.9rem; color: #6b7280;">${config.conversion_elements.guarantee.text}</p></div></div>` : '';
+
+                const orderBumpHTML = config.order_bump.enabled && config.order_bump.product_name
+                    ? `<div style="background-color: #fefce8; border: 2px dashed #facc15; padding: 1rem; border-radius: 0.5rem; margin-top: 1.5rem;">
+                           <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                               <input id="order-bump-checkbox" type="checkbox" style="width: 1.5rem; height: 1.5rem; margin-top: 0.25rem; accent-color: #ca8a04;">
+                               <div>
+                                   <h4 style="font-weight: 700; color: #ca8a04;">${config.order_bump.product_name}</h4>
+                                   <p style="font-size: 0.9rem; color: #4b5563;">${config.order_bump.description}</p>
+                               </div>
+                           </div>
+                       </div>`
+                    : '';
+
+                const guaranteeHTML = config.conversion_elements.guarantee.text
+                    ? `<div style="margin-top: 2rem; display: flex; align-items: center; gap: 1rem; background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
+                            ${config.conversion_elements.guarantee.seal_url ? `<img src="${config.conversion_elements.guarantee.seal_url}" alt="Selo de Garantia" style="width: 60px; height: 60px;">` : ''}
+                            <div>
+                                <h4 style="font-weight: 700; color: #374151;">Garantia Total</h4>
+                                <p style="font-size: 0.9rem; color: #6b7280;">${config.conversion_elements.guarantee.text}</p>
+                            </div>
+                        </div>`
+                    : '';
+                
                 const testimonials = Array.isArray(config.testimonials) ? config.testimonials : [];
-                const testimonialsHTML = testimonials.filter(t => t.name && t.text).length > 0 ? `<div style="margin-top: 2.5rem;"><h3 style="font-size: 1.5rem; font-weight: 800; text-align: center; color: var(--checkout-text-primary); margin-bottom: 1.5rem;">O Que Nossos Clientes Dizem</h3><div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">${testimonials.map(t => `<div style="background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb; color: #1f2937;"><div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">${t.photo_url ? `<img src="${t.photo_url}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">` : ''}<p style="font-weight: 600; color: #111827;">${t.name}</p></div><p style="font-size: 0.9rem; color: #4b5563; font-style: italic;">"${t.text}"</p></div>`).join('')}</div></div>` : '';
-                const bgColor = config.style.background_color || '#0f172a'; const accentColor = config.style.accent_color || '#38bdf8'; const isDarkBg = (parseInt(bgColor.substring(1,3),16)*0.299+parseInt(bgColor.substring(3,5),16)*0.587+parseInt(bgColor.substring(5,7),16)*0.114)<186; const primaryTextColor = isDarkBg?'#f1f5f9':'#111827'; const secondaryTextColor = isDarkBg?'#94a3b8':'#4b5563';
-                const checkoutHTML = `<style>:root{--checkout-bg:${bgColor};--checkout-accent:${accentColor};--checkout-text-primary:${primaryTextColor};--checkout-text-secondary:${secondaryTextColor};}body,#app{background-color:var(--checkout-bg) !important;font-family:'Inter',sans-serif;color:var(--checkout-text-primary);height:auto;overflow-y:auto;}.checkout-card{background-color:${isDarkBg?'rgba(30,41,59,0.6)':'rgba(255,255,255,0.8)'};border:1px solid ${isDarkBg?'#334155':'#e5e7eb'};backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:var(--checkout-text-primary);}.package-item{background-color:${isDarkBg?'#1e293b':'#ffffff'};border-color:${isDarkBg?'#334155':'#e5e7eb'};}.package-item h3{color:${isDarkBg?'#f1f5f9':'#111827'};}.package-item p{color:${isDarkBg?'#94a3b8':'#6b7280'};}.package-item:hover{border-color:var(--checkout-accent);}.package-item.selected{border-color:var(--checkout-accent);box-shadow:0 0 0 2px var(--checkout-accent);}.final-pay-btn{background-color:var(--checkout-accent);color:${(parseInt(accentColor.substring(1,3),16)*0.299+parseInt(accentColor.substring(3,5),16)*0.587+parseInt(accentColor.substring(5,7),16)*0.114)<186?'#FFFFFF':'#000000'};font-weight:700;padding:1rem;border-radius:0.5rem;margin-top:1.5rem;font-size:1.1rem;text-transform:uppercase;border:none;width:100%;cursor:pointer;transition:all 0.2s ease;}.final-pay-btn:hover{filter:brightness(1.1);}.final-pay-btn:disabled{background-color:#334155;color:#64748b;cursor:not-allowed;filter:none;}</style>${countdownHTML}<div id="checkout-body-wrapper" class="min-h-screen flex items-center justify-center p-4 animate-fade-in"><div class="checkout-card w-full max-w-lg p-6 md:p-8 rounded-2xl shadow-lg">${mediaHTML}<h1 class="text-2xl font-bold text-center" style="color: var(--checkout-text-primary);">${config.content.main_title||'Oferta Especial'}</h1><p style="color: var(--checkout-text-secondary);" class="text-center mb-6">${config.content.subtitle||''}</p>${pricingHTML}${orderBumpHTML}<button id="pay-button" class="final-pay-btn" disabled>Selecione um pacote</button>${guaranteeHTML}${testimonialsHTML}</div></div>`;
+                const testimonialsHTML = testimonials.filter(t => t.name && t.text).length > 0
+                    ? `<div style="margin-top: 2.5rem;">
+                           <h3 style="font-size: 1.5rem; font-weight: 800; text-align: center; color: var(--checkout-text-primary); margin-bottom: 1.5rem;">O Que Nossos Clientes Dizem</h3>
+                           <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                               ${testimonials.map(t => `
+                                   <div style="background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb; color: #1f2937;">
+                                       <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                                           ${t.photo_url ? `<img src="${t.photo_url}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">` : ''}
+                                           <p style="font-weight: 600; color: #111827;">${t.name}</p>
+                                       </div>
+                                       <p style="font-size: 0.9rem; color: #4b5563; font-style: italic;">"${t.text}"</p>
+                                   </div>
+                               `).join('')}
+                           </div>
+                       </div>`
+                    : '';
+
+                const bgColor = config.style.background_color || '#0f172a';
+                const accentColor = config.style.accent_color || '#38bdf8';
+                const isDarkBg = (parseInt(bgColor.substring(1, 3), 16) * 0.299 + parseInt(bgColor.substring(3, 5), 16) * 0.587 + parseInt(bgColor.substring(5, 7), 16) * 0.114) < 186;
+                const primaryTextColor = isDarkBg ? '#f1f5f9' : '#111827';
+                const secondaryTextColor = isDarkBg ? '#94a3b8' : '#4b5563';
+
+                const checkoutHTML = `
+                    <style>
+                        :root {
+                            --checkout-bg: ${bgColor};
+                            --checkout-accent: ${accentColor};
+                            --checkout-text-primary: ${primaryTextColor};
+                            --checkout-text-secondary: ${secondaryTextColor};
+                        }
+                        body, #app { 
+                            background-color: var(--checkout-bg) !important; 
+                            font-family: 'Inter', sans-serif;
+                            color: var(--checkout-text-primary);
+                            height: auto;
+                            overflow-y: auto;
+                        }
+                        .checkout-card {
+                            background-color: ${isDarkBg ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)'};
+                            border: 1px solid ${isDarkBg ? '#334155' : '#e5e7eb'};
+                            backdrop-filter: blur(16px);
+                            -webkit-backdrop-filter: blur(16px);
+                            color: var(--checkout-text-primary);
+                        }
+                        .package-item {
+                            background-color: ${isDarkBg ? '#1e293b' : '#ffffff'};
+                            border-color: ${isDarkBg ? '#334155' : '#e5e7eb'};
+                        }
+                        .package-item h3 { color: ${isDarkBg ? '#f1f5f9' : '#111827'}; }
+                        .package-item p { color: ${isDarkBg ? '#94a3b8' : '#6b7280'}; }
+                        .package-item:hover { border-color: var(--checkout-accent); }
+                        .package-item.selected {
+                            border-color: var(--checkout-accent);
+                            box-shadow: 0 0 0 2px var(--checkout-accent);
+                        }
+                        .final-pay-btn {
+                            background-color: var(--checkout-accent);
+                            color: ${ (parseInt(accentColor.substring(1, 3), 16) * 0.299 + parseInt(accentColor.substring(3, 5), 16) * 0.587 + parseInt(accentColor.substring(5, 7), 16) * 0.114) < 186 ? '#FFFFFF' : '#000000' };
+                            font-weight: 700;
+                            padding: 1rem;
+                            border-radius: 0.5rem;
+                            margin-top: 1.5rem;
+                            font-size: 1.1rem;
+                            text-transform: uppercase;
+                            border: none;
+                            width: 100%;
+                            cursor: pointer;
+                            transition: all 0.2s ease;
+                        }
+                        .final-pay-btn:hover { filter: brightness(1.1); }
+                        .final-pay-btn:disabled { background-color: #334155; color: #64748b; cursor: not-allowed; filter: none; }
+                    </style>
+                    
+                    ${countdownHTML}
+                    <div id="checkout-body-wrapper" class="min-h-screen flex items-center justify-center p-4 animate-fade-in">
+                        <div class="checkout-card w-full max-w-lg p-6 md:p-8 rounded-2xl shadow-lg">
+                            ${mediaHTML}
+                            <h1 class="text-2xl font-bold text-center" style="color: var(--checkout-text-primary);">${config.content.main_title || 'Oferta Especial'}</h1>
+                            <p style="color: var(--checkout-text-secondary);" class="text-center mb-6">${config.content.subtitle || ''}</p>
+                            
+                            ${pricingHTML}
+                            ${orderBumpHTML}
+
+                            <button id="pay-button" class="final-pay-btn" disabled>Selecione um pacote</button>
+
+                            ${guaranteeHTML}
+                            ${testimonialsHTML}
+                        </div>
+                    </div>
+                `;
+
                 appContainer.innerHTML = checkoutHTML;
-                if(config.pricing.type==='fixed'&&Array.isArray(config.pricing.packages)&&config.pricing.packages.length>0){let sP=null;const pL=document.getElementById('packages-list');const pB=document.getElementById('pay-button');const oBC=document.getElementById('order-bump-checkbox');function uPBT(){if(!sP)return;let tV=sP.value_cents;let bT=`Pagar Agora (${formatCurrency(tV)})`;if(oBC&&oBC.checked&&config.order_bump&&config.order_bump.value_cents>0){tV+=config.order_bump.value_cents;bT=`Pagar Agora (${formatCurrency(tV)})`;}pB.textContent=bT;}pL.addEventListener('click',(e)=>{const cP=e.target.closest('.package-item');if(!cP)return;pL.querySelectorAll('.package-item').forEach(p=>p.classList.remove('selected'));cP.classList.add('selected');const pI=cP.dataset.packageIndex;sP=config.pricing.packages[pI];uPBT();pB.disabled=false;});if(oBC){oBC.addEventListener('change',uPBT);}pB.addEventListener('click',async()=>{if(!sP){alert('Selecione.');return;}let tVC=sP.value_cents;if(oBC&&oBC.checked&&config.order_bump&&config.order_bump.value_cents>0){tVC+=config.order_bump.value_cents;}pB.textContent='Gerando PIX...';pB.disabled=true;try{const pD=await this.apiRequest('/api/oferta/generate-pix','POST',{checkoutId:checkoutId,value_cents:tVC});this.showPixModal(pD);}catch(error){alert('Erro.');}finally{uPBT();pB.disabled=!sP;}});};if(config.conversion_elements.countdown.enabled){const tE=document.getElementById('countdown-timer');if(tE){let d=(config.conversion_elements.countdown.minutes||15)*60;const i=setInterval(()=>{const m=Math.floor(d/60).toString().padStart(2,'0');const s=(d%60).toString().padStart(2,'0');tE.textContent=`${m}:${s}`;d--;if(d<0){clearInterval(i);tE.textContent="00:00";}},1000);}}
+
+                if (config.pricing.type === 'fixed' && Array.isArray(config.pricing.packages) && config.pricing.packages.length > 0) {
+                    let selectedPackage = null;
+                    const packagesList = document.getElementById('packages-list');
+                    const payButton = document.getElementById('pay-button');
+                    const orderBumpCheckbox = document.getElementById('order-bump-checkbox');
+
+                    function updatePayButtonText() {
+                        if (!selectedPackage) return;
+                        
+                        let totalValue = selectedPackage.value_cents;
+                        let buttonText = `Pagar Agora (${formatCurrency(totalValue)})`;
+                        
+                        if (orderBumpCheckbox && orderBumpCheckbox.checked && config.order_bump && config.order_bump.value_cents > 0) {
+                            totalValue += config.order_bump.value_cents;
+                            buttonText = `Pagar Agora (${formatCurrency(totalValue)})`;
+                        }
+                        
+                        payButton.textContent = buttonText;
+                    }
+
+                    packagesList.addEventListener('click', (e) => {
+                        const clickedPackage = e.target.closest('.package-item');
+                        if (!clickedPackage) return;
+
+                        packagesList.querySelectorAll('.package-item').forEach(p => p.classList.remove('selected'));
+                        clickedPackage.classList.add('selected');
+
+                        const packageIndex = clickedPackage.dataset.packageIndex;
+                        selectedPackage = config.pricing.packages[packageIndex];
+                        
+                        updatePayButtonText();
+                        payButton.disabled = false;
+                    });
+                    
+                    if (orderBumpCheckbox) {
+                        orderBumpCheckbox.addEventListener('change', updatePayButtonText);
+                    }
+
+                    payButton.addEventListener('click', async () => {
+                        if (!selectedPackage) { alert('Por favor, selecione um pacote válido.'); return; }
+                        
+                        let totalValueCents = selectedPackage.value_cents;
+                        if (orderBumpCheckbox && orderBumpCheckbox.checked && config.order_bump && config.order_bump.value_cents > 0) {
+                            totalValueCents += config.order_bump.value_cents;
+                        }
+
+                        payButton.textContent = 'Gerando PIX...';
+                        payButton.disabled = true;
+                        
+                        try {
+                            const pixData = await this.apiRequest('/api/oferta/generate-pix', 'POST', {
+                                checkoutId: checkoutId,
+                                value_cents: totalValueCents
+                            });
+                            this.showPixModal(pixData);
+                        } catch (error) {
+                            alert('Erro ao gerar PIX. Tente novamente.');
+                        } finally {
+                            updatePayButtonText();
+                            payButton.disabled = !selectedPackage;
+                        }
+                    });
+                }
+                
+                if (config.conversion_elements.countdown.enabled) {
+                    const timerEl = document.getElementById('countdown-timer');
+                    if (timerEl) {
+                        let duration = (config.conversion_elements.countdown.minutes || 15) * 60;
+                        const interval = setInterval(() => {
+                            const minutes = Math.floor(duration / 60).toString().padStart(2, '0');
+                            const seconds = (duration % 60).toString().padStart(2, '0');
+                            timerEl.textContent = `${minutes}:${seconds}`;
+                            duration--;
+                            if (duration < 0) {
+                                clearInterval(interval);
+                                timerEl.textContent = "00:00";
+                            }
+                        }, 1000);
+                    }
+                }
+
             } catch (error) {
                 console.error("Erro ao renderizar página de checkout:", error);
                 appContainer.innerHTML = `<p class="text-center text-red-400 text-lg mt-20">Erro ao carregar oferta: ${error.message || 'Verifique o console.'}</p>`;
@@ -455,15 +647,17 @@
 
         // *** FUNÇÃO formatNumber CORRIGIDA ***
         formatNumber(number, isCurrency = false) {
-            if (typeof number !== 'number') {
-                number = parseFloat(number) || 0;
+            let num = parseFloat(number); // Converte para número
+            if (isNaN(num)) {
+                 num = 0; // Garante que é um número, mesmo que seja 0
             }
+
             if (isCurrency) {
-                // AGORA, espera Reais (float) e formata diretamente
-                return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                 // AGORA, espera Reais (float) e formata diretamente
+                return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             } else {
-                // Para números não monetários, formata como antes
-                return number.toLocaleString('pt-BR');
+                 // Para números não monetários, formata como antes
+                return num.toLocaleString('pt-BR');
             }
         },
 
@@ -791,14 +985,11 @@
                 <div id="creator-screen" class="animate-fade-in p-4 md:p-8">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                         <div>
-                            {/* */}
-                            <h1 class="text-3xl font-bold text-white">Criador de Página de Obrigado</h1>
+                            <h1 id="ty-creator-title" class="text-3xl font-bold text-white">Criador de Página de Obrigado</h1>
                             <p class="text-slate-400 mt-1">Gere links para disparar eventos de compra no navegador.</p>
                         </div>
                         <div class="flex items-center gap-4">
-                            {/* */}
                             <button type="button" id="back-to-ty-list-btn" class="btn btn-secondary">Cancelar</button>
-                            {/* */}
                             <button type="submit" form="thank-you-form" id="submit-btn" class="btn font-bold text-lg py-2 px-6">Gerar Página</button>
                         </div>
                     </div>
@@ -833,7 +1024,6 @@
                                         <label for="utmify_integration_id" class="text-sm font-medium text-gray-400 mb-1 block">Enviar evento para Utmify (Opcional)</label>
                                         <select id="utmify_integration_id" class="form-select w-full p-2">
                                             <option value="">Não enviar</option>
-                                            {/* */}
                                         </select>
                                     </div>
                                 </div>
@@ -850,7 +1040,6 @@
 
                     <div id="result-screen" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center animate-fade-in z-50 p-4">
                         <div class="card p-8 rounded-2xl w-full max-w-2xl mx-auto">
-                            {/* */}
                              <div class="flex justify-between items-center mb-4">
                                 <h2 class="text-2xl font-bold text-center text-green-400">Página Criada com Sucesso!</h2>
                                 <button id="closeModalBtn" class="text-gray-400 hover:text-white text-3xl">&times;</button>
@@ -870,7 +1059,6 @@
                 `;
             },
 
-            // *** TEMPLATE DA LISTAGEM DE PÁGINAS DE OBRIGADO ***
             thankYouPages() {
                 return `
                 <div class="animate-fade-in p-4 md:p-8">
@@ -1200,8 +1388,14 @@
                 // Navigate SPA
                 const sidebarLink = e.target.closest('.nav-link[data-target]');
                 if (sidebarLink && sidebarLink.dataset.target) {
-                    if (sidebarLink.dataset.target === 'pageCreator') { this.state.editingCheckoutId = null; }
-                    if (sidebarLink.dataset.target === 'thankYouCreator') { this.state.editingThankYouPageId = null; } // Limpa estado TY
+                    // Limpa estados de edição ao navegar pelo menu
+                    if (sidebarLink.dataset.target === 'checkouts') { this.state.editingCheckoutId = null; }
+                    if (sidebarLink.dataset.target === 'thankYouPages') { this.state.editingThankYouPageId = null; }
+                    
+                    // (Mantém a lógica antiga de 'pageCreator' por segurança, embora o link tenha sido removido)
+                    if (sidebarLink.dataset.target === 'pageCreator') { this.state.editingCheckoutId = null; } 
+                    if (sidebarLink.dataset.target === 'thankYouCreator') { this.state.editingThankYouPageId = null; }
+                    
                     this.navigateTo(sidebarLink.dataset.target);
                 }
 
@@ -1227,8 +1421,21 @@
                      try { await navigator.clipboard.writeText(link); const o=copyThankYouLinkBtn.textContent; copyThankYouLinkBtn.textContent='Copiado!'; setTimeout(()=>{copyThankYouLinkBtn.textContent='Copiar Link'},2000); } catch(err){this.showToast('Erro.', 'error');}
                 }
                 if (e.target.id === 'view-ty-pages-btn') {
-                    document.getElementById('modal-container').innerHTML = ''; // Fecha modal
-                    this.navigateTo('thankYouPages'); // Navega para a lista
+                    const resultScreen = e.target.closest('#result-screen');
+                    if(resultScreen) resultScreen.classList.add('hidden');
+                    this.navigateTo('thankYouPages');
+                }
+                if (e.target.id === 'create-another-btn') { // Botão "Criar Outra" no modal de sucesso
+                     const resultScreen = e.target.closest('#result-screen');
+                     if(resultScreen) resultScreen.classList.add('hidden');
+                     
+                     if (document.getElementById('thankYouCreator')) {
+                         this.state.editingThankYouPageId = null;
+                         this.initThankYouCreatorPage(); // Reinicializa o criador
+                     } else if (document.getElementById('pageCreator')) {
+                         this.state.editingCheckoutId = null;
+                         this.initCreatorPage(); // Reinicializa o criador
+                     }
                 }
 
 
@@ -1266,7 +1473,7 @@
                     if (deleteBtn.classList.contains('delete-pressel-btn')) { type = 'pressels'; endpoint = 'pressels'; itemName = 'pressel'; }
                     if (deleteBtn.classList.contains('delete-utmify-btn')) { type = 'utmifyIntegrations'; endpoint = 'integrations/utmify'; itemName = 'integração Utmify'; }
                     if (deleteBtn.classList.contains('delete-checkout-btn')) { type = 'checkouts'; endpoint = 'checkouts'; itemName = 'checkout'; refreshFunction = this.fetchAndRenderCheckouts; }
-                    if (deleteBtn.classList.contains('delete-thankyou-btn')) { /* type = 'thankYouPages' (não precisa mexer no state aqui); */ endpoint = 'thank-you-pages'; itemName = 'página de obrigado'; refreshFunction = this.fetchAndRenderThankYouPages; }
+                    if (deleteBtn.classList.contains('delete-thankyou-btn')) { /* type = 'thankYouPages' */; endpoint = 'thank-you-pages'; itemName = 'página de obrigado'; refreshFunction = this.fetchAndRenderThankYouPages; }
 
                     if (confirm(`Tem certeza que deseja excluir est${itemName.includes('integração') || itemName.includes('página') ? 'a' : 'e'} ${itemName}?`)) {
                         try {
@@ -1414,7 +1621,7 @@
         logout() {
             this.state.token = null;
             this.state.editingCheckoutId = null;
-            this.state.editingThankYouPageId = null; // Limpa estado TY no logout
+            this.state.editingThankYouPageId = null;
             localStorage.removeItem('hottrack_token');
             window.location.reload();
         },
@@ -1431,7 +1638,6 @@
         },
         async viewDispatchDetails(logId) { /* ... (sem alterações) ... */ },
 
-        // *** FUNÇÃO NAVIGATETO ATUALIZADA ***
         async navigateTo(page) {
             this.state.currentPage = page;
             const contentContainer = document.getElementById('content');
@@ -1441,9 +1647,8 @@
             }
 
             contentContainer.innerHTML = `<div class="flex items-center justify-center h-full"><svg class="animate-spin h-6 w-6 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>`;
-
-            // Controla o scroll do #content
-            if (page === 'pageCreator' || page === 'thankYouCreator') { // Adicionado thankYouCreator
+            
+            if (page === 'pageCreator' || page === 'thankYouCreator') {
                 contentContainer.classList.remove('overflow-y-auto', 'p-4', 'md:p-8');
                 contentContainer.classList.add('overflow-hidden');
             } else {
@@ -1463,8 +1668,8 @@
                 else if (page === 'settings') { this.updateAllPixStatusIndicators(); }
                 else if (page === 'bots') { this.updateAllBotStatusIndicators(); }
                 else if (page === 'pageCreator') { await this.initCreatorPage(); }
-                else if (page === 'thankYouCreator') { await this.initThankYouCreatorPage(); } // Tornou async
-                else if (page === 'thankYouPages') { await this.fetchAndRenderThankYouPages(); } // Chamada para listar TY pages
+                else if (page === 'thankYouCreator') { await this.initThankYouCreatorPage(); }
+                else if (page === 'thankYouPages') { await this.fetchAndRenderThankYouPages(); }
                 else if (page === 'checkouts') { await this.fetchAndRenderCheckouts(); }
 
             } catch (renderError) {
@@ -1483,12 +1688,12 @@
                 const query = new URLSearchParams({ startDate: startDate || '', endDate: endDate || '' }).toString();
 
                 const metrics = await this.apiRequest(`/api/dashboard/metrics?${query}`);
-                this.state.data.dashboard = metrics;
+                this.state.data.dashboard = metrics; 
 
-                // Função auxiliar ajustada - espera Reais para currency
                 const updateElement = (id, value, isCurrency = false) => {
                     const el = document.getElementById(id);
                     if (el) {
+                        // Passa o valor (Reais ou contagem) diretamente para formatNumber
                         el.textContent = this.formatNumber(value, isCurrency);
                     }
                 };
@@ -1496,18 +1701,18 @@
                 updateElement('metric-clicks', metrics.total_clicks);
                 updateElement('metric-generated', metrics.total_pix_generated);
                 updateElement('metric-paid', metrics.total_pix_paid);
-                updateElement('metric-total-revenue', metrics.total_revenue, true);
-                updateElement('metric-paid-revenue', metrics.paid_revenue, true);
+                updateElement('metric-total-revenue', metrics.total_revenue, true); // Passa Reais
+                updateElement('metric-paid-revenue', metrics.paid_revenue, true); // Passa Reais
 
                 const botsTableBody = document.getElementById('bots-performance-table');
-                if (botsTableBody && metrics.bots_performance) {
+                if (botsTableBody && metrics.bots_performance) { 
                     if (metrics.bots_performance.length > 0) {
                         botsTableBody.innerHTML = metrics.bots_performance.map(b => `
                             <tr class="hover:bg-slate-800/50">
                                 <td>${b.bot_name || 'N/A'}</td>
                                 <td>${this.formatNumber(b.total_clicks)}</td>
                                 <td>${this.formatNumber(b.total_pix_paid)}</td>
-                                <td>${this.formatNumber(b.paid_revenue, true)}</td>
+                                <td>${this.formatNumber(b.paid_revenue, true)}</td> {/* Passa Reais */}
                             </tr>`).join('');
                     } else {
                         botsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500 py-8">Nenhum dado de bot.</td></tr>';
@@ -1515,7 +1720,7 @@
                 }
 
                 const trafficTableBody = document.getElementById('traffic-by-state-table');
-                 if (trafficTableBody && metrics.clicks_by_state) {
+                 if (trafficTableBody && metrics.clicks_by_state) { 
                     if (metrics.clicks_by_state.length > 0) {
                         trafficTableBody.innerHTML = metrics.clicks_by_state.map(s => `<tr class="hover:bg-slate-800/50"><td>${s.state || 'N/A'}</td><td>${this.formatNumber(s.total_clicks)}</td></tr>`).join('');
                     } else {
@@ -1523,8 +1728,8 @@
                     }
                  }
 
-                this.renderRevenueChart();
-                this.fetchAchievementsAndRanking();
+                this.renderRevenueChart(); 
+                this.fetchAchievementsAndRanking(); 
             } catch (e) { console.error("Erro ao carregar métricas do painel:", e); }
         },
 
@@ -1538,7 +1743,8 @@
 
             try {
                 const data = await this.apiRequest('/api/dashboard/achievements-and-ranking');
-
+                
+                // Pega o faturamento pago (em Reais) do dashboard
                 const paidRevenueReais = parseFloat(this.state.data.dashboard.paid_revenue || 0);
 
                 if (data.userAchievements && data.userAchievements.length > 0) {
@@ -1546,10 +1752,13 @@
                         const icon = ach.is_completed ? '✅' : '🔒';
                         const textColor = ach.is_completed ? 'text-green-400' : 'text-gray-400';
                         
-                        // Assumindo que 'sales_goal' vem em REAIS (igual ao 'total_revenue' da API)
-                        const missingAmountReais = Math.max(0, (parseFloat(ach.sales_goal || 0)) - paidRevenueReais);
+                        // Assumindo que sales_goal vem em REAIS (ex: 1000.00)
+                        const salesGoalReais = parseFloat(ach.sales_goal || 0);
+                        const missingAmountReais = Math.max(0, salesGoalReais - paidRevenueReais);
                         
-                        const formattedMissing = missingAmountReais > 0 ? `Falta ${this.formatNumber(missingAmountReais, true)}` : 'Concluída!';
+                        const formattedMissing = missingAmountReais > 0
+                            ? `Falta ${this.formatNumber(missingAmountReais, true)}` // Passa Reais
+                            : 'Concluída!';
 
                         return `
                             <div class="card p-4 rounded-lg flex items-center gap-3 bg-slate-900/50">
@@ -1568,6 +1777,7 @@
                     rankingList.innerHTML = data.topSellersRanking.map((seller, index) => {
                         const rank = index + 1;
                         const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
+                        // total_revenue vem em Reais, passa direto
                         const revenue = this.formatNumber(seller.total_revenue || 0, true);
                         return `<div class="p-2 bg-slate-900/50 rounded-lg flex justify-between items-center"><span class="font-bold text-lg w-8 text-center">${medal}</span><span class="text-sm flex-1">${seller.name || 'Vendedor'}</span><span class="text-xs text-gray-400">${revenue}</span></div>`;
                     }).join('');
@@ -1589,11 +1799,11 @@
             const tableBody = document.getElementById('transactions-table-body');
             if (!tableBody) return;
             tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">Carregando transações...</td></tr>';
-
+            
             try {
                 const { startDate, endDate } = this.state.dateFilter;
                 const query = new URLSearchParams({ startDate: startDate || '', endDate: endDate || '' }).toString();
-                const transactions = await this.apiRequest(`/api/transactions?${query}`);
+                const transactions = await this.apiRequest(`/api/transactions?${query}`); 
                 this.state.data.transactions = transactions;
                 this.renderTransactionsTable();
             } catch (e) {
@@ -1606,15 +1816,12 @@
         renderTransactionsTable() {
             const tableBody = document.getElementById('transactions-table-body');
             if (!tableBody) return;
-
             const transactionsToRender = this.state.data.transactions || [];
-
             if (transactionsToRender.length > 0) {
                 tableBody.innerHTML = transactionsToRender.map(t => {
                     const statusClass = t.status === 'paid' ? 'text-green-400 bg-green-500/10' : 'text-yellow-400 bg-yellow-500/10';
                     const statusText = t.status === 'paid' ? 'Pago' : 'Pendente';
-                    // pix_value vem em REAIS, passa direto para formatNumber
-                    const formattedValue = this.formatNumber(t.pix_value, true);
+                    const formattedValue = this.formatNumber(t.pix_value, true); // Passa Reais
                     const formattedDate = t.created_at ? new Date(t.created_at).toLocaleString('pt-BR') : 'Data inválida';
                     const sourceName = t.source_name || 'Desconhecida';
                     const providerName = t.provider ? t.provider.toUpperCase() : 'N/A';
@@ -1631,7 +1838,7 @@
        handleFilterChange(page, period, customStartDate, customEndDate) {
             const now = new Date();
             let startDate, endDate;
-
+            
             const setTimeToStartOfDayUTC = (date) => { date.setUTCHours(0, 0, 0, 0); return date; }
             const setTimeToEndOfDay = (date) => { date.setUTCHours(23, 59, 59, 999); return date; };
 
@@ -1818,18 +2025,393 @@
             document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
         },
         
-        async testIndividualPixConnection(provider, button) { /* ... (sem alterações) ... */ },
-        async testPriorityRoute(button) { /* ... (sem alterações) ... */ },
-        updateAllBotStatusIndicators() { /* ... (sem alterações) ... */ },
-        updateBotStatusIndicator(botId) { /* ... (sem alterações) ... */ },
-        updateAllPixStatusIndicators() { /* ... (sem alterações) ... */ },
-        updatePixStatusIndicator(provider, mode) { /* ... (sem alterações) ... */ },
-        formatTimeAgo(timestamp) { /* ... (sem alterações) ... */ },
-        showToast(message, type = 'success') { /* ... (sem alterações) ... */ },
-        async fetchAndRenderCheckouts() { /* ... (sem alterações) ... */ },
-        async fetchAndRenderThankYouPages() { /* ... (sem alterações) ... */ },
-        async initCreatorPage() { /* ... (sem alterações) ... */ },
-        async initThankYouCreatorPage() { /* ... (sem alterações) ... */ },
+        async testIndividualPixConnection(provider, button) {
+             if(!provider) { this.showToast('Selecione um provedor para testar.', 'warning'); return; }
+            const originalText = button.textContent;
+            button.innerHTML = 'Testando...';
+            button.disabled = true;
+            this.updatePixStatusIndicator(provider, 'testing');
+            const form = document.getElementById('pixSettingsForm');
+            if (!form) return;
+            const formData = Object.fromEntries(new FormData(form).entries());
+            try {
+                await this.apiRequest('/api/settings/pix', 'POST', formData);
+                App.state.data.settings = { ...App.state.data.settings, ...formData };
+            } catch (e) {
+                this.showToast('Erro ao salvar as configurações antes do teste.', 'error');
+                button.innerHTML = originalText;
+                button.disabled = false;
+                this.updatePixStatusIndicator(provider);
+                return;
+            }
+            try {
+                const result = await this.apiRequest('/api/pix/test-provider', 'POST', { provider });
+                localStorage.setItem(`pix_status_${provider}`, 'success');
+                localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
+                const successModalContent = `<div class="text-center"><p class="text-sm text-gray-400 mb-4">PIX de R$ 33,33 gerado com sucesso. Pague para testar a notificação (webhook).</p><textarea id="pix-code-textarea" class="form-input w-full p-2 font-mono text-xs bg-slate-900" rows="5" readonly>${result.qr_code_text || 'Erro'}</textarea><button type="button" class="copy-btn btn w-full mt-4 py-2" data-target="#pix-code-textarea">Copiar Código</button></div>`;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Conexão Bem-sucedida!', successModalContent);
+            } catch (error) {
+                localStorage.setItem(`pix_status_${provider}`, 'failure');
+                localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
+                const errorModalContent = `<div class="text-center"><p class="text-lg font-bold text-red-400">Falha na Conexão</p><p class="text-sm text-gray-400 mt-2">${error.message || 'Ocorreu um erro.'}</p></div>`;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste', errorModalContent);
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+                this.updatePixStatusIndicator(provider);
+            }
+        },
+
+        async testPriorityRoute(button) {
+            const originalText = button.textContent;
+            button.innerHTML = 'Testando Rota...';
+            button.disabled = true;
+            const form = document.getElementById('pixSettingsForm');
+             if (!form) return;
+            const formData = Object.fromEntries(new FormData(form).entries());
+            try {
+                await this.apiRequest('/api/settings/pix', 'POST', formData);
+                App.state.data.settings = { ...App.state.data.settings, ...formData };
+            } catch (e) {
+                this.showToast('Erro ao salvar as configurações antes do teste.', 'error');
+                button.innerHTML = originalText; button.disabled = false; return;
+            }
+            try {
+                const result = await this.apiRequest('/api/pix/test-priority-route', 'POST');
+                const logHTML = Array.isArray(result.log) ? result.log.map(line => `<li class="${line.startsWith('SUCESSO') ? 'text-green-400' : 'text-red-400'}">${line}</li>`).join('') : '<li>Log indisponível.</li>';
+                const successModalContent = `<div class="text-left"><p class="text-sm text-gray-400 mb-2">Resultado:</p><ul class="text-xs list-disc list-inside space-y-1 mb-4">${logHTML}</ul><p class="text-sm text-gray-400 mb-2">PIX Gerado (pode ser pago para teste):</p><textarea id="pix-code-textarea" class="form-input w-full p-2 font-mono text-xs bg-slate-900" rows="5" readonly>${result.qr_code_text || 'Erro'}</textarea><button type="button" class="copy-btn btn w-full mt-4 py-2" data-target="#pix-code-textarea">Copiar Código</button></div>`;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Teste da Rota Concluído!', successModalContent);
+            } catch (error) {
+                const logHTML = Array.isArray(error.log) ? error.log.map(line => `<li class="text-red-400">${line}</li>`).join('') : '<li>Nenhum log disponível.</li>';
+                const errorModalContent = `<div class="text-left"><p class="text-lg font-bold text-red-400">Falha na Rota de Prioridade</p><p class="text-sm text-gray-400 mt-2 mb-2">Todos os provedores falharam. Log:</p><ul class="text-xs list-disc list-inside space-y-1">${logHTML}</ul></div>`;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste', errorModalContent);
+            } finally {
+                button.innerHTML = originalText; button.disabled = false;
+            }
+        },
+
+        updateAllBotStatusIndicators() {
+            if (this.state.data.bots && this.state.data.bots.length > 0) {
+                this.state.data.bots.forEach(bot => this.updateBotStatusIndicator(bot.id));
+            }
+        },
+
+        updateBotStatusIndicator(botId) {
+            const indicator = document.getElementById(`status-indicator-bot-${botId}`);
+            if (!indicator) return;
+            indicator.textContent = '';
+            indicator.className = '';
+        },
+
+        updateAllPixStatusIndicators() {
+            const providers = ['pushinpay', 'cnpay', 'oasyfy', 'syncpay', 'brpix'];
+            providers.forEach(provider => this.updatePixStatusIndicator(provider));
+        },
+
+        updatePixStatusIndicator(provider, mode) {
+             const indicator = document.getElementById(`status-indicator-${provider}`);
+            if (!indicator) return;
+            if (mode === 'testing') {
+                indicator.textContent = 'Testando...';
+                indicator.className = 'status-indicator testing';
+                return;
+            }
+            const status = localStorage.getItem(`pix_status_${provider}`);
+            const timestamp = localStorage.getItem(`pix_timestamp_${provider}`);
+            const now = Date.now();
+            const oneHour = 60 * 60 * 1000;
+             if (timestamp && (now - parseInt(timestamp)) > oneHour) {
+                localStorage.removeItem(`pix_status_${provider}`);
+                localStorage.removeItem(`pix_timestamp_${provider}`);
+                indicator.textContent = 'Não testado';
+                indicator.className = 'status-indicator unknown';
+                return;
+             }
+            if (status === 'success' && timestamp) {
+                indicator.textContent = `Ativo (Testado ${this.formatTimeAgo(timestamp)})`;
+                indicator.className = 'status-indicator success';
+            } else if (status === 'failure' && timestamp) {
+                indicator.textContent = `Falhou (Testado ${this.formatTimeAgo(timestamp)})`;
+                indicator.className = 'status-indicator failure';
+            } else {
+                indicator.textContent = 'Não testado';
+                indicator.className = 'status-indicator unknown';
+            }
+        },
+
+        formatTimeAgo(timestamp) {
+            const seconds = Math.floor((Date.now() - parseInt(timestamp)) / 1000);
+            if (seconds < 60) return "agora";
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `há ${minutes} min`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `há ${hours}h`;
+            const days = Math.floor(hours / 24);
+            return `há ${days}d`;
+        },
+
+        showToast(message, type = 'success') {
+            const toastId = `toast-${Date.now()}`;
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            let bgColor = type === 'success' ? 'bg-green-600' : (type === 'error' ? 'bg-red-600' : 'bg-yellow-500');
+            toast.className = `fixed bottom-5 right-5 ${bgColor} text-white py-2 px-4 rounded-lg shadow-lg animate-fade-in z-50 transition-opacity duration-300`;
+            toast.textContent = message;
+            const existingToasts = document.querySelectorAll('[id^="toast-"]');
+            toast.style.bottom = `${1.25 + existingToasts.length * 3.5}rem`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.addEventListener('transitionend', () => {
+                    if(toast.parentNode) toast.remove();
+                });
+            }, 5000);
+        },
+        
+        async fetchAndRenderCheckouts() {
+            const tableBody = document.getElementById('checkouts-table-body');
+            if (!tableBody) return;
+            tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-gray-500 py-8">Carregando...</td></tr>';
+            try {
+                const checkouts = await this.apiRequest('/api/checkouts');
+                this.state.data.checkouts = checkouts;
+                if (checkouts.length > 0) {
+                    tableBody.innerHTML = checkouts.map(c => `
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="font-medium">${c.name || 'Checkout Sem Título'}</td>
+                            <td>${new Date(c.created_at).toLocaleString('pt-BR')}</td>
+                            <td class="text-right space-x-2">
+                                <button class="btn-secondary btn-sm py-1 px-2 copy-checkout-link-btn" data-id="${c.id}">Copiar Link</button>
+                                <button class="btn-secondary btn-sm py-1 px-2 edit-checkout-btn" data-id="${c.id}">Editar</button>
+                                <button class="btn-red btn-sm py-1 px-2 delete-checkout-btn" data-id="${c.id}">Excluir</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-gray-500 py-8">Nenhum checkout criado ainda.</td></tr>';
+                }
+            } catch (e) {
+                console.error("Erro ao buscar checkouts:", e);
+                tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-red-400 py-8">Erro ao carregar checkouts.</td></tr>';
+            }
+        },
+
+        async fetchAndRenderThankYouPages() {
+            const tableBody = document.getElementById('thankyou-table-body');
+            if (!tableBody) return;
+            tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-gray-500 py-8">Carregando...</td></tr>';
+            try {
+                const pages = await this.apiRequest('/api/thank-you-pages');
+                if (pages.length > 0) {
+                    tableBody.innerHTML = pages.map(p => `
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="font-medium">${p.name || 'Página Sem Nome'}</td>
+                            <td>${new Date(p.created_at).toLocaleString('pt-BR')}</td>
+                            <td class="text-right space-x-2">
+                                <button class="btn-secondary btn-sm py-1 px-2 copy-thankyou-link-btn" data-id="${p.id}">Copiar Link</button>
+                                <button class="btn-secondary btn-sm py-1 px-2 edit-thankyou-btn" data-id="${p.id}">Editar</button>
+                                <button class="btn-red btn-sm py-1 px-2 delete-thankyou-btn" data-id="${p.id}">Excluir</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-gray-500 py-8">Nenhuma página de obrigado criada ainda.</td></tr>';
+                }
+            } catch (e) {
+                console.error("Erro ao buscar páginas de obrigado:", e);
+                tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-red-400 py-8">Erro ao carregar páginas.</td></tr>';
+            }
+        },
+
+        async initCreatorPage() {
+            const FRONTEND_URL = window.location.origin;
+            const contentEl = document.getElementById('content');
+            if (!contentEl) { console.error("Container #content não encontrado."); return; }
+
+            const creatorTitle = contentEl.querySelector('#creator-title');
+            const submitBtn = contentEl.querySelector('#submit-btn');
+            const checkoutForm = contentEl.querySelector('#checkout-form');
+            const packagesContainer = contentEl.querySelector('#packages-container');
+            const testimonialsContainer = contentEl.querySelector('#testimonials-container');
+            const pixelSelect = contentEl.querySelector('#pixel_id');
+            const utmifySelect = contentEl.querySelector('#utmify_integration_id');
+            const resultScreen = contentEl.querySelector('#result-screen');
+            const checkoutLinkOutput = contentEl.querySelector('#checkout-link-output');
+
+            if (packagesContainer) packagesContainer.innerHTML = '';
+            if (testimonialsContainer) testimonialsContainer.innerHTML = '';
+
+            if (pixelSelect) {
+                 pixelSelect.innerHTML = '<option value="">-- Selecione um Pixel --</option>' + App.state.data.pixels.map(p => `<option value="${p.pixel_id}">${p.account_name} (${p.pixel_id})</option>`).join('');
+            }
+            if (utmifySelect) {
+                utmifySelect.innerHTML = '<option value="">-- Nenhuma --</option>' + App.state.data.utmifyIntegrations.map(u => `<option value="${u.id}">${u.account_name}</option>`).join('');
+            }
+
+            let packageCount = 0;
+            function addPackage(title = 'Acesso Completo', desc = 'Todo o conteúdo liberado.', val = '29.90') {
+                 if (!packagesContainer) return;
+                packageCount++; const el = document.createElement('div'); el.id = `package-${packageCount}`; el.className = 'grid grid-cols-1 md:grid-cols-7 gap-4 border border-slate-700 p-4 rounded-lg';
+                el.innerHTML = `<div class="md:col-span-2"><label class="text-xs text-gray-400 mb-1 block">Nome</label><input type="text" class="form-input w-full p-2 package-title" value="${title}" required></div> <div class="md:col-span-3"><label class="text-xs text-gray-400 mb-1 block">Descrição</label><input type="text" class="form-input w-full p-2 package-description" value="${desc}" required></div> <div class="md:col-span-1"><label class="text-xs text-gray-400 mb-1 block">Valor (R$)</label><input type="number" step="0.01" min="0" class="form-input w-full p-2 package-value" value="${val}" required></div> <div class="flex items-end"><button type="button" class="btn btn-danger w-full h-10 remove-package-btn" data-id="${packageCount}">X</button></div>`;
+                packagesContainer.appendChild(el);
+            }
+            let testimonialCount = 0;
+            function addTestimonial(name = '', photo_url = '', text = '') {
+                 if (!testimonialsContainer) return;
+                testimonialCount++; const el = document.createElement('div'); el.id = `testimonial-${testimonialCount}`; el.className = 'border border-slate-700 p-4 rounded-lg space-y-3';
+                el.innerHTML = `<div class="flex justify-end"><button type="button" class="btn btn-danger text-xs py-1 px-2 remove-testimonial-btn" data-id="${testimonialCount}">Remover</button></div> <div class="grid grid-cols-1 md:grid-cols-2 gap-4"> <div><label class="text-xs text-gray-400 mb-1 block">Nome</label><input type="text" class="form-input w-full p-2 testimonial-name" value="${name}" placeholder="Ex: João da Silva"></div> <div><label class="text-xs text-gray-400 mb-1 block">URL da Foto (Opcional)</label><input type="url" class="form-input w-full p-2 testimonial-photo" value="${photo_url}" placeholder="https://..."></div> </div> <div><label class="text-xs text-gray-400 mb-1 block">Texto</label><textarea class="form-textarea w-full p-2 testimonial-text" rows="3" placeholder="Excelente produto...">${text}</textarea></div>`;
+                testimonialsContainer.appendChild(el);
+            }
+            function populateCreatorForm(config) {
+                const get = (selector) => contentEl.querySelector(selector);
+                get('#main_title').value = config.content.main_title || ''; get('#subtitle').value = config.content.subtitle || ''; get('#media_url').value = config.content.media_url || '';
+                get('#pricing-type-select').value = config.pricing.type || 'fixed'; packagesContainer.innerHTML=''; if (config.pricing.type === 'fixed' && config.pricing.packages?.length > 0) { config.pricing.packages.forEach(pkg => addPackage(pkg.title, pkg.description, (pkg.value_cents / 100).toFixed(2))); } else { addPackage(); }
+                get('#enable_order_bump').checked = config.order_bump.enabled; get('#order-bump-fields').classList.toggle('hidden', !config.order_bump.enabled); get('#order_bump_product_name').value = config.order_bump.product_name || ''; get('#order_bump_description').value = config.order_bump.description || ''; get('#order_bump_value').value = (config.order_bump.value_cents / 100).toFixed(2) || '0.00';
+                get('#enable_countdown').checked = config.conversion_elements.countdown.enabled; get('#countdown-fields').classList.toggle('hidden', !config.conversion_elements.countdown.enabled); get('#countdown_minutes').value = config.conversion_elements.countdown.minutes || 15;
+                get('#guarantee_text').value = config.conversion_elements.guarantee.text || ''; get('#guarantee_seal_url').value = config.conversion_elements.guarantee.seal_url || '';
+                testimonialsContainer.innerHTML=''; if (config.testimonials?.length > 0) { config.testimonials.forEach(t => addTestimonial(t.name, t.photo_url, t.text)); }
+                get('#pixel_id').value = config.tracking.pixel_id || ''; get('#utmify_integration_id').value = config.tracking.utmify_integration_id || ''; get('#background_color').value = config.style.background_color || '#0f172a'; get('#accent_color').value = config.style.accent_color || '#38bdf8';
+            }
+            function getFormData() {
+                 const getElValue=(s,d='')=>contentEl.querySelector(s)?.value||d; const getElChecked=(s)=>contentEl.querySelector(s)?.checked||false; const getElFloat=(s,d=0)=>parseFloat(contentEl.querySelector(s)?.value)||d; const getElInt=(s,d=0)=>parseInt(contentEl.querySelector(s)?.value)||d; const pT=getElValue('#pricing-type-select','fixed'); let pD; if(pT==='fixed'){pD={type:'fixed',packages:Array.from(contentEl.querySelectorAll('#packages-container > div')).map(p=>({title:p.querySelector('.package-title')?.value||'',description:p.querySelector('.package-description')?.value||'',value_cents:Math.round((parseFloat(p.querySelector('.package-value')?.value)||0)*100)}))};}else{pD={type:'open',label:getElValue('#open_value_label'),minimum_value_cents:Math.round(getElFloat('#open_value_min',5)*100),suggested_value_cents:Math.round(getElFloat('#open_value_suggested',50)*100)};}
+                 return{content:{main_title:getElValue('#main_title'),subtitle:getElValue('#subtitle'),media_url:getElValue('#media_url')||null},pricing:pD,order_bump:{enabled:getElChecked('#enable_order_bump'),product_name:getElValue('#order_bump_product_name'),description:getElValue('#order_bump_description'),value_cents:Math.round(getElFloat('#order_bump_value',0)*100)},conversion_elements:{countdown:{enabled:getElChecked('#enable_countdown'),minutes:getElInt('#countdown_minutes',15)},guarantee:{text:getElValue('#guarantee_text',''),seal_url:getElValue('#guarantee_seal_url')||null}},testimonials:Array.from(contentEl.querySelectorAll('#testimonials-container > div')).map(t=>({name:t.querySelector('.testimonial-name')?.value||'',text:t.querySelector('.testimonial-text')?.value||'',photo_url:t.querySelector('.testimonial-photo')?.value||null})),style:{background_color:getElValue('#background_color','#0f172a'),accent_color:getElValue('#accent_color','#38bdf8')},tracking:{pixel_id:getElValue('#pixel_id',''),utmify_integration_id:getElValue('#utmify_integration_id','')||null}};
+            }
+            function generatePreviewHTML(data) {
+                 const fC=(c)=>(c/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); const cdH=data.conversion_elements.countdown.enabled?`<div style="background-color: var(--preview-accent, #38bdf8); color: white; text-align: center; padding: 0.75rem;"><p style="font-weight: 600; font-size: 0.9rem;">A OFERTA TERMINA EM</p><p style="font-size: 1.5rem; font-weight: 800; letter-spacing: 0.1em;">${String(data.conversion_elements.countdown.minutes).padStart(2,'0')}:00</p></div>`:''; const mH=data.content.media_url?`<img src="${data.content.media_url}" alt="Preview" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 0.5rem; margin-bottom: 1.5rem;">`:''; let pH; if(data.pricing.type==='open'){pH=`<div style="margin-top: 1.5rem;"><label ...>${data.pricing.label||'Escolha o valor'}</label><div ...><span ...>R$</span><input ... placeholder="${(data.pricing.suggested_value_cents/100).toFixed(2).replace('.',',')}" ...></div><p ...>Mínimo: ${fC(data.pricing.minimum_value_cents)}</p></div>`;}else{const p=Array.isArray(data.pricing.packages)?data.pricing.packages:[];pH=(p.length>0?p:[{title:'Configure',description:'',value_cents:0}]).map((pk,i)=>`<div style="border: 1px solid #e5e7eb; padding: 1rem; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;" onclick="this.style.borderColor=getComputedStyle(document.documentElement).getPropertyValue('--preview-accent'); this.style.boxShadow = '0 0 0 2px '+getComputedStyle(document.documentElement).getPropertyValue('--preview-accent');"><h3 style="font-weight: 700; font-size: 1.1rem; color: #111827;">${pk.title||'Pacote'}</h3><p style="font-size: 0.9rem; color: #6b7280; margin-top: 0.25rem;">${pk.description||'Descrição'}</p><p style="font-size: 1.5rem; font-weight: 800; color: var(--preview-accent, #38bdf8); margin-top: 0.75rem;">${fC(pk.value_cents)}</p></div>`).join(''); pH=`<div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">${pH}</div>`;}
+                 const obH=data.order_bump.enabled&&data.order_bump.product_name?`<div style="background-color: #fefce8; border: 2px dashed #facc15; padding: 1rem; border-radius: 0.5rem; margin-top: 1.5rem;"><div style="display: flex; align-items: flex-start; gap: 0.75rem;"><input type="checkbox" style="width: 1.5rem; height: 1.5rem; margin-top: 0.25rem; accent-color: #ca8a04;"><div><h4 style="font-weight: 700; color: #ca8a04;">${data.order_bump.product_name}</h4><p style="font-size: 0.9rem; color: #4b5563;">${data.order_bump.description}</p></div></div></div>`:''; const gH=data.conversion_elements.guarantee.text?`<div style="margin-top: 2rem; display: flex; align-items: center; gap: 1rem; background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb;">${data.conversion_elements.guarantee.seal_url?`<img src="${data.conversion_elements.guarantee.seal_url}" alt="Selo" style="width: 60px; height: 60px;">`:''}<div><h4 style="font-weight: 700; color: #374151;">Garantia</h4><p style="font-size: 0.9rem; color: #6b7280;">${data.conversion_elements.guarantee.text}</p></div></div>`:''; const t=Array.isArray(data.testimonials)?data.testimonials:[]; const tH=t.filter(x=>x.name&&x.text).length>0?`<div style="margin-top: 2.5rem;"><h3 style="font-size: 1.5rem; font-weight: 800; text-align: center; color: ${data.style.background_color==='#ffffff'?'#111827':'#f1f5f9'}; margin-bottom: 1.5rem;">Clientes Dizem</h3><div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">${t.map(x=>`<div style="background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb; color: #1f2937;"><div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">${x.photo_url?`<img src="${x.photo_url}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">`:''}<p style="font-weight: 600; color: #111827;">${x.name}</p></div><p style="font-size: 0.9rem; color: #4b5563; font-style: italic;">"${x.text}"</p></div>`).join('')}</div></div>`:'';
+                 return`<div id="preview-body" style="--preview-bg: ${data.style.background_color}; --preview-accent: ${data.style.accent_color}; background-color: var(--preview-bg); color: ${data.style.background_color==='#ffffff'?'#1f2937':'#f1f5f9'}; min-height: 100%; font-family: 'Inter', sans-serif;">${cdH}<div style="padding: 1.5rem 2rem;"><h1 style="font-size: 1.8rem; font-weight: 800; text-align: center; color: ${data.style.background_color==='#ffffff'?'#111827':'#f1f5f9'};">${data.content.main_title||'Título'}</h1><p style="text-align: center; color: ${data.style.background_color==='#ffffff'?'#6b7280':'#94a3b8'}; margin-top: 0.5rem; margin-bottom: 2rem;">${data.content.subtitle||'Subtítulo'}</p>${mH}${pH}${obH}<button disabled style="width: 100%; background-color: var(--preview-accent, #38bdf8); color: white; font-weight: 700; padding: 1rem; border-radius: 0.5rem; margin-top: 1.5rem; font-size: 1.1rem; text-transform: uppercase; border: none; cursor: not-allowed;">Comprar</button>${gH}${tH}</div></div>`;
+            }
+            function updatePreview() { if (App.state.currentPage === 'pageCreator' && contentEl.querySelector('#creator-screen') && contentEl.querySelector('#preview-content')) { try { const data = getFormData(); contentEl.querySelector('#preview-content').innerHTML = generatePreviewHTML(data); const pb = contentEl.querySelector('#preview-content').querySelector('#preview-body'); if(pb) { pb.style.setProperty('--preview-bg', data.style.background_color); pb.style.setProperty('--preview-accent', data.style.accent_color); } } catch (e) { console.error("Erro no updatePreview:", e); } } }
+            function showResultScreen(checkoutId) { if (!checkoutLinkOutput || !resultScreen) return; const link = `${FRONTEND_URL}/oferta/${checkoutId}`; checkoutLinkOutput.value = link; resultScreen.classList.remove('hidden'); }
+            function hideResultScreen() { if (!resultScreen || !checkoutForm || !packagesContainer || !testimonialsContainer) return; resultScreen.classList.add('hidden'); checkoutForm.reset(); contentEl.querySelector('#pricing-type-select').value = 'fixed'; contentEl.querySelector('#fixed-pricing-container').classList.remove('hidden'); contentEl.querySelector('#open-pricing-container').classList.add('hidden'); contentEl.querySelector('#enable_order_bump').checked = false; contentEl.querySelector('#order-bump-fields').classList.add('hidden'); contentEl.querySelector('#enable_countdown').checked = false; contentEl.querySelector('#countdown-fields').classList.add('hidden'); packagesContainer.innerHTML = ''; testimonialsContainer.innerHTML = ''; addPackage(); updatePreview(); }
+
+            if (this.state.editingCheckoutId) {
+                creatorTitle.textContent = 'Editar Checkout'; submitBtn.textContent = 'Carregando...'; submitBtn.disabled = true;
+                try {
+                    const data = await this.apiRequest(`/api/oferta/${this.state.editingCheckoutId}`);
+                    if (data && data.config) { populateCreatorForm(data.config); submitBtn.textContent = 'Salvar Alterações'; } else { throw new Error('Config não encontrada.'); }
+                } catch (e) { this.showToast('Erro ao carregar.', 'error'); this.state.editingCheckoutId = null; creatorTitle.textContent = 'Criador'; submitBtn.textContent = 'Criar'; addPackage(); }
+                finally { submitBtn.disabled = false; updatePreview(); }
+            } else {
+                creatorTitle.textContent = 'Criador de Ofertas'; submitBtn.textContent = 'Criar Checkout'; addPackage(); updatePreview();
+            }
+
+            // Listeners
+            contentEl.removeEventListener('input', updatePreview); // Garante que não haja duplicatas
+            contentEl.addEventListener('input', updatePreview);
+            contentEl.removeEventListener('change', contentEl._changeListener);
+            contentEl._changeListener = (e) => {
+                 if (e.target.matches('#pricing-type-select, #enable_order_bump, #enable_countdown')) { const pS=contentEl.querySelector('#pricing-type-select'); const fC=contentEl.querySelector('#fixed-pricing-container'); const oC=contentEl.querySelector('#open-pricing-container'); const eOB=contentEl.querySelector('#enable_order_bump'); const oBF=contentEl.querySelector('#order-bump-fields'); const eC=contentEl.querySelector('#enable_countdown'); const cF=contentEl.querySelector('#countdown-fields'); const iF=pS.value==='fixed'; if(fC)fC.classList.toggle('hidden',!iF); if(oC)oC.classList.toggle('hidden',iF); if(oBF)oBF.classList.toggle('hidden',!eOB.checked); if(cF)cF.classList.toggle('hidden',!eC.checked); updatePreview(); } if (e.target.matches('#pixel_id')) updatePreview();
+            };
+            contentEl.addEventListener('change', contentEl._changeListener);
+
+            contentEl.removeEventListener('click', contentEl._clickListener);
+            contentEl._clickListener = (e) => {
+                 if(e.target.id==='add-package-btn')addPackage(); if(e.target.id==='add-testimonial-btn')addTestimonial(); const rPB=e.target.closest('.remove-package-btn'); if(rPB){contentEl.querySelector(`#package-${rPB.dataset.id}`)?.remove();updatePreview();} const rTB=e.target.closest('.remove-testimonial-btn'); if(rTB){contentEl.querySelector(`#testimonial-${rTB.dataset.id}`)?.remove();updatePreview();}
+                 const pW=contentEl.querySelector('#preview-wrapper'); if(e.target.id==='desktop-view-btn'){pW.className='desktop mx-auto'; e.target.classList.add('active'); contentEl.querySelector('#mobile-view-btn').classList.remove('active');} if(e.target.id==='mobile-view-btn'){pW.className='mobile mx-auto'; e.target.classList.add('active'); contentEl.querySelector('#desktop-view-btn').classList.remove('active');}
+                 if(e.target.id==='copy-link-btn'){checkoutLinkOutput.select(); document.execCommand('copy'); e.target.textContent='Copiado!'; setTimeout(()=>{e.target.textContent='Copiar Link'},2000);} if(e.target.id==='create-another-btn'){hideResultScreen(); App.navigateTo('checkouts');}
+            };
+            contentEl.addEventListener('click', contentEl._clickListener);
+
+             checkoutForm.removeEventListener('submit', checkoutForm._submitListener);
+             checkoutForm._submitListener = async (e) => {
+                 e.preventDefault(); const b=submitBtn; const oT=b.textContent; b.textContent='Salvando...'; b.disabled=true;
+                 try{ const cD=getFormData(); if(cD.pricing.type==='fixed'&&(!cD.pricing.packages||cD.pricing.packages.length===0))throw new Error('Adicione um pacote.'); if(!cD.tracking.pixel_id)throw new Error('Pixel obrigatório.');
+                 if(App.state.editingCheckoutId){await App.apiRequest(`/api/checkouts/${App.state.editingCheckoutId}`,'PUT',cD); App.showToast('Atualizado!', 'success'); App.state.editingCheckoutId=null; App.navigateTo('checkouts');}else{const r=await App.apiRequest('/api/checkouts/create-hosted','POST',cD); if(r&&r.checkoutId){showResultScreen(r.checkoutId);}else{throw new Error('Erro API.');}}}catch(error){App.showToast(error.message||'Erro.','error'); b.disabled=false; b.textContent=oT;}
+             };
+             checkoutForm.addEventListener('submit', checkoutForm._submitListener);
+        }, 
+        
+        async initThankYouCreatorPage() {
+            const FRONTEND_URL = window.location.origin;
+            const creatorScreen = document.getElementById('creator-screen');
+            if (!creatorScreen) return;
+
+            const thankYouForm = document.getElementById('thank-you-form');
+            const submitBtn = document.getElementById('submit-btn');
+            const resultScreen = document.getElementById('result-screen');
+            const pageLinkOutput = document.getElementById('page-link-output');
+            const copyLinkBtn = document.getElementById('copy-link-btn');
+            const createAnotherBtn = document.getElementById('create-another-btn');
+            const utmifySelect = document.getElementById('utmify_integration_id');
+            const previewContent = document.getElementById('preview-content');
+            const pageTitle = document.getElementById('ty-creator-title'); // ID único para o título
+            const backBtn = document.getElementById('back-to-ty-list-btn');
+
+            if (!document.getElementById('sidebar')) { if(backBtn) backBtn.style.display = 'none'; }
+
+            const apiKey = App.state.data.settings.api_key;
+            if (!apiKey) {
+                App.showToast("Chave de API não encontrada. Salve-a na página 'API PIX'.", "error");
+                submitBtn.disabled = true;
+                return;
+            } else {
+                 submitBtn.disabled = false;
+            }
+
+            utmifySelect.innerHTML = '<option value="">Não enviar</option>';
+            if (App.state.data.utmifyIntegrations) {
+                App.state.data.utmifyIntegrations.forEach(int => {
+                    const option = document.createElement('option'); option.value = int.id; option.textContent = int.account_name; utmifySelect.appendChild(option);
+                });
+            }
+
+            function populateForm(config) {
+                 document.getElementById('page_name').value = config.page_name || ''; document.getElementById('main_title').value = config.main_title || ''; document.getElementById('subtitle').value = config.subtitle || ''; document.getElementById('button_text').value = config.button_text || ''; document.getElementById('redirect_url').value = config.redirect_url || ''; document.getElementById('purchase_value').value = config.purchase_value || ''; document.getElementById('pixel_id').value = config.pixel_id || ''; document.getElementById('utmify_integration_id').value = config.utmify_integration_id || '';
+            }
+
+            if (App.state.editingThankYouPageId) {
+                pageTitle.textContent = 'Editar Página de Obrigado'; submitBtn.textContent = 'Carregando...'; submitBtn.disabled = true; if(backBtn) backBtn.textContent = 'Cancelar Edição';
+                try {
+                    const pageData = await App.apiRequest(`/api/thank-you-pages/${App.state.editingThankYouPageId}`);
+                    if (pageData && pageData.config) { populateForm(pageData.config); submitBtn.textContent = 'Salvar Alterações'; } else { throw new Error('Configuração não encontrada.'); }
+                } catch (e) { App.showToast('Erro ao carregar.', 'error'); App.state.editingThankYouPageId = null; pageTitle.textContent = 'Criador de Página de Obrigado'; submitBtn.textContent = 'Gerar Página'; if(backBtn) backBtn.textContent = 'Voltar para Lista'; thankYouForm.reset(); }
+                finally { submitBtn.disabled = false; updatePreview(); }
+            } else {
+                pageTitle.textContent = 'Criador de Página de Obrigado'; submitBtn.textContent = 'Gerar Página'; if(backBtn) backBtn.textContent = 'Voltar para Lista'; thankYouForm.reset(); updatePreview();
+            }
+
+             function updatePreview() {
+                 if (!previewContent) return; const data = { main_title: document.getElementById('main_title').value, subtitle: document.getElementById('subtitle').value, button_text: document.getElementById('button_text').value, redirect_url: document.getElementById('redirect_url').value, };
+                 previewContent.innerHTML = `<div style="background-color: var(--bg-secondary); color: var(--text-primary); font-family: 'Inter', sans-serif; min-height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem;"> <div> <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-400 mx-auto mb-4" viewBox="0 0 20 20" fill="currentColor"> <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /> </svg> <h1 style="font-size: 2.25rem; font-weight: 800; color: white;">${data.main_title || 'Obrigado!'}</h1> <p style="color: var(--text-secondary); margin-top: 0.5rem; max-width: 450px; margin-left: auto; margin-right: auto;">${data.subtitle || 'Subtítulo...'}</p> <a href="${data.redirect_url || '#'}" target="_blank" style="display: inline-block; background-color: var(--accent-secondary); color: white; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.375rem; margin-top: 1.5rem; text-decoration: none;"> ${data.button_text || 'Botão'} </a> </div> </div>`;
+             }
+             function showResultScreen(pageId) { const link = `${FRONTEND_URL}/obrigado/${pageId}`; pageLinkOutput.value = link; resultScreen.classList.remove('hidden'); }
+             function hideResultScreen() { resultScreen.classList.add('hidden'); thankYouForm.reset(); updatePreview(); }
+
+            // Listeners
+            thankYouForm.removeEventListener('input', updatePreview);
+            thankYouForm.addEventListener('input', updatePreview);
+
+            thankYouForm.removeEventListener('submit', thankYouForm._submitListener);
+            thankYouForm._submitListener = async (e) => {
+                e.preventDefault(); const button = submitBtn; const originalText = button.textContent; button.textContent = 'Salvando...'; button.disabled = true;
+                const payload = { page_name: document.getElementById('page_name').value, main_title: document.getElementById('main_title').value, subtitle: document.getElementById('subtitle').value, button_text: document.getElementById('button_text').value, redirect_url: document.getElementById('redirect_url').value, purchase_value: parseFloat(document.getElementById('purchase_value').value), pixel_id: document.getElementById('pixel_id').value, utmify_integration_id: document.getElementById('utmify_integration_id').value || null };
+                try {
+                    if (App.state.editingThankYouPageId) {
+                         await App.apiRequest(`/api/thank-you-pages/${App.state.editingThankYouPageId}`, 'PUT', payload);
+                         App.showToast('Página atualizada!', 'success'); App.state.editingThankYouPageId = null; App.navigateTo('thankYouPages');
+                    } else {
+                        const result = await App.apiRequest(`/api/thank-you-pages/create`, 'POST', payload);
+                        showResultScreen(result.pageId);
+                    }
+                } catch (error) { button.disabled = false; button.textContent = originalText; }
+            };
+            thankYouForm.addEventListener('submit', thankYouForm._submitListener);
+
+            copyLinkBtn.removeEventListener('click', copyLinkBtn._clickListener);
+            copyLinkBtn._clickListener = () => { pageLinkOutput.select(); document.execCommand('copy'); copyLinkBtn.textContent = 'Copiado!'; setTimeout(() => { copyLinkBtn.textContent = 'Copiar Link'; }, 2000); };
+            copyLinkBtn.addEventListener('click', copyLinkBtn._clickListener);
+
+            createAnotherBtn.removeEventListener('click', createAnotherBtn._clickListener);
+            createAnotherBtn._clickListener = () => { hideResultScreen(); App.state.editingThankYouPageId = null; pageTitle.textContent = 'Criador de Página de Obrigado'; submitBtn.textContent = 'Gerar Página'; };
+            createAnotherBtn.addEventListener('click', createAnotherBtn._clickListener);
+
+             if(backBtn) {
+                 backBtn.removeEventListener('click', backBtn._clickListener);
+                 backBtn._clickListener = () => { App.state.editingThankYouPageId = null; App.navigateTo('thankYouPages'); };
+                 backBtn.addEventListener('click', backBtn._clickListener);
+             }
+        },
     };
 
     App.init();
