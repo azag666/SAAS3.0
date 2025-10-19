@@ -28,7 +28,7 @@
             --danger: #f87171; /* red-400 */
             --warning: #facc15; /* yellow-400 */
         }
-        
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-primary);
@@ -62,7 +62,7 @@
             border-color: var(--accent-primary);
             box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
         }
-        
+
         .form-date::-webkit-calendar-picker-indicator {
             filter: invert(0.8);
         }
@@ -106,7 +106,7 @@
         .btn-green:hover { background-color: #059669; box-shadow: 0 0 25px rgba(16, 185, 129, 0.5); }
         .btn-secondary { background-color: var(--border-color); border-color: #475569; box-shadow: none; }
         .btn-secondary:hover { background-color: #475569; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }
-        
+
         .nav-link {
             color: var(--text-secondary);
             position: relative;
@@ -155,7 +155,7 @@
             background-color: rgba(15, 23, 42, 0.7);
             backdrop-filter: blur(8px);
         }
-        
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .animate-fade-in { animation: fadeIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
 
@@ -168,7 +168,7 @@
         .status-indicator.failure { background: linear-gradient(to right, rgba(248, 113, 113, 0.1), rgba(185, 28, 28, 0.1)); color: var(--danger); border: 1px solid rgba(248, 113, 113, 0.2); }
         .status-indicator.unknown { background-color: rgba(100, 116, 139, 0.1); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
         .status-indicator.testing { background: linear-gradient(to right, rgba(56, 189, 248, 0.1), rgba(14, 165, 233, 0.1)); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.2); }
-        
+
         .tab-button { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 0.5rem 1rem; border-radius: 0.375rem; transition: all 0.3s ease; }
         .tab-button:hover { background-color: var(--bg-secondary); color: var(--text-primary); }
         .tab-button.active { background-color: rgba(14, 165, 233, 0.1); border-color: var(--accent-secondary); color: white; font-weight: 600; box-shadow: 0 0 10px rgba(14, 165, 233, 0.2); }
@@ -221,7 +221,7 @@
         .btn-danger:hover { background-color: #b91c1c; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); }
         .btn-view { color: var(--text-secondary); }
         .btn-view.active { background-color: var(--accent-secondary); color: white; }
-        
+
         #preview-wrapper {
             background-color: #fff;
             border-radius: 0.75rem;
@@ -242,7 +242,7 @@
         #preview-content::-webkit-scrollbar-track { background: #f1f1f1; }
         #preview-content::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
         #preview-content::-webkit-scrollbar-thumb:hover { background: #555; }
-        
+
         /* @keyframes fadeIn ja existe, nao precisa redeclarar */
         /* .animate-fade-in ja existe, nao precisa redeclarar */
         /* --- FIM DO CSS ADICIONADO --- */
@@ -265,11 +265,11 @@
         state: {
             API_BASE_URL: 'https://novaapi-one.vercel.app',
             token: null,
-            data: { 
+            data: {
                 pixels: [],
                 bots: [],
-                pressels: [], 
-                settings: {}, 
+                pressels: [],
+                settings: {},
                 transactions: [],
                 dashboard: {},
                 utmifyIntegrations: []
@@ -296,7 +296,7 @@
                 this.renderCheckoutPage(checkoutId);
                 return;
             }
-            
+
             this.state.token = localStorage.getItem('hottrack_token');
             if (this.state.token) {
                 try {
@@ -307,13 +307,13 @@
                     this.state.data = { ...this.state.data, ...staticData, transactions };
                     this.renderLayout();
                     this.navigateTo('dashboard');
-                } catch (e) { 
+                } catch (e) {
                     console.error("Erro ao inicializar:", e); // Adicionado log de erro
                     this.logout();
                 }
             } else {
                 this.renderLogin();
-                this.addAuthEventListeners(); 
+                this.addAuthEventListeners();
             }
         },
 
@@ -362,7 +362,7 @@
                         </div>
                     </div>
                 `;
-                
+
                 appContainer.innerHTML = checkoutHTML;
 
                 // Só adiciona listeners se for preço fixo e tiver pacotes
@@ -379,10 +379,10 @@
                             p.classList.remove('border-sky-400', 'ring-2', 'ring-sky-400');
                         });
                         clickedPackage.classList.add('border-sky-400', 'ring-2', 'ring-sky-400');
-                        
+
                         const packageIndex = clickedPackage.dataset.packageIndex;
                         selectedPackage = config.pricing.packages[packageIndex];
-                        
+
                         payButton.textContent = `Pagar Agora (${((selectedPackage.value_cents || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`;
                         payButton.disabled = false;
                     });
@@ -479,7 +479,7 @@
                 return number.toLocaleString('pt-BR');
             }
         },
-        
+
         templates: {
             auth(page = 'login') {
                 return `<div class="flex items-center justify-center min-h-screen p-4">${page === 'login' ? this.loginForm() : this.registerForm()}</div>`;
@@ -558,7 +558,7 @@
                         </nav>
                         <div class="mt-auto"><button id="logoutButton" class="w-full text-slate-400 hover:bg-red-900/50 hover:text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" /></svg>Sair da Conta</button></div>
                     </aside>
-                    
+
                     <div class="flex-1 flex flex-col w-full">
                         <header class="p-4 md:hidden card flex justify-between items-center sticky top-0 z-10">
                              <button id="open-sidebar-btn" class="text-white">
@@ -614,7 +614,7 @@
                     <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
                         <div class="card p-6 rounded-lg lg:col-span-2"><h2 class="text-xl font-semibold text-white mb-4">Desempenho por Bot</h2><div id="bots-performance-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Bot</th><th>Cliques</th><th>Vendas</th><th>Faturamento</th></tr></thead><tbody id="bots-performance-table"><tr><td colspan="4">Carregando...</td></tr></tbody></table></div></div>
                         <div class="card p-6 rounded-lg"><h2 class="text-xl font-semibold text-white mb-4">Tráfego por Estado</h2><div id="traffic-by-state-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Estado</th><th>Cliques</th></tr></thead><tbody id="traffic-by-state-table"><tr><td colspan="2">Carregando...</td></tr></tbody></table></div></div>
-                        
+
                     </div>
                      <div class="grid grid-cols-1 gap-8 lg:grid-cols-3 mt-8">
                         <div class="card p-6 rounded-lg lg:col-span-2">
@@ -645,7 +645,7 @@
                             <button type="submit" form="checkout-form" id="submit-btn" class="btn font-bold text-lg py-2 px-6">Criar Checkout</button>
                         </div>
                     </div>
-                    
+
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <form id="checkout-form" class="space-y-6 h-[700px] overflow-y-auto pr-4">
                             <div class="card p-6 rounded-xl">
@@ -792,7 +792,7 @@
                 const utmifyOptions = utmifyIntegrations.map(u => `<option value="${u.id}">${u.account_name}</option>`).join('');
                 const pixelCheckboxes = pixels.map(p => `<label class="flex items-center space-x-2 text-gray-300 hover:text-white cursor-pointer p-2 rounded-md hover:bg-slate-700/50"><input type="checkbox" name="pixel_ids" value="${p.id}" class="h-4 w-4 bg-slate-700 border-slate-500 rounded text-sky-500 focus:ring-sky-500"><span>${p.account_name}</span></label>`).join('');
                 const presselList = pressels.map(pr => `<div class="p-3 card flex justify-between items-center text-sm"><div><p class="font-semibold">${pr.name}</p><p class="text-xs text-gray-400">Bot: ${pr.bot_name}</p></div><div class="space-x-2"><button data-id="${pr.id}" class="generate-pressel-code-btn btn text-xs py-1 px-2">Ver Código</button><button data-id="${pr.id}" class="delete-pressel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
-                
+
                 return `
                 <div class="animate-fade-in">
                     <div class="mb-6"><h1 class="text-3xl font-bold text-white">Criador de Pressel</h1><p class="text-slate-400">Configure suas páginas de pressel para captura de leads.</p></div>
@@ -803,7 +803,7 @@
                                 <input name="name" placeholder="Nome da Pressel (Ex: Campanha Black Friday)" class="form-input w-full p-2" required>
                                 <input name="white_page_url" type="url" placeholder="URL da Página Branca" class="form-input w-full p-2" required>
                                 <select name="bot_id" class="form-select w-full p-2" required><option value="">Selecione um Bot</option>${botOptions}</select>
-                                
+
                                 <div>
                                     <label class="text-sm font-medium text-gray-400 mb-1 block">Enviar Eventos para Utmify (Opcional)</label>
                                     <select name="utmify_integration_id" class="form-select w-full p-2">
@@ -811,7 +811,7 @@
                                         ${utmifyOptions}
                                     </select>
                                 </div>
-                                
+
                                 <div class="card p-3"><p class="font-semibold mb-2">Selecione os Pixels:</p><div class="space-y-1">${pixelCheckboxes.length ? pixelCheckboxes : '<p class="text-gray-500 text-sm">Cadastre um pixel primeiro.</p>'}</div></div>
                                 <button type="submit" class="btn w-full p-3 rounded-md text-base font-bold">Salvar e Gerar Código</button>
                             </form>
@@ -1020,10 +1020,10 @@
 
                 // Logout
                 if (e.target.id === 'logoutButton') this.logout();
-                
+
                 // Close Modal
                 if (e.target.closest('#closeModalBtn')) document.getElementById('modal-container').innerHTML = '';
-                
+
                 // Open Add Utmify Modal
                 if (e.target.id === 'add-utmify-btn') {
                     this.showAddUtmifyModal();
@@ -1060,8 +1060,8 @@
                     if(targetInput){
                        const isPassword = targetInput.type === 'password';
                        targetInput.type = isPassword ? 'text' : 'password';
-                       toggleBtn.innerHTML = isPassword 
-                           ? `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781z" clip-rule="evenodd" /><path d="M12.454 16.697L9.75 13.992a2.5 2.5 0 01-3.482-3.482l-2.455-2.455a10.048 10.048 0 00-3.263 5.218C1.732 14.057 5.522 17 10 17a9.95 9.95 0 005.023-1.303l-2.57-2.57z" /></svg>` 
+                       toggleBtn.innerHTML = isPassword
+                           ? `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781z" clip-rule="evenodd" /><path d="M12.454 16.697L9.75 13.992a2.5 2.5 0 01-3.482-3.482l-2.455-2.455a10.048 10.048 0 00-3.263 5.218C1.732 14.057 5.522 17 10 17a9.95 9.95 0 005.023-1.303l-2.57-2.57z" /></svg>`
                            : `<svg class="pointer-events-none h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>`;
                    }
                 }
@@ -1105,13 +1105,13 @@
                     if (deleteBtn.classList.contains('delete-bot-btn')) { type = 'bots'; endpoint = 'bots'; itemName = 'bot'; }
                     if (deleteBtn.classList.contains('delete-pressel-btn')) { type = 'pressels'; endpoint = 'pressels'; itemName = 'pressel'; }
                     if (deleteBtn.classList.contains('delete-utmify-btn')) { type = 'utmifyIntegrations'; endpoint = 'integrations/utmify'; itemName = 'integração Utmify'; }
-                    
+
                     if (confirm(`Tem certeza que deseja excluir este ${itemName}?`)) {
                         try {
                             await this.apiRequest(`/api/${endpoint}/${id}`, 'DELETE');
                             this.state.data[type] = this.state.data[type].filter(item => item.id != id);
                             // Re-renderiza a página atual para atualizar a lista
-                            this.navigateTo(this.state.currentPage); 
+                            this.navigateTo(this.state.currentPage);
                             this.showToast(`${itemName.charAt(0).toUpperCase() + itemName.slice(1)} excluído com sucesso!`, 'success');
                         } catch(err) {
                              this.showToast(`Erro ao excluir o ${itemName}.`, 'error');
@@ -1138,7 +1138,7 @@
                 const form = e.target.closest('form');
                 // Ignora forms de login/registro e o form do criador de checkout (tratado em initCreatorPage)
                 if (!form || ['loginForm', 'registerForm', 'checkout-form'].includes(form.id)) return;
-                
+
                 e.preventDefault();
                 const button = form.querySelector('button[type="submit"]');
                 const originalButtonText = button ? button.innerHTML : 'Salvar';
@@ -1146,16 +1146,16 @@
                    button.innerHTML = 'Salvando...';
                    button.disabled = true;
                 }
-                
+
                 let data = Object.fromEntries(new FormData(form).entries());
                 try {
                     if (form.id === 'pixSettingsForm') {
                         await this.apiRequest('/api/settings/pix', 'POST', data);
                         // Atualiza o estado local para refletir as mudanças
-                        App.state.data.settings = { ...App.state.data.settings, ...data }; 
+                        App.state.data.settings = { ...App.state.data.settings, ...data };
                         this.showToast('Configurações PIX salvas!', 'success');
                         // Atualiza indicadores após salvar
-                         this.updateAllPixStatusIndicators(); 
+                         this.updateAllPixStatusIndicators();
                     }
                     else if (form.id === 'utmifySettingsForm') {
                         const newIntegration = await this.apiRequest('/api/integrations/utmify', 'POST', data);
@@ -1168,8 +1168,8 @@
                     }
                     else if (form.id === 'pixelForm') {
                         const newPixel = await this.apiRequest('/api/pixels', 'POST', data);
-                        if (newPixel) { 
-                            this.state.data.pixels.unshift(newPixel); 
+                        if (newPixel) {
+                            this.state.data.pixels.unshift(newPixel);
                             this.navigateTo('pixels'); // Atualiza a página de pixels
                             this.showToast('Pixel adicionado com sucesso!', 'success');
                             form.reset(); // Limpa o formulário
@@ -1177,8 +1177,8 @@
                     }
                     else if (form.id === 'botForm') {
                         const newBot = await this.apiRequest('/api/bots', 'POST', data);
-                        if (newBot) { 
-                            this.state.data.bots.unshift(newBot); 
+                        if (newBot) {
+                            this.state.data.bots.unshift(newBot);
                             this.navigateTo('bots'); // Atualiza a página de bots
                              this.showToast('Bot adicionado com sucesso!', 'success');
                              form.reset(); // Limpa o formulário
@@ -1195,7 +1195,7 @@
                                 // Adiciona bot_name localmente para exibição imediata
                                 const bot = this.state.data.bots.find(b => b.id == newPressel.bot_id);
                                 const presselWithBotName = {...newPressel, bot_name: bot ? bot.bot_name : 'Desconhecido'};
-                                this.state.data.pressels.unshift(presselWithBotName); 
+                                this.state.data.pressels.unshift(presselWithBotName);
                                 this.navigateTo('pressels'); // Atualiza a página
                                 this.generatePresselCode(presselWithBotName); // Mostra o código no modal
                                 form.reset(); // Limpa o formulário
@@ -1210,7 +1210,7 @@
                     }
                 }
             });
-            
+
              // Listener de change continua global pois não há conflitos aparentes
             document.addEventListener('change', e => {
                 if (e.target.id === 'value-type-selector') {
@@ -1220,10 +1220,10 @@
                     }
                 }
                  // Este listener pode ser movido para initCreatorPage se causar problemas
-                if (e.target.id === 'flow-type-selector') { 
+                if (e.target.id === 'flow-type-selector') {
                     const container = document.getElementById('flow-config-container');
                     if (!container) return;
-                    
+
                     if (e.target.value === 'pix_flow') {
                         container.innerHTML = `
                             <h4 class="text-md font-semibold mt-2 mb-1 text-sky-400">Conteúdo da Mensagem</h4>
@@ -1259,13 +1259,13 @@
 
                 const options = { method, headers };
                 if (body) { options.body = JSON.stringify(body); }
-                
+
                 const response = await fetch(`${this.state.API_BASE_URL}${endpoint}`, options);
-                
+
                 if (response.status === 204) return null; // Handle No Content
-                
+
                 const data = await response.json();
-                
+
                 if (!response.ok) {
                     console.error(`API Error ${response.status} on ${method} ${endpoint}:`, data); // Log detalhado do erro
                     // Tenta extrair uma mensagem de erro mais útil
@@ -1284,7 +1284,7 @@
                     this.showToast(error.message, 'error');
                     // Desloga se o token for inválido/expirado
                     if (error.message.includes('inválido') || error.message.includes('expirado') || error.message.includes('API Key inválida')) {
-                       this.logout(); 
+                       this.logout();
                     }
                  } else {
                     // Caso seja um erro de rede (fetch falhou)
@@ -1294,27 +1294,27 @@
                  throw error; // Re-lança o erro para que chamadas .catch() funcionem
             }
         },
-        
+
         async login(email, password) {
             try {
                 const data = await this.apiRequest('/api/sellers/login', 'POST', { email, password });
                 this.state.token = data.token;
                 localStorage.setItem('hottrack_token', data.token);
                 // Recarrega a página após o login para garantir estado limpo
-                window.location.reload(); 
+                window.location.reload();
             } catch (e) {
                  // O erro já foi mostrado pelo apiRequest
             }
         },
-        
+
         async register(name, email, password) {
             try {
                 const data = await this.apiRequest('/api/sellers/register', 'POST', { name, email, password });
                 this.showToast('Cadastro realizado! Redirecionando para aprovação...', 'success');
-                
+
                 const message = `Olá, gostaria de solicitar a aprovação do meu cadastro. Email: ${email}`;
                 const whatsappUrl = `https://wa.me/5541995211148?text=${encodeURIComponent(message)}`;
-                
+
                 setTimeout(() => {
                     window.location.href = whatsappUrl;
                 }, 1000);
@@ -1328,7 +1328,7 @@
             this.state.token = null;
             localStorage.removeItem('hottrack_token');
             // Recarrega a página para ir para a tela de login
-            window.location.reload(); 
+            window.location.reload();
         },
 
         showAddUtmifyModal() {
@@ -1352,7 +1352,7 @@
         async viewDispatchDetails(logId) {
             const modalContainer = document.getElementById('modal-container');
             modalContainer.innerHTML = this.templates.modal(`Relatório do Disparo #${logId}`, '<p>Carregando detalhes...</p>');
-            
+
             try {
                 const details = await this.apiRequest(`/api/dispatches/${logId}`);
                 const rows = details.map(d => `
@@ -1375,7 +1375,7 @@
                  modalContainer.innerHTML = this.templates.modal(`Relatório do Disparo #${logId}`, '<p class="text-red-400">Erro ao carregar detalhes.</p>');
             }
         },
-        
+
         async navigateTo(page) {
             this.state.currentPage = page;
             const contentContainer = document.getElementById('content');
@@ -1385,9 +1385,9 @@
             }
 
             contentContainer.innerHTML = `<div class="flex items-center justify-center h-full"><svg class="animate-spin h-6 w-6 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>`;
-            
+
              // Adiciona um pequeno delay para garantir que o DOM seja atualizado
-            await new Promise(resolve => setTimeout(resolve, 10)); 
+            await new Promise(resolve => setTimeout(resolve, 10));
 
             try {
                 contentContainer.innerHTML = this.templates[page]();
@@ -1410,19 +1410,19 @@
                  contentContainer.innerHTML = `<p class="text-center text-red-400">Erro ao carregar a seção ${page}.</p>`;
             }
         },
-        
+
         async fetchDashboardMetrics() {
              const metricsContainer = document.getElementById('metric-clicks');
              // Se os elementos do dashboard não existem, não busca as métricas
-             if (!metricsContainer) return; 
+             if (!metricsContainer) return;
 
             try {
                 const { startDate, endDate } = this.state.dateFilter;
-                const query = new URLSearchParams({ 
+                const query = new URLSearchParams({
                     startDate: startDate || '',
                     endDate: endDate || ''
                 }).toString();
-                
+
                 const metrics = await this.apiRequest(`/api/dashboard/metrics?${query}`);
                 this.state.data.dashboard = metrics; // Guarda os dados recebidos
 
@@ -1437,7 +1437,7 @@
                 updateElement('metric-paid', metrics.total_pix_paid);
                 updateElement('metric-total-revenue', metrics.total_revenue, true);
                 updateElement('metric-paid-revenue', metrics.paid_revenue, true);
-                
+
                 const botsTableBody = document.getElementById('bots-performance-table');
                 if (botsTableBody && metrics.bots_performance) { // Verifica se 'bots_performance' existe
                     if (metrics.bots_performance.length > 0) {
@@ -1461,12 +1461,12 @@
                        trafficTableBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-500 py-8">Nenhum tráfego registrado.</td></tr>';
                     }
                  }
-                
+
                 this.renderRevenueChart(); // Chama o gráfico
                 this.fetchAchievementsAndRanking(); // Busca conquistas e ranking
             } catch (e) { console.error("Erro ao carregar métricas do painel:", e); }
         },
-        
+
         async fetchAchievementsAndRanking() {
             const achievementsList = document.getElementById('achievements-list');
             const rankingList = document.getElementById('ranking-list');
@@ -1477,20 +1477,20 @@
 
             try {
                 const data = await this.apiRequest('/api/dashboard/achievements-and-ranking');
-                
+
                 // Pega o faturamento PAGO atual do estado (já formatado em centavos pela API)
-                const paidRevenueCents = this.state.data.dashboard.paid_revenue || 0; 
+                const paidRevenueCents = this.state.data.dashboard.paid_revenue || 0;
 
                 if (data.userAchievements && data.userAchievements.length > 0) {
                     achievementsList.innerHTML = data.userAchievements.map(ach => {
                         const icon = ach.is_completed ? '✅' : '🔒';
                         const textColor = ach.is_completed ? 'text-green-400' : 'text-gray-400';
                         // Compara com sales_goal que também vem em centavos
-                        const missingAmountCents = (ach.sales_goal || 0) - paidRevenueCents; 
-                        const formattedMissing = missingAmountCents > 0 
-                            ? `Falta ${this.formatNumber(missingAmountCents, true)}` 
+                        const missingAmountCents = (ach.sales_goal || 0) - paidRevenueCents;
+                        const formattedMissing = missingAmountCents > 0
+                            ? `Falta ${this.formatNumber(missingAmountCents, true)}`
                             : 'Concluída!';
-                        
+
                         return `
                             <div class="card p-4 rounded-lg flex items-center gap-3 bg-slate-900/50">
                                 <span class="text-2xl">${icon}</span>
@@ -1509,7 +1509,7 @@
                         const rank = index + 1;
                         const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
                         // total_revenue vem em centavos da API
-                        const revenue = this.formatNumber(seller.total_revenue || 0, true); 
+                        const revenue = this.formatNumber(seller.total_revenue || 0, true);
                         return `<div class="p-2 bg-slate-900/50 rounded-lg flex justify-between items-center"><span class="font-bold text-lg w-8 text-center">${medal}</span><span class="text-sm flex-1">${seller.name || 'Vendedor'}</span><span class="text-xs text-gray-400">${revenue}</span></div>`;
                     }).join('');
                 } else {
@@ -1526,7 +1526,7 @@
                 if(userRankStatus) userRankStatus.textContent = 'Erro ao carregar sua posição.';
             }
         },
-        
+
         renderTransactionsTable() {
             const tableBody = document.getElementById('transactions-table-body');
             if (!tableBody) return;
@@ -1539,9 +1539,9 @@
                    const start = new Date(startDate).getTime();
                    // Adiciona 1 dia ao endDate para incluir o dia inteiro
                    const end = new Date(endDate);
-                   end.setDate(end.getDate() + 1); 
+                   end.setDate(end.getDate() + 1);
                    const endTime = end.getTime();
-                   
+
                    filteredTransactions = filteredTransactions.filter(t => {
                        const transactionDate = new Date(t.created_at).getTime();
                        return transactionDate >= start && transactionDate < endTime; // Usa < endTime
@@ -1559,7 +1559,7 @@
                     const statusText = t.status === 'paid' ? 'Pago' : 'Pendente';
                     // pix_value vem em REAIS do backend, convertemos para centavos para formatNumber
                     const valueInCents = Math.round(parseFloat(t.pix_value || 0) * 100);
-                    const formattedValue = this.formatNumber(valueInCents, true); 
+                    const formattedValue = this.formatNumber(valueInCents, true);
                     const formattedDate = t.created_at ? new Date(t.created_at).toLocaleString('pt-BR') : 'Data inválida';
                     const sourceName = t.source_name || 'Desconhecida';
                     const providerName = t.provider ? t.provider.toUpperCase() : 'N/A';
@@ -1583,7 +1583,7 @@
             };
             const setTimeToEndOfDay = (date) => {
                 // Ajustado para T23:59:59.999Z (UTC) para consistência com o backend (BETWEEN inclui limites)
-                date.setUTCHours(23, 59, 59, 999); 
+                date.setUTCHours(23, 59, 59, 999);
                 return date;
             };
             const setTimeToStartOfDayUTC = (date) => {
@@ -1612,16 +1612,16 @@
                     case 'thisMonth':
                         startDate = setTimeToStartOfDayUTC(new Date(now.getFullYear(), now.getMonth(), 1)); // Começo do mês UTC
                         // Pega o último dia do mês atual e define o fim do dia local
-                        endDate = setTimeToEndOfDay(new Date(now.getFullYear(), now.getMonth() + 1, 0)); 
+                        endDate = setTimeToEndOfDay(new Date(now.getFullYear(), now.getMonth() + 1, 0));
                         break;
                     case 'custom':
                         if (customStartDate) {
                             // Interpreta a data como local e pega o início do dia UTC
-                            startDate = setTimeToStartOfDayUTC(new Date(customStartDate + 'T00:00:00')); 
+                            startDate = setTimeToStartOfDayUTC(new Date(customStartDate + 'T00:00:00'));
                         }
                         if (customEndDate) {
                              // Interpreta a data como local e pega o fim do dia UTC
-                            endDate = setTimeToEndOfDay(new Date(customEndDate + 'T00:00:00')); 
+                            endDate = setTimeToEndOfDay(new Date(customEndDate + 'T00:00:00'));
                         }
                         // Validação se as datas customizadas são válidas
                         if (!startDate || !endDate || isNaN(startDate) || isNaN(endDate)) {
@@ -1638,13 +1638,13 @@
             }
 
 
-            this.state.dateFilter = { 
-                period, 
+            this.state.dateFilter = {
+                period,
                 // Envia datas no formato ISO String (UTC) para o backend
-                startDate: startDate ? startDate.toISOString() : null, 
+                startDate: startDate ? startDate.toISOString() : null,
                 endDate: endDate ? endDate.toISOString() : null
             };
-            
+
             // Atualiza a UI dos botões de filtro
             const filterContainer = document.getElementById(`${page}-date-filter`);
             if (filterContainer) {
@@ -1662,27 +1662,27 @@
             if (page === 'dashboard') this.fetchDashboardMetrics();
             else if (page === 'transactions') this.renderTransactionsTable();
         },
-        
+
         renderRevenueChart() {
             const ctx = document.getElementById('revenueChart');
             // Garante que o gráfico só seja renderizado se o elemento canvas existir
-            if (!ctx || !(ctx instanceof HTMLCanvasElement)) return; 
-            
+            if (!ctx || !(ctx instanceof HTMLCanvasElement)) return;
+
             const rawData = this.state.data.dashboard.daily_revenue || [];
-            
+
             // Formata as datas corretamente (considerando que vêm como YYYY-MM-DD)
             const labels = rawData.map(item => {
                  try {
                      // Adiciona 'T00:00:00' para interpretar como UTC e evitar problemas de fuso
-                    const date = new Date(item.date + 'T00:00:00'); 
+                    const date = new Date(item.date + 'T00:00:00');
                     return date.toLocaleDateString('pt-BR', {timeZone: 'UTC'}); // Exibe como UTC
                  } catch {
                     return 'Data Inválida'; // Fallback
                  }
             });
             // Converte para centavos para formatNumber funcionar corretamente
-            const revenuesInCents = rawData.map(item => Math.round(parseFloat(item.revenue || 0) * 100)); 
-            
+            const revenuesInCents = rawData.map(item => Math.round(parseFloat(item.revenue || 0) * 100));
+
             // Destroi gráfico anterior se existir
             if (this.state.revenueChart) {
                 try {
@@ -1713,14 +1713,14 @@
                    options: {
                        responsive: true, maintainAspectRatio: false, // Ajustado para false
                        scales: {
-                           y: { 
-                               beginAtZero: true, 
-                               ticks: { 
+                           y: {
+                               beginAtZero: true,
+                               ticks: {
                                    color: '#94a3b8',
                                    // Formata o eixo Y para mostrar em Reais
-                                   callback: (value) => this.formatNumber(value, true) 
-                               }, 
-                               grid: { color: 'rgba(51, 65, 85, 0.5)' } 
+                                   callback: (value) => this.formatNumber(value, true)
+                               },
+                               grid: { color: 'rgba(51, 65, 85, 0.5)' }
                            },
                            x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
                        },
@@ -1729,9 +1729,9 @@
                            tooltip: {
                                backgroundColor: '#0f172a', titleColor: '#f1f5f9', bodyColor: '#cbd5e1',
                                borderColor: '#334155', borderWidth: 1,
-                               callbacks: { 
+                               callbacks: {
                                    // Formata o tooltip para mostrar em Reais
-                                   label: (context) => `Faturamento: ${this.formatNumber(context.raw, true)}` 
+                                   label: (context) => `Faturamento: ${this.formatNumber(context.raw, true)}`
                                }
                            }
                        }
@@ -1821,7 +1821,7 @@
                 window.location.replace(WHITE_PAGE_URL);
             }
         }
-        
+
         function startFlow() {
             if (isBot()) {
                 window.location.replace(WHITE_PAGE_URL);
@@ -1833,7 +1833,7 @@
                 const fbc = getCookie("_fbc");
                 const fbclid = new URLSearchParams(window.location.search).get("fbclid");
                 // Tenta redirecionar se o _fbc for encontrado OU se não houver fbclid (tráfego orgânico/direto) OU se atingir o limite
-                if (fbc || !fbclid || attempts >= maxAttempts) { 
+                if (fbc || !fbclid || attempts >= maxAttempts) {
                     clearInterval(interval);
                     registerAndRedirect();
                 }
@@ -1843,14 +1843,14 @@
 
         // Inicializa pixels antes de qualquer coisa
         if (PIXELS_TO_TRACK && PIXELS_TO_TRACK.length > 0) {
-            PIXELS_TO_TRACK.forEach(p => { 
-                if(p && p.id) fbq('init', p.id); 
+            PIXELS_TO_TRACK.forEach(p => {
+                if(p && p.id) fbq('init', p.id);
             });
             fbq('track', 'PageView');
         } else {
              console.warn("Nenhum pixel configurado para inicializar.");
         }
-        
+
         // Inicia o fluxo de verificação/redirecionamento
         startFlow();
     <\/script>
@@ -1859,11 +1859,11 @@
 </html>`;
 
             const modalContent = `<p class="text-sm text-gray-400 mb-4">Código gerado com o novo formato de alta conversão. Copie e cole no HTML da sua página.</p><textarea id="pressel-code-textarea" class="form-input w-full p-2 font-mono text-xs" rows="15" readonly>${htmlContent}</textarea><button class="copy-btn btn w-full mt-4 py-2" data-target="#pressel-code-textarea">Copiar Código</button>`;
-            
+
             document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
             // document.getElementById('pressel-code-textarea').value = htmlContent; // O valor já é setado no HTML
         },
-        
+
         async testIndividualPixConnection(provider, button) {
              if(!provider) {
                 this.showToast('Selecione um provedor para testar.', 'warning');
@@ -1873,7 +1873,7 @@
             button.innerHTML = 'Testando...';
             button.disabled = true;
             this.updatePixStatusIndicator(provider, 'testing');
-            
+
             // Pega os dados do formulário ANTES de enviar
             const form = document.getElementById('pixSettingsForm');
             if (!form) return; // Segurança
@@ -1882,14 +1882,14 @@
             // Tenta salvar as configurações PRIMEIRO
             try {
                 await this.apiRequest('/api/settings/pix', 'POST', formData);
-                App.state.data.settings = { ...App.state.data.settings, ...formData }; 
+                App.state.data.settings = { ...App.state.data.settings, ...formData };
             } catch (e) {
                 // Se salvar falhar, mostra erro e para o teste
                 this.showToast('Erro ao salvar as configurações antes do teste.', 'error');
-                button.innerHTML = originalText; 
+                button.innerHTML = originalText;
                 button.disabled = false;
                 this.updatePixStatusIndicator(provider); // Reseta indicador
-                return; 
+                return;
             }
 
             // Se salvou, prossegue com o teste
@@ -1897,7 +1897,7 @@
                 const result = await this.apiRequest('/api/pix/test-provider', 'POST', { provider });
                 localStorage.setItem(`pix_status_${provider}`, 'success');
                 localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
-                
+
                 const successModalContent = `<div class="space-y-4 text-sm"><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Provedor:</span> <span class="text-white">${result.provider}</span></div><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Adquirente:</span> <span class="text-white">${result.acquirer}</span></div><div class="flex justify-between items-center"><span class="font-semibold text-gray-400">Tempo de Resposta:</span> <span class="text-white">${result.responseTime}s</span></div><hr class="border-slate-700"><div><p class="font-semibold text-gray-400 mb-2">PIX Copia e Cola (R$ 33,33):</p><textarea id="pix-test-key" class="form-input w-full p-2 font-mono text-xs" rows="4" readonly>${result.qr_code_text || 'Erro ao obter código'}</textarea><button class="copy-btn btn w-full mt-2 py-2 text-sm" data-target="#pix-test-key">Copiar Chave PIX</button></div></div>`;
                 document.getElementById('modal-container').innerHTML = this.templates.modal('Conexão Bem-sucedida!', successModalContent);
 
@@ -1907,12 +1907,12 @@
                 const errorModalContent = `<div class="text-center"><p class="text-lg font-medium text-red-400 mb-2">Falha na Conexão</p><p class="text-sm text-gray-400">${error.message || 'Ocorreu um erro desconhecido.'}</p></div>`;
                 document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste', errorModalContent);
             } finally {
-                button.innerHTML = originalText; 
+                button.innerHTML = originalText;
                 button.disabled = false;
                 this.updatePixStatusIndicator(provider);
             }
         },
-        
+
         async testPriorityRoute(button) {
             const originalText = button.textContent; // Usar textContent
             button.innerHTML = 'Testando Rota...';
@@ -1952,13 +1952,13 @@
                 this.state.data.bots.forEach(bot => this.updateBotStatusIndicator(bot.id));
             }
         },
-        
+
         updateBotStatusIndicator(botId) {
             const indicator = document.getElementById(`status-indicator-bot-${botId}`);
             if (!indicator) return;
             // Lógica para verificar status do bot (pode ser um teste de conexão simples ou verificar webhook)
             // Por enquanto, apenas limpa
-            indicator.textContent = ''; 
+            indicator.textContent = '';
             indicator.className = '';
         },
 
@@ -2013,7 +2013,7 @@
             const days = Math.floor(hours / 24);
             return `há ${days}d`;
         },
-        
+
         showToast(message, type = 'success') {
             const toastId = `toast-${Date.now()}`;
             const toast = document.createElement('div');
@@ -2021,13 +2021,13 @@
             let bgColor = type === 'success' ? 'bg-green-600' : (type === 'error' ? 'bg-red-600' : 'bg-yellow-500');
             toast.className = `fixed bottom-5 right-5 ${bgColor} text-white py-2 px-4 rounded-lg shadow-lg animate-fade-in z-50 transition-opacity duration-300`;
             toast.textContent = message;
-            
+
             // Garante que toasts não se sobreponham totalmente
             const existingToasts = document.querySelectorAll('[id^="toast-"]');
             toast.style.bottom = `${1.25 + existingToasts.length * 3.5}rem`; // 1.25rem base + 3.5rem por toast
 
             document.body.appendChild(toast);
-            
+
             // Fade out e remove
             setTimeout(() => {
                 toast.style.opacity = '0';
@@ -2038,7 +2038,7 @@
             }, 5000);
         },
 
-        // initCreatorPage() {
+        initCreatorPage() {
             const FRONTEND_URL = 'https://hottrack.site'; // Ou o URL correto do seu frontend
 
             // Seleciona os elementos da página que acabamos de renderizar DENTRO DE #content
@@ -2051,7 +2051,7 @@
             const creatorScreen = contentEl.querySelector('#creator-screen');
             const resultScreen = contentEl.querySelector('#result-screen');
             const checkoutForm = contentEl.querySelector('#checkout-form');
-            
+
             const pricingTypeSelect = contentEl.querySelector('#pricing-type-select');
             const fixedPricingContainer = contentEl.querySelector('#fixed-pricing-container');
             const openPricingContainer = contentEl.querySelector('#open-pricing-container');
@@ -2064,12 +2064,12 @@
             const countdownFields = contentEl.querySelector('#countdown-fields');
             const testimonialsContainer = contentEl.querySelector('#testimonials-container');
             const addTestimonialBtn = contentEl.querySelector('#add-testimonial-btn');
-            
+
             const submitBtn = contentEl.querySelector('#submit-btn');
             const checkoutLinkOutput = contentEl.querySelector('#checkout-link-output');
             const copyLinkBtn = contentEl.querySelector('#copy-link-btn');
             const createAnotherBtn = contentEl.querySelector('#create-another-btn');
-            
+
             const previewContent = contentEl.querySelector('#preview-content');
             const previewWrapper = contentEl.querySelector('#preview-wrapper');
             const desktopViewBtn = contentEl.querySelector('#desktop-view-btn');
@@ -2079,21 +2079,21 @@
              if (!creatorScreen || !resultScreen || !checkoutForm || !packagesContainer || !testimonialsContainer || !previewContent) {
                 console.error("Elementos essenciais do Criador de Páginas não encontrados no DOM.");
                 // Poderia mostrar um erro para o usuário aqui
-                return; 
+                return;
              }
-            
+
             function showResultScreen(checkoutId) {
                 if (!checkoutLinkOutput || !resultScreen) return;
                 const link = `${FRONTEND_URL}/oferta/${checkoutId}`;
                 checkoutLinkOutput.value = link;
                 resultScreen.classList.remove('hidden');
             }
-            
+
             function hideResultScreen() {
                 if (!resultScreen || !checkoutForm || !packagesContainer || !testimonialsContainer) return;
                 resultScreen.classList.add('hidden');
                 checkoutForm.reset(); // Reseta o formulário
-                
+
                 // Reseta estado dos toggles e containers
                  if(pricingTypeSelect) pricingTypeSelect.value = 'fixed';
                  if(fixedPricingContainer) fixedPricingContainer.classList.remove('hidden');
@@ -2105,7 +2105,7 @@
 
                 packagesContainer.innerHTML = ''; // Limpa pacotes
                 testimonialsContainer.innerHTML = ''; // Limpa depoimentos
-                
+
                 addPackage(); // Adiciona o primeiro pacote vazio
                 updatePreview(); // Atualiza a visualização
             }
@@ -2125,7 +2125,7 @@
                 `;
                 packagesContainer.appendChild(el);
             }
-            
+
             let testimonialCount = 0;
             function addTestimonial() {
                  if (!testimonialsContainer) return; // Segurança
@@ -2146,18 +2146,18 @@
 
             function updatePreview() {
                 // Só atualiza se a página atual for pageCreator E os elementos existirem
-                if (App.state.currentPage === 'pageCreator' && creatorScreen && previewContent) { 
+                if (App.state.currentPage === 'pageCreator' && creatorScreen && previewContent) {
                     try {
                        const data = getFormData(); // Pode falhar se elementos não existirem
                        previewContent.innerHTML = generatePreviewHTML(data);
-                       
+
                        const previewBody = previewContent.querySelector('#preview-body');
                        if (previewBody) {
                            previewBody.style.setProperty('--preview-bg', data.style.background_color);
                            previewBody.style.setProperty('--preview-accent', data.style.accent_color);
                        }
                     } catch (e) {
-                         console.error("Erro durante updatePreview:", e); 
+                         console.error("Erro durante updatePreview:", e);
                          // Pode acontecer se a página for trocada rapidamente antes do DOM estar pronto
                     }
                 }
@@ -2190,7 +2190,7 @@
                         suggested_value_cents: Math.round(getElFloat('#open_value_suggested', 50) * 100)
                     };
                 }
-                
+
                 return {
                     content: {
                         main_title: getElValue('#main_title', 'Título Principal'),
@@ -2233,17 +2233,17 @@
                 // Esta função depende apenas do objeto 'data', então não precisa de try-catch aqui
                 const formatCurrency = (cents) => (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-                const countdownHTML = data.conversion_elements.countdown.enabled 
+                const countdownHTML = data.conversion_elements.countdown.enabled
                     ? `<div style="background-color: var(--preview-accent, #38bdf8); color: white; text-align: center; padding: 0.75rem;">
                            <p style="font-weight: 600; font-size: 0.9rem;">A OFERTA TERMINA EM</p>
                            <p style="font-size: 1.5rem; font-weight: 800; letter-spacing: 0.1em;">${String(data.conversion_elements.countdown.minutes).padStart(2, '0')}:00</p>
                        </div>`
                     : '';
-                    
-                const mediaHTML = data.content.media_url 
+
+                const mediaHTML = data.content.media_url
                     ? `<img src="${data.content.media_url}" alt="Preview da Oferta" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 0.5rem; margin-bottom: 1.5rem;">`
                     : '';
-                    
+
                 let pricingHTML;
                 if (data.pricing.type === 'open') {
                     pricingHTML = `
@@ -2253,8 +2253,8 @@
                             </label>
                             <div style="position: relative; max-width: 250px; margin: 0 auto;">
                                  <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #6b7280; font-weight: 600;">R$</span>
-                                 <input id="preview-open-value" type="number" step="0.01" 
-                                        placeholder="${(data.pricing.suggested_value_cents / 100).toFixed(2).replace('.', ',')}" 
+                                 <input id="preview-open-value" type="number" step="0.01"
+                                        placeholder="${(data.pricing.suggested_value_cents / 100).toFixed(2).replace('.', ',')}"
                                         style="width: 100%; border: 1px solid #d1d5db; padding: 1rem 1rem 1rem 3rem; border-radius: 0.5rem; text-align: center; font-size: 1.5rem; font-weight: 700;">
                             </div>
                             <p style="font-size: 0.8rem; text-align: center; color: #6b7280; margin-top: 0.5rem;">Valor mínimo: ${formatCurrency(data.pricing.minimum_value_cents)}</p>
@@ -2287,7 +2287,7 @@
                            </div>
                        </div>`
                     : '';
-                    
+
                 const guaranteeHTML = data.conversion_elements.guarantee.text
                     ? `<div style="margin-top: 2rem; display: flex; align-items: center; gap: 1rem; background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
                             ${data.conversion_elements.guarantee.seal_url ? `<img src="${data.conversion_elements.guarantee.seal_url}" alt="Selo de Garantia" style="width: 60px; height: 60px;">` : ''}
@@ -2341,9 +2341,105 @@
 
             // Os listeners agora são anexados dentro de initCreatorPage
             // Eles já estão usando 'contentEl.querySelector' e verificando App.state.currentPage
-            
-            // Não precisa mais do listener 'DOMContentLoaded' aqui dentro
-        }
+
+            // --- ADIÇÃO DOS EVENT LISTENERS ESPECÍFICOS DO CRIADOR ---
+
+            // Listener geral para o formulário e botões dentro dele
+            contentEl.addEventListener('input', updatePreview); // Atualiza preview em qualquer input
+            contentEl.addEventListener('change', (e) => { // Lida com selects e checkboxes
+                 if (e.target.matches('#pricing-type-select, #enable_order_bump, #enable_countdown')) {
+                     const isFixed = pricingTypeSelect.value === 'fixed';
+                     fixedPricingContainer.classList.toggle('hidden', !isFixed);
+                     openPricingContainer.classList.toggle('hidden', isFixed);
+
+                     orderBumpFields.classList.toggle('hidden', !enableOrderBump.checked);
+                     countdownFields.classList.toggle('hidden', !enableCountdown.checked);
+                     updatePreview();
+                 }
+            });
+
+            // Listeners para adicionar/remover pacotes e depoimentos
+            contentEl.addEventListener('click', (e) => {
+                 if (e.target.id === 'add-package-btn') addPackage();
+                 if (e.target.id === 'add-testimonial-btn') addTestimonial();
+                 
+                 const removePackageBtn = e.target.closest('.remove-package-btn');
+                 if (removePackageBtn) {
+                     const packageId = removePackageBtn.dataset.id;
+                     const packageEl = contentEl.querySelector(`#package-${packageId}`);
+                     if(packageEl) packageEl.remove();
+                     updatePreview();
+                 }
+                 const removeTestimonialBtn = e.target.closest('.remove-testimonial-btn');
+                 if (removeTestimonialBtn) {
+                     const testimonialId = removeTestimonialBtn.dataset.id;
+                     const testimonialEl = contentEl.querySelector(`#testimonial-${testimonialId}`);
+                     if(testimonialEl) testimonialEl.remove();
+                     updatePreview();
+                 }
+
+                 // Listeners dos botões de visualização
+                 if (e.target.id === 'desktop-view-btn') {
+                     previewWrapper.className = 'desktop mx-auto';
+                     desktopViewBtn.classList.add('active');
+                     mobileViewBtn.classList.remove('active');
+                 }
+                 if (e.target.id === 'mobile-view-btn') {
+                     previewWrapper.className = 'mobile mx-auto';
+                     mobileViewBtn.classList.add('active');
+                     desktopViewBtn.classList.remove('active');
+                 }
+                 
+                 // Listener do botão de copiar link
+                 if (e.target.id === 'copy-link-btn') {
+                     checkoutLinkOutput.select();
+                     try {
+                         document.execCommand('copy');
+                         e.target.textContent = 'Copiado!';
+                         setTimeout(() => { e.target.textContent = 'Copiar Link'; }, 2000);
+                     } catch(err) { App.showToast('Erro ao copiar', 'error'); }
+                 }
+                 
+                 // Listener do botão de fechar/criar outro
+                 if (e.target.id === 'create-another-btn') {
+                     hideResultScreen();
+                 }
+            });
+
+            // Listener para submissão do formulário do criador
+             checkoutForm.addEventListener('submit', async (e) => {
+                 e.preventDefault();
+                 const button = submitBtn; // Já temos a referência
+                 const originalText = button.textContent;
+                 button.textContent = 'Criando...';
+                 button.disabled = true;
+
+                 try {
+                     const configData = getFormData();
+                     // Validações básicas antes de enviar
+                     if (configData.pricing.type === 'fixed' && (!configData.pricing.packages || configData.pricing.packages.length === 0)) {
+                         throw new Error('Adicione pelo menos um pacote de preço.');
+                     }
+                     if (!configData.tracking.pixel_id) {
+                         throw new Error('O ID do Pixel da Meta é obrigatório.');
+                     }
+                     
+                     // Envia os dados para a API
+                     const response = await App.apiRequest('/api/checkouts/create-hosted', 'POST', { config: configData });
+                     
+                     if (response && response.checkoutId) {
+                         showResultScreen(response.checkoutId);
+                     } else {
+                         throw new Error('Resposta inválida da API ao criar checkout.');
+                     }
+                 } catch (error) {
+                     App.showToast(error.message || 'Erro ao criar checkout.', 'error');
+                 } finally {
+                     button.textContent = originalText;
+                     button.disabled = false;
+                 }
+             });
+        } // Fim da função initCreatorPage
     };
 
     App.init();
