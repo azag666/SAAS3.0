@@ -297,19 +297,30 @@
             revenueChart: null,
         },
 
+        // *** FUNÇÃO INIT ATUALIZADA ***
         async init() {
             if (window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')) {
                 this.state.API_BASE_URL = 'http://localhost:3000';
             }
 
             const path = window.location.pathname;
+            const origin = window.location.origin; // Para usar no FRONTEND_URL dinâmico
 
+            // Verifica se a URL é de uma página de oferta
             if (path.startsWith('/oferta/')) {
                 const checkoutId = path.split('/')[2];
                 this.renderCheckoutPage(checkoutId);
-                return;
+                return; // Interrompe a inicialização normal do painel
+            } 
+            // Verifica se a URL é de uma página de obrigado
+            else if (path.startsWith('/obrigado/')) { 
+                const pageId = path.split('/')[2];
+                // Chama a nova função para renderizar a página de obrigado
+                this.renderStandaloneThankYouPage(pageId, origin); 
+                return; // Interrompe a inicialização normal do painel
             }
 
+            // Se não for '/oferta/' nem '/obrigado/', continua com a lógica do painel
             this.state.token = localStorage.getItem('hottrack_token');
             if (this.state.token) {
                 try {
@@ -339,7 +350,6 @@
                      throw new Error("Configuração da oferta inválida recebida da API.");
                 }
 
-                // Funções auxiliares para gerar o HTML (baseado no generatePreviewHTML)
                 const formatCurrency = (cents) => (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
                 const countdownHTML = config.conversion_elements.countdown.enabled
@@ -571,6 +581,93 @@
             }
         },
 
+        // *** FUNÇÃO DE RENDERIZAÇÃO DA PÁGINA DE OBRIGADO ISOLADA ADICIONADA ***
+        async renderStandaloneThankYouPage(pageId, originUrl) {
+            const appContainer = document.getElementById('app');
+            appContainer.innerHTML = `<div id="app-loader" style="height: 100vh; display: flex; align-items: center; justify-content: center;"><svg class="animate-spin h-8 w-8 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span class="ml-3">Carregando...</span></div>`;
+
+            try {
+                // Busca a configuração da página de obrigado na API
+                const { config } = await this.apiRequest(`/api/obrigado/${pageId}`);
+                if (!config) {
+                    throw new Error("Configuração da página de obrigado não encontrada.");
+                }
+
+                // Renderiza o HTML da página de obrigado
+                const thankYouHTML = `
+                    <div style="background-color: var(--bg-secondary, #0f172a); color: var(--text-primary, #f1f5f9); font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem;">
+                        <div class="animate-fade-in">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-400 mx-auto mb-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                            <h1 style="font-size: 2.25rem; font-weight: 800; color: white;">${config.main_title || 'Obrigado!'}</h1>
+                            <p style="color: var(--text-secondary, #94a3b8); margin-top: 0.5rem; max-width: 450px; margin-left: auto; margin-right: auto;">${config.subtitle || 'Sua compra foi concluída com sucesso.'}</p>
+                            <a id="redirect-button" href="${config.redirect_url || '#'}" style="display: inline-block; background-color: var(--accent-secondary, #0ea5e9); color: white; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.375rem; margin-top: 1.5rem; text-decoration: none; transition: background-color 0.2s ease;">
+                                ${config.button_text || 'Acessar Conteúdo'}
+                            </a>
+                        </div>
+                    </div>
+                `;
+                appContainer.innerHTML = thankYouHTML;
+
+                // Inicializa o Pixel da Meta
+                if (config.pixel_id && config.purchase_value > 0) {
+                    if (!document.getElementById('facebook-pixel-script')) {
+                        const script = document.createElement('script');
+                        script.id = 'facebook-pixel-script';
+                        script.innerHTML = `
+                            !function(f,b,e,v,n,t,s)
+                            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+                            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+                            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+                            n.queue=[];t=b.createElement(e);t.async=!0;
+                            t.src=v;s=b.getElementsByTagName(e)[0];
+                            s.parentNode.insertBefore(t,s)}(window, document,'script',
+                            'https://connect.facebook.net/en_US/fbevents.js');
+                        `;
+                        document.head.appendChild(script);
+                    }
+                    window.fbq('init', config.pixel_id);
+                    window.fbq('track', 'Purchase', {
+                        value: config.purchase_value,
+                        currency: 'BRL'
+                    });
+                     console.log(`Pixel ${config.pixel_id} inicializado e evento Purchase disparado.`);
+                }
+
+                // Dispara evento para Utmify (via backend)
+                if (config.utmify_integration_id) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const trackingParameters = {};
+                    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'src', 'sck'].forEach(param => {
+                        if (urlParams.has(param)) {
+                            trackingParameters[param] = urlParams.get(param);
+                        }
+                    });
+                    const customerData = {
+                        name: urlParams.get('name') || null,
+                        email: urlParams.get('email') || null,
+                        phone: urlParams.get('phone') || null
+                    };
+                    try {
+                         // Note: We don't need the dashboard token here, the backend uses the API key linked to the pageId
+                         await this.apiRequest('/api/thank-you-pages/fire-utmify', 'POST', {
+                            pageId: pageId,
+                            trackingParameters: trackingParameters,
+                            customerData: customerData
+                         });
+                         console.log("Evento Utmify disparado (via backend).");
+                    } catch (utmifyError) {
+                        console.error("Erro ao disparar evento Utmify via backend:", utmifyError);
+                    }
+                }
+
+            } catch (error) {
+                console.error("Erro ao renderizar página de obrigado:", error);
+                appContainer.innerHTML = `<p class="text-center text-red-400 text-lg mt-20">Erro ao carregar página: ${error.message || 'Verifique o console.'}</p>`;
+            }
+        },
+
         showPixModal(pixData) {
             const modalContent = `
                 <div class="text-center">
@@ -618,7 +715,6 @@
                 number = parseFloat(number) || 0;
             }
             if (isCurrency) {
-                // Converte centavos para reais antes de formatar
                 return (number / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             } else {
                 return number.toLocaleString('pt-BR');
@@ -699,6 +795,7 @@
                                 </svg>
                                 <span>Págs. de Obrigado</span>
                             </div>
+                            
                             <div data-target="pixels" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h10a3 3 0 013 3v5a.997.997 0 01-.293-.707zM5 4a1 1 0 00-1 1v.01L8 9.01l4-4.002V5a1 1 0 00-1-1H5z" clip-rule="evenodd" /></svg>Gerenciar Pixels</div>
                             <div data-target="transactions" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.158-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-.165 0-.33.018-.488.054a1 1 0 01-.502 1.765l.986.328c.73.243 1.196.96 1.196 1.765 0 1.132-.98 1.99-2.206 1.99-1.225 0-2.205-.858-2.205-1.99 0-.962.63-1.698 1.447-1.938l.986-.329a1 1 0 01.502-1.765z" /><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.838.385l-.234-.14a1 1 0 00-1.18.157l-1 1.732a1 1 0 00.157 1.18l.234.14A4.5 4.5 0 005.5 8.5v.092l-1.07.356a1 1 0 00-.503 1.765l.986.329a2.5 2.5 0 001.09.243v.092a4.5 4.5 0 001.838-.385l.234.14a1 1 0 001.18-.157l1-1.732a1 1 0 00-.157-1.18l-.234-.14a4.5 4.5 0 001.03-2.062V5z" clip-rule="evenodd" /></svg>Transações</div>
                             <div class="h-px bg-slate-700 my-2"></div>
@@ -936,7 +1033,6 @@
                 `;
             },
             
-            // *** TEMPLATE DA PÁGINA DE OBRIGADO ADICIONADO ***
             thankYouCreator() {
                 return `
                 <div id="creator-screen" class="animate-fade-in p-4 md:p-8">
@@ -1421,7 +1517,6 @@
                 const form = e.target.closest('form');
                 if (!form || ['loginForm', 'registerForm'].includes(form.id)) return;
                 
-                // *** ATUALIZAÇÃO: Ignora o 'thank-you-form' aqui, pois é tratado em initThankYouCreatorPage ***
                 if (form.id === 'checkout-form' || form.id === 'thank-you-form') return;
 
                 e.preventDefault();
@@ -1499,7 +1594,6 @@
                 const headers = { 'Content-Type': 'application/json' };
                 if (this.state.token) { headers['Authorization'] = `Bearer ${this.state.token}`; }
                 
-                // *** CHAVE DE API ADICIONADA PARA AS NOVAS ROTAS ***
                 const apiKeyRequired = endpoint.includes('/api/checkouts/create-hosted') ||
                                        (endpoint.includes('/api/checkouts/') && method === 'PUT') ||
                                        endpoint.includes('/api/thank-you-pages/create');
@@ -1507,7 +1601,6 @@
                 if (this.state.data.settings && this.state.data.settings.api_key && apiKeyRequired) {
                     headers['x-api-key'] = this.state.data.settings.api_key;
                 }
-                // *** FIM DA ADIÇÃO ***
 
                 const options = { method, headers };
                 if (body) { options.body = JSON.stringify(body); }
@@ -1614,6 +1707,7 @@
             }
         },
 
+        // *** FUNÇÃO NAVIGATETO ATUALIZADA PARA CHAMAR initThankYouCreatorPage ***
         async navigateTo(page) {
             this.state.currentPage = page;
             const contentContainer = document.getElementById('content');
@@ -1648,12 +1742,8 @@
                     this.updateAllBotStatusIndicators();
                 } else if (page === 'pageCreator') {
                     await this.initCreatorPage();
-                
-                // *** BLOCO ELSE IF ADICIONADO ***
-                } else if (page === 'thankYouCreator') {
+                } else if (page === 'thankYouCreator') { // <- CHAMADA ADICIONADA
                     this.initThankYouCreatorPage();
-                // *** FIM DO BLOCO ***
-
                 } else if (page === 'checkouts') {
                     await this.fetchAndRenderCheckouts();
                 }
@@ -2370,13 +2460,13 @@
                      button.textContent = originalText;
                  }
              });
-        },
+        }, 
         
-        // *** FUNÇÃO DE LÓGICA DA PÁGINA DE OBRIGADO ADICIONADA ***
+        // *** FUNÇÃO DE INICIALIZAÇÃO DA PÁGINA DE OBRIGADO ADICIONADA ***
         initThankYouCreatorPage: function() {
             const FRONTEND_URL = 'https://hottrack.site'; // Certifique-se que este é o domínio correto
             const creatorScreen = document.getElementById('creator-screen');
-            if (!creatorScreen) return;
+            if (!creatorScreen) return; // Garante que estamos na página certa
 
             const thankYouForm = document.getElementById('thank-you-form');
             const submitBtn = document.getElementById('submit-btn');
@@ -2387,12 +2477,14 @@
             const utmifySelect = document.getElementById('utmify_integration_id');
             const previewContent = document.getElementById('preview-content');
 
+            // Pega a chave de API do estado principal do App
             const apiKey = App.state.data.settings.api_key;
             if (!apiKey) {
                 App.showToast("Chave de API não encontrada. Salve-a na página 'API PIX'.", "error");
                 submitBtn.disabled = true;
             }
 
+            // Popula o select de integrações do estado principal do App
             utmifySelect.innerHTML = '<option value="">Não enviar</option>';
             if (App.state.data.utmifyIntegrations) {
                 App.state.data.utmifyIntegrations.forEach(int => {
@@ -2439,6 +2531,7 @@
                 updatePreview();
             }
 
+            // Listeners
             updatePreview();
             thankYouForm.addEventListener('input', updatePreview);
             
@@ -2459,6 +2552,7 @@
                 };
                 
                 try {
+                    // Usa a função apiRequest do App principal
                     const result = await App.apiRequest(`/api/thank-you-pages/create`, 'POST', payload);
                     showResultScreen(result.pageId);
                 } catch (error) {
