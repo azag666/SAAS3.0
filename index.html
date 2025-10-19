@@ -45,11 +45,14 @@
             height: 100%;
             overflow: hidden; /* Impede scroll no body */
         }
-        main#content.overflow-hidden {
+        main#content {
+            height: 100%; /* Altura total por padrão */
+        }
+        main#content.overflow-y-auto {
              height: calc(100% - 72px); /* 100% da altura menos o header mobile */
         }
         @media (min-width: 768px) { /* md */
-            main#content.overflow-hidden {
+            main#content.overflow-y-auto {
                 height: 100%; /* Em desktop, o header não afeta */
             }
         }
@@ -500,7 +503,25 @@
                     let selectedPackage = null;
                     const packagesList = document.getElementById('packages-list');
                     const payButton = document.getElementById('pay-button');
+                    // *** INÍCIO DA CORREÇÃO 1: Lógica do Order Bump ***
+                    const orderBumpCheckbox = document.getElementById('order-bump-checkbox');
 
+                    // Função para atualizar o texto do botão de pagamento
+                    function updatePayButtonText() {
+                        if (!selectedPackage) return;
+                        
+                        let totalValue = selectedPackage.value_cents;
+                        let buttonText = `Pagar Agora (${formatCurrency(totalValue)})`;
+                        
+                        if (orderBumpCheckbox && orderBumpCheckbox.checked && config.order_bump && config.order_bump.value_cents > 0) {
+                            totalValue += config.order_bump.value_cents;
+                            buttonText = `Pagar Agora (${formatCurrency(totalValue)})`;
+                        }
+                        
+                        payButton.textContent = buttonText;
+                    }
+
+                    // Listener para os pacotes
                     packagesList.addEventListener('click', (e) => {
                         const clickedPackage = e.target.closest('.package-item');
                         if (!clickedPackage) return;
@@ -510,28 +531,43 @@
 
                         const packageIndex = clickedPackage.dataset.packageIndex;
                         selectedPackage = config.pricing.packages[packageIndex];
-
-                        payButton.textContent = `Pagar Agora (${formatCurrency(selectedPackage.value_cents)})`;
+                        
+                        updatePayButtonText(); // Atualiza o botão
                         payButton.disabled = false;
                     });
+                    
+                    // Listener para o checkbox do order bump
+                    if (orderBumpCheckbox) {
+                        orderBumpCheckbox.addEventListener('change', updatePayButtonText);
+                    }
 
+                    // Listener do botão de pagamento
                     payButton.addEventListener('click', async () => {
                         if (!selectedPackage) { alert('Por favor, selecione um pacote válido.'); return; }
+                        
+                        let totalValueCents = selectedPackage.value_cents;
+                        // Verifica se o order bump está marcado e adiciona o valor
+                        if (orderBumpCheckbox && orderBumpCheckbox.checked && config.order_bump && config.order_bump.value_cents > 0) {
+                            totalValueCents += config.order_bump.value_cents;
+                        }
+
                         payButton.textContent = 'Gerando PIX...';
                         payButton.disabled = true;
+                        
                         try {
                             const pixData = await this.apiRequest('/api/oferta/generate-pix', 'POST', {
                                 checkoutId: checkoutId,
-                                value_cents: selectedPackage.value_cents
+                                value_cents: totalValueCents // Envia o valor total (pacote + bump)
                             });
                             this.showPixModal(pixData);
                         } catch (error) {
                             alert('Erro ao gerar PIX. Tente novamente.');
                         } finally {
-                            payButton.textContent = `Pagar Agora (${formatCurrency(selectedPackage.value_cents)})`;
+                            updatePayButtonText(); // Restaura o texto correto do botão
                             payButton.disabled = !selectedPackage;
                         }
                     });
+                    // *** FIM DA CORREÇÃO 1 ***
                 }
                 
                 // Lógica do Contador
@@ -704,7 +740,7 @@
                              </button>
                              <div class="text-lg font-bold">HotTrack</div>
                         </header>
-                        <main id="content" class="flex-1 overflow-y-auto p-4 md:p-8"></main> 
+                        <main id="content" class="flex-1 overflow-y-auto"></main> 
                     </div>
                 </div>`;
             },
@@ -730,8 +766,7 @@
             },
             dashboard() {
                 return `
-                <div class="animate-fade-in">
-                    <div class="mb-6">
+                <div class="animate-fade-in p-4 md:p-8"> <div class="mb-6">
                         <h1 class="text-3xl font-bold text-white">Painel de Métricas</h1>
                         <p class="text-slate-400">Visão geral do desempenho de suas operações.</p>
                     </div>
@@ -750,7 +785,6 @@
                     <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
                         <div class="card p-6 rounded-lg lg:col-span-2"><h2 class="text-xl font-semibold text-white mb-4">Desempenho por Bot</h2><div id="bots-performance-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Bot</th><th>Cliques</th><th>Vendas</th><th>Faturamento</th></tr></thead><tbody id="bots-performance-table"><tr><td colspan="4">Carregando...</td></tr></tbody></table></div></div>
                         <div class="card p-6 rounded-lg"><h2 class="text-xl font-semibold text-white mb-4">Tráfego por Estado</h2><div id="traffic-by-state-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Estado</th><th>Cliques</th></tr></thead><tbody id="traffic-by-state-table"><tr><td colspan="2">Carregando...</td></tr></tbody></table></div></div>
-
                     </div>
                      <div class="grid grid-cols-1 gap-8 lg:grid-cols-3 mt-8">
                         <div class="card p-6 rounded-lg lg:col-span-2">
@@ -774,8 +808,7 @@
             // *******************************************************************
             checkouts() {
                 return `
-                <div class="animate-fade-in">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div class="animate-fade-in p-4 md:p-8"> <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                         <div>
                             <h1 class="text-3xl font-bold text-white">Meus Checkouts</h1>
                             <p class="text-slate-400">Gerencie suas páginas de oferta criadas.</p>
@@ -805,8 +838,8 @@
             // *******************************************************************
             pageCreator() {
                  return `
-                <div id="creator-screen" class="animate-fade-in flex flex-col h-full p-4 md:p-8">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 flex-shrink-0">
+                <div id="creator-screen" class="animate-fade-in flex flex-col h-full">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 flex-shrink-0 p-4 md:p-8 pb-0">
                         <div>
                             <h1 id="creator-title" class="text-3xl font-bold text-white">Criador de Ofertas</h1>
                             <p class="text-slate-400 mt-1">Configure à esquerda e veja o resultado à direita em tempo real.</p>
@@ -817,10 +850,9 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 overflow-hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 overflow-hidden p-4 md:p-8 pt-0">
                         
                         <form id="checkout-form" class="space-y-6 overflow-y-auto pr-4">
-                            {/* Bloco 1: Conteúdo */}
                             <div class="card p-6 rounded-xl">
                                 <h2 class="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">1. Conteúdo da Página</h2>
                                 <div class="space-y-4">
@@ -829,7 +861,6 @@
                                     <div><label for="media_url" class="text-sm font-medium text-gray-400 mb-1 block">URL da Imagem/Vídeo (Opcional)</label><input id="media_url" type="url" class="form-input w-full p-2" placeholder="https://exemplo.com/imagem.png"></div>
                                 </div>
                             </div>
-                            {/* Bloco 2: Preços */}
                             <div class="card p-6 rounded-xl">
                                 <h2 class="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">2. Preços</h2>
                                 <div class="mb-4">
@@ -847,7 +878,6 @@
                                     {/* Conteúdo do valor aberto... */}
                                 </div>
                             </div>
-                            {/* Bloco 3: Order Bump */}
                             <div class="card p-6 rounded-xl">
                                 <h2 class="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">3. Order Bump (Opcional)</h2>
                                 <div class="flex items-center space-x-3 mb-4"><input id="enable_order_bump" type="checkbox" class="form-checkbox h-5 w-5 rounded"><label for="enable_order_bump" class="font-medium">Ativar Order Bump</label></div>
@@ -857,7 +887,6 @@
                                     <div><label for="order_bump_value" class="text-sm font-medium text-gray-400 mb-1 block">Valor (R$)</label><input id="order_bump_value" type="number" step="0.01" min="0" class="form-input w-full p-2" value="9.90"></div>
                                 </div>
                             </div>
-                            {/* Bloco 4: Elementos de Conversão */}
                             <div class="card p-6 rounded-xl">
                                 <h2 class="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">4. Elementos de Conversão</h2>
                                 <div class="space-y-6">
@@ -874,12 +903,10 @@
                                     </div>
                                 </div>
                             </div>
-                            {/* Bloco 5: Prova Social */}
                             <div class="card p-6 rounded-xl">
                                 <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2"><h2 class="text-xl font-semibold">5. Prova Social</h2><button type="button" id="add-testimonial-btn" class="btn btn-secondary text-sm py-1 px-3">+ Depoimento</button></div>
                                 <div id="testimonials-container" class="space-y-4"></div>
                             </div>
-                            {/* Bloco 6: Rastreamento e Estilo */}
                             <div class="card p-6 rounded-xl">
                                 <h2 class="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">6. Rastreamento e Estilo</h2>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -938,8 +965,7 @@
             pixels() {
                 const pixelListHTML = App.state.data.pixels.map(p => `<div class="p-3 bg-slate-900/50 rounded-lg flex justify-between items-center"><span class="font-mono text-sm">${p.account_name}</span><button data-id="${p.id}" class="delete-pixel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div>`).join('');
                 return `
-                <div class="animate-fade-in">
-                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Gerenciar Pixels</h1><p class="text-slate-400">Adicione e gerencie seus pixels do Facebook.</p></div>
+                <div class="animate-fade-in p-4 md:p-8"> <div class="mb-6"><h1 class="text-3xl font-bold text-white">Gerenciar Pixels</h1><p class="text-slate-400">Adicione e gerencie seus pixels do Facebook.</p></div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="card p-6 rounded-lg">
                             <h2 class="text-xl font-semibold mb-4 text-white">Adicionar Novo Pixel</h2>
@@ -961,8 +987,7 @@
                         </div>
                     </div>`).join('');
                 return `
-                <div class="animate-fade-in">
-                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Gerenciar Bots</h1><p class="text-slate-400">Conecte seus bots do Telegram para automatizar processos.</p></div>
+                <div class="animate-fade-in p-4 md:p-8"> <div class="mb-6"><h1 class="text-3xl font-bold text-white">Gerenciar Bots</h1><p class="text-slate-400">Conecte seus bots do Telegram para automatizar processos.</p></div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="card p-6 rounded-lg">
                             <h2 class="text-xl font-semibold mb-4 text-white">Adicionar Novo Bot</h2>
@@ -983,8 +1008,7 @@
                 const presselList = pressels.map(pr => `<div class="p-3 card flex justify-between items-center text-sm"><div><p class="font-semibold">${pr.name}</p><p class="text-xs text-gray-400">Bot: ${pr.bot_name}</p></div><div class="space-x-2"><button data-id="${pr.id}" class="generate-pressel-code-btn btn text-xs py-1 px-2">Ver Código</button><button data-id="${pr.id}" class="delete-pressel-btn btn btn-red text-xs py-1 px-2">Excluir</button></div></div>`).join('');
 
                 return `
-                <div class="animate-fade-in">
-                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Criador de Pressel</h1><p class="text-slate-400">Configure suas páginas de pressel para captura de leads.</p></div>
+                <div class="animate-fade-in p-4 md:p-8"> <div class="mb-6"><h1 class="text-3xl font-bold text-white">Criador de Pressel</h1><p class="text-slate-400">Configure suas páginas de pressel para captura de leads.</p></div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div class="card p-6 rounded-lg">
                             <h2 class="text-xl font-bold mb-4 text-white">Criar Nova Pressel</h2>
@@ -1011,8 +1035,7 @@
             },
             transactions() {
                 return `
-                <div class="animate-fade-in">
-                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Histórico de Transações</h1><p class="text-slate-400">Visualize todas as transações de PIX geradas e pagas.</p></div>
+                <div class="animate-fade-in p-4 md:p-8"> <div class="mb-6"><h1 class="text-3xl font-bold text-white">Histórico de Transações</h1><p class="text-slate-400">Visualize todas as transações de PIX geradas e pagas.</p></div>
                     ${this.dateFilterComponent('transactions')}
                     <div class="card p-6 rounded-lg"><div id="transactions-table-container" class="overflow-x-auto"><table class="table-custom w-full text-sm"><thead><tr><th>Status</th><th>Valor</th><th>Origem</th><th>Provedor PIX</th><th>Data</th></tr></thead><tbody id="transactions-table-body"><tr><td colspan="5" class="text-center text-gray-500 py-8">Carregando transações...</td></tr></tbody></table></div></div>
                 </div>`;
@@ -1031,8 +1054,7 @@
                     return `<select name="${name}" class="form-select w-full p-2">${options}<option value="" ${!selectedValue ? 'selected' : ''}>Nenhum</option></select>`;
                 };
                 return `
-                <div class="animate-fade-in">
-                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Configurações de PIX</h1><p class="text-slate-400">Configure seus provedores de pagamento e a ordem de prioridade.</p></div>
+                <div class="animate-fade-in p-4 md:p-8"> <div class="mb-6"><h1 class="text-3xl font-bold text-white">Configurações de PIX</h1><p class="text-slate-400">Configure seus provedores de pagamento e a ordem de prioridade.</p></div>
                     <form id="pixSettingsForm" class="max-w-4xl">
                         <div class="flex border-b border-slate-700 mb-6" id="pix-settings-tabs">
                             <button type="button" data-tab="priority" class="tab-button active">Ordem de Prioridade</button>
@@ -1107,8 +1129,7 @@
                 `).join('');
 
                 return `
-                <div class="animate-fade-in">
-                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">Integrações</h1><p class="text-slate-400">Conecte o HotTrack a outras ferramentas.</p></div>
+                <div class="animate-fade-in p-4 md:p-8"> <div class="mb-6"><h1 class="text-3xl font-bold text-white">Integrações</h1><p class="text-slate-400">Conecte o HotTrack a outras ferramentas.</p></div>
                     <div class="max-w-2xl">
                         <div class="card p-6 rounded-lg">
                             <div class="flex justify-between items-center mb-4">
@@ -1125,8 +1146,7 @@
             },
             documentation() {
                 return `
-                <div class="animate-fade-in">
-                    <div class="mb-6"><h1 class="text-3xl font-bold text-white">API & Documentação</h1><p class="text-slate-400">Sua chave de API para integrações e o guia de implementação.</p></div>
+                <div class="animate-fade-in p-4 md:p-8"> <div class="mb-6"><h1 class="text-3xl font-bold text-white">API & Documentação</h1><p class="text-slate-400">Sua chave de API para integrações e o guia de implementação.</p></div>
                     <div class="grid grid-cols-1 gap-8 max-w-4xl">
                         <div class="card p-6 rounded-lg">
                             <h2 class="text-xl font-semibold mb-2 text-white">Sua Chave de API HotTrack</h2>
@@ -1632,7 +1652,7 @@
                 const updateElement = (id, value, isCurrency = false) => {
                     const el = document.getElementById(id);
                     if (el) {
-                        // *** CORREÇÃO: Converte REAIS para CENTAVOS antes de formatNumber ***
+                        // *** CORREÇÃO: Converte REAIS para CENTAVOS antes de formatar ***
                         const valueToFormat = isCurrency ? Math.round(parseFloat(value || 0) * 100) : value;
                         el.textContent = this.formatNumber(valueToFormat, isCurrency);
                     }
@@ -1911,39 +1931,157 @@
             }
         },
        generatePresselCode(pressel) {
-            // ... (função sem alterações) ...
+            const { settings, pixels } = this.state.data;
+            const presselPixelIds = Array.isArray(pressel.pixel_ids) ? pressel.pixel_ids : [];
+            const selectedPixels = pixels.filter(p => presselPixelIds.includes(p.id));
+            const pixelsToTrackJSON = JSON.stringify(selectedPixels.map(p => ({ id: p.pixel_id })), null, 4);
+            const noscriptPixelId = selectedPixels.length > 0 ? selectedPixels[0].pixel_id : '';
+            const htmlContent = `<!DOCTYPE html>... (código da pressel) ...<\/script>${noscriptPixelId ? `<noscript><img ... src="...${noscriptPixelId}..."/></noscript>` : ''}</body></html>`;
+            const modalContent = `<p ...>Código gerado...</p><textarea id="pressel-code-textarea" ...>${htmlContent}</textarea><button ... data-target="#pressel-code-textarea">Copiar Código</button>`;
+            document.getElementById('modal-container').innerHTML = this.templates.modal(`Código da Pressel: ${pressel.name}`, modalContent);
         },
 
         async testIndividualPixConnection(provider, button) {
-             // ... (função sem alterações) ...
+             if(!provider) { this.showToast('Selecione um provedor para testar.', 'warning'); return; }
+            const originalText = button.textContent;
+            button.innerHTML = 'Testando...';
+            button.disabled = true;
+            this.updatePixStatusIndicator(provider, 'testing');
+            const form = document.getElementById('pixSettingsForm');
+            if (!form) return;
+            const formData = Object.fromEntries(new FormData(form).entries());
+            try {
+                await this.apiRequest('/api/settings/pix', 'POST', formData);
+                App.state.data.settings = { ...App.state.data.settings, ...formData };
+            } catch (e) {
+                this.showToast('Erro ao salvar as configurações antes do teste.', 'error');
+                button.innerHTML = originalText;
+                button.disabled = false;
+                this.updatePixStatusIndicator(provider);
+                return;
+            }
+            try {
+                const result = await this.apiRequest('/api/pix/test-provider', 'POST', { provider });
+                localStorage.setItem(`pix_status_${provider}`, 'success');
+                localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
+                const successModalContent = `<div ...>...<textarea ...>${result.qr_code_text || 'Erro'}</textarea>...</div>`;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Conexão Bem-sucedida!', successModalContent);
+            } catch (error) {
+                localStorage.setItem(`pix_status_${provider}`, 'failure');
+                localStorage.setItem(`pix_timestamp_${provider}`, Date.now());
+                const errorModalContent = `<div ...><p ...>Falha na Conexão</p><p ...>${error.message || 'Ocorreu um erro.'}</p></div>`;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste', errorModalContent);
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+                this.updatePixStatusIndicator(provider);
+            }
         },
 
         async testPriorityRoute(button) {
-             // ... (função sem alterações) ...
+            const originalText = button.textContent;
+            button.innerHTML = 'Testando Rota...';
+            button.disabled = true;
+            const form = document.getElementById('pixSettingsForm');
+             if (!form) return;
+            const formData = Object.fromEntries(new FormData(form).entries());
+            try {
+                await this.apiRequest('/api/settings/pix', 'POST', formData);
+                App.state.data.settings = { ...App.state.data.settings, ...formData };
+            } catch (e) {
+                this.showToast('Erro ao salvar as configurações antes do teste.', 'error');
+                button.innerHTML = originalText; button.disabled = false; return;
+            }
+            try {
+                const result = await this.apiRequest('/api/pix/test-priority-route', 'POST');
+                const logHTML = Array.isArray(result.log) ? result.log.map(line => `<li class="${line.startsWith('SUCESSO') ? 'text-green-400' : 'text-red-400'}">${line}</li>`).join('') : '<li>Log indisponível.</li>';
+                const successModalContent = `<div ...>...<ul ...>${logHTML}</ul>...<textarea ...>${result.qr_code_text || 'Erro'}</textarea>...</div>`;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Teste da Rota Concluído!', successModalContent);
+            } catch (error) {
+                const logHTML = Array.isArray(error.log) ? error.log.map(line => `<li class="text-red-400">${line}</li>`).join('') : '<li>Nenhum log disponível.</li>';
+                const errorModalContent = `<div ...><p ...>Falha na Rota de Prioridade</p>...<ul ...>${logHTML}</ul></div>`;
+                document.getElementById('modal-container').innerHTML = this.templates.modal('Erro no Teste', errorModalContent);
+            } finally {
+                button.innerHTML = originalText; button.disabled = false;
+            }
         },
 
         updateAllBotStatusIndicators() {
-             // ... (função sem alterações) ...
+            if (this.state.data.bots && this.state.data.bots.length > 0) {
+                this.state.data.bots.forEach(bot => this.updateBotStatusIndicator(bot.id));
+            }
         },
 
         updateBotStatusIndicator(botId) {
-             // ... (função sem alterações) ...
+            const indicator = document.getElementById(`status-indicator-bot-${botId}`);
+            if (!indicator) return;
+            indicator.textContent = '';
+            indicator.className = '';
         },
 
         updateAllPixStatusIndicators() {
-             // ... (função sem alterações) ...
+            const providers = ['pushinpay', 'cnpay', 'oasyfy', 'syncpay', 'brpix'];
+            providers.forEach(provider => this.updatePixStatusIndicator(provider));
         },
 
         updatePixStatusIndicator(provider, mode) {
-             // ... (função sem alterações) ...
+             const indicator = document.getElementById(`status-indicator-${provider}`);
+            if (!indicator) return;
+            if (mode === 'testing') {
+                indicator.textContent = 'Testando...';
+                indicator.className = 'status-indicator testing';
+                return;
+            }
+            const status = localStorage.getItem(`pix_status_${provider}`);
+            const timestamp = localStorage.getItem(`pix_timestamp_${provider}`);
+            const now = Date.now();
+            const oneHour = 60 * 60 * 1000;
+             if (timestamp && (now - parseInt(timestamp)) > oneHour) {
+                localStorage.removeItem(`pix_status_${provider}`);
+                localStorage.removeItem(`pix_timestamp_${provider}`);
+                indicator.textContent = 'Não testado';
+                indicator.className = 'status-indicator unknown';
+                return;
+             }
+            if (status === 'success' && timestamp) {
+                indicator.textContent = `Ativo (Testado ${this.formatTimeAgo(timestamp)})`;
+                indicator.className = 'status-indicator success';
+            } else if (status === 'failure' && timestamp) {
+                indicator.textContent = `Falhou (Testado ${this.formatTimeAgo(timestamp)})`;
+                indicator.className = 'status-indicator failure';
+            } else {
+                indicator.textContent = 'Não testado';
+                indicator.className = 'status-indicator unknown';
+            }
         },
 
         formatTimeAgo(timestamp) {
-             // ... (função sem alterações) ...
+            const seconds = Math.floor((Date.now() - parseInt(timestamp)) / 1000);
+            if (seconds < 60) return "agora";
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `há ${minutes} min`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `há ${hours}h`;
+            const days = Math.floor(hours / 24);
+            return `há ${days}d`;
         },
 
         showToast(message, type = 'success') {
-             // ... (função sem alterações) ...
+            const toastId = `toast-${Date.now()}`;
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            let bgColor = type === 'success' ? 'bg-green-600' : (type === 'error' ? 'bg-red-600' : 'bg-yellow-500');
+            toast.className = `fixed bottom-5 right-5 ${bgColor} text-white py-2 px-4 rounded-lg shadow-lg animate-fade-in z-50 transition-opacity duration-300`;
+            toast.textContent = message;
+            const existingToasts = document.querySelectorAll('[id^="toast-"]');
+            toast.style.bottom = `${1.25 + existingToasts.length * 3.5}rem`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.addEventListener('transitionend', () => {
+                    if(toast.parentNode) toast.remove();
+                });
+            }, 5000);
         },
         
         // *******************************************************************
