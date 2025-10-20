@@ -655,7 +655,7 @@
         },
 
         // ******** FUNÇÃO showPixModal ATUALIZADA ********
-        showPixModal(pixData) {
+        async showPixModal(pixData) {
             // Limpa qualquer polling anterior ao abrir um novo modal
             if (this.state.pixPollingIntervalId) {
                 clearInterval(this.state.pixPollingIntervalId);
@@ -680,20 +680,28 @@
             const modalContainer = document.getElementById('modal-container');
             modalContainer.innerHTML = this.templates.modal('Pagamento via PIX', modalContent);
 
+
+            await new Promise(resolve => setTimeout(resolve, 0));
+
             const copyBtn = document.getElementById('copy-pix-btn');
             if (copyBtn) {
-                copyBtn.addEventListener('click', (e) => {
+                copyBtn.addEventListener('click', async (e) => { // Tornar async
                     const textarea = document.getElementById('pix-code-textarea');
                     if (textarea && textarea.value !== 'Erro ao obter código') {
-                        textarea.select();
                         try {
-                            document.execCommand('copy');
+                            // ============ CORREÇÃO ============
+                            await navigator.clipboard.writeText(textarea.value);
+                            // ==================================
+                            
                             e.target.textContent = 'Copiado!';
                             setTimeout(() => { e.target.textContent = 'Copiar Código PIX'; }, 2000);
                         } catch (err) {
-                            console.error('Falha ao copiar:', err); alert('Não foi possível copiar.');
+                            console.error('Falha ao copiar:', err); 
+                            alert('Não foi possível copiar.');
                         }
-                    } else { alert('Sem código PIX para copiar.'); }
+                    } else { 
+                        alert('Sem código PIX para copiar.'); 
+                    }
                 });
             }
 
@@ -1895,10 +1903,11 @@
             }
 
             // Garante que o DOM seja atualizado antes de tentar acessar elementos
-            await new Promise(resolve => setTimeout(resolve, 10));
+           
 
             try {
                 contentContainer.innerHTML = this.templates[page](); // Renderiza o template HTML
+                await new Promise(resolve => setTimeout(resolve, 10));
                 document.querySelectorAll('.nav-link[data-target]').forEach(item => item.classList.toggle('active', item.dataset.target === page));
 
                 // Inicializa JS específico da página APÓS renderizar o HTML
